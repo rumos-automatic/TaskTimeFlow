@@ -244,7 +244,7 @@ export function Timeline({ className, initialDate }: TimelineProps) {
                   {timelineHours.map((hour) => (
                     <div
                       key={hour.hour}
-                      ref={el => hourRefs.current[hour.hour] = el}
+                      ref={el => { hourRefs.current[hour.hour] = el }}
                       className={cn(
                         'relative border-b border-gray-200 transition-all duration-200',
                         isToday && hour.hour === currentHour && 'bg-tasktime-50 border-tasktime-200'
