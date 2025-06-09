@@ -73,7 +73,7 @@ export function OptimizedImage({
 
   const handleLoad = () => {
     setIsLoading(false)
-    onLoad?.(())
+    onLoad?.()
   }
 
   const handleError = () => {
