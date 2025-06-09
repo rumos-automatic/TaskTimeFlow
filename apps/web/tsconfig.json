@@ -10,12 +10,6 @@
       "@/store/*": ["./store/*"],
       "@/app/*": ["./app/*"],
       "@/public/*": ["./public/*"],
-      "@tasktimeflow/types": ["../../packages/types"],
-      "@tasktimeflow/types/*": ["../../packages/types/*"],
-      "@tasktimeflow/ui": ["../../packages/ui"],
-      "@tasktimeflow/ui/*": ["../../packages/ui/*"],
-      "@tasktimeflow/utils": ["../../packages/utils"],
-      "@tasktimeflow/utils/*": ["../../packages/utils/*"]
     },
     "plugins": [
       {
@@ -28,13 +22,5 @@
     "**/*.ts", 
     "**/*.tsx", 
     ".next/types/**/*.ts",
-    "../../packages/types/**/*.ts",
-    "../../packages/ui/**/*.tsx",
-    "../../packages/utils/**/*.ts"
   ],
-  "references": [
-    { "path": "../../packages/types" },
-    { "path": "../../packages/ui" },
-    { "path": "../../packages/utils" }
-  ]
 }

@@ -34,8 +34,4 @@
     "turbo": "^1.12.4",
     "typescript": "^5.3.3"
   },
-  "workspaces": [
-    "apps/*",
-    "packages/*"
-  ]
 }
