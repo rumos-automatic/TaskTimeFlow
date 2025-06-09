@@ -11,7 +11,13 @@ export * from './dialog'
 export * from './dropdown-menu'
 export * from './input'
 export * from './label'
-export * from './optimized-image'
+// Export specific components from optimized-image to avoid Avatar conflict
+export { 
+  OptimizedImage, 
+  LazyLoad, 
+  ProgressiveImage,
+  Avatar as OptimizedAvatar 
+} from './optimized-image'
 export * from './popover'
 export * from './progress'
 export * from './scroll-area'
