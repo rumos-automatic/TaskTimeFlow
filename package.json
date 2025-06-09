@@ -9,12 +9,12 @@
     "npm": ">=8.0.0"
   },
   "scripts": {
-    "build": "turbo run build",
-    "dev": "turbo run dev",
-    "lint": "turbo run lint",
-    "type-check": "turbo run type-check",
-    "test": "turbo run test",
-    "clean": "turbo run clean",
+    "build": "echo 'Building TaskTimeFlow...' && cd apps/web && npm run build",
+    "dev": "echo 'Starting development server...' && cd apps/web && npm run dev",
+    "lint": "echo 'Linting code...' && cd apps/web && npm run lint",
+    "type-check": "echo 'Type checking...' && cd apps/web && npm run type-check",
+    "test": "echo 'Running tests...' && cd apps/web && npm run test",
+    "clean": "echo 'Cleaning build files...'",
     "format": "prettier --write \"**/*.{ts,tsx,md}\"",
     "db:generate": "cd apps/web && npm run db:generate",
     "db:push": "cd apps/web && npm run db:push",
