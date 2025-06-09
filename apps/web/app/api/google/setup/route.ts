@@ -59,11 +59,23 @@ export async function POST(request: NextRequest) {
       results.taskList = taskList
 
       // Update user settings with task list ID
+      const { data: currentIntegration2 } = await supabase
+        .from('integrations')
+        .select('provider_data')
+        .eq('user_id', user.id)
+        .eq('provider', 'google')
+        .single()
+
+      const updatedProviderData2 = {
+        ...(currentIntegration2?.provider_data || {}),
+        task_list_id: taskList.id
+      }
+
       await supabase
         .from('integrations')
         .update({
           task_list_id: taskList.id,
-          provider_data: supabase.sql`provider_data || jsonb_build_object('task_list_id', ${taskList.id})`
+          provider_data: updatedProviderData2
         })
         .eq('user_id', user.id)
         .eq('provider', 'google')
