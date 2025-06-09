@@ -1,6 +1,7 @@
 {
-  "buildCommand": "npm install && cd apps/web && npm install && npm run build",
+  "buildCommand": "npx turbo build --filter=web",
   "outputDirectory": "apps/web/.next",
-  "installCommand": null,
-  "framework": null
+  "installCommand": "npm install",
+  "framework": null,
+  "ignoreCommand": "git diff --quiet HEAD^ HEAD ./"
 }

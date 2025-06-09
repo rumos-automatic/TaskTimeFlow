@@ -8,15 +8,20 @@
     "npm": ">=8.0.0"
   },
   "scripts": {
-    "build": "cd apps/web && npm run build",
-    "dev": "cd apps/web && npm run dev",
-    "lint": "cd apps/web && npm run lint",
-    "type-check": "cd apps/web && npm run type-check"
+    "build": "turbo build --filter=web",
+    "dev": "turbo dev --filter=web", 
+    "lint": "turbo lint --filter=web",
+    "type-check": "turbo type-check --filter=web"
   },
   "devDependencies": {
     "@types/node": "^20.11.5",
     "eslint": "^8.56.0",
     "prettier": "^3.2.4",
-    "typescript": "^5.3.3"
-  }
+    "typescript": "^5.3.3",
+    "turbo": "^1.12.2"
+  },
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ]
 }

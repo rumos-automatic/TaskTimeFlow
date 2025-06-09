@@ -1,5 +1,5 @@
 {
-  "name": "@tasktimeflow/web",
+  "name": "web",
   "version": "1.0.0",
   "description": "TaskTimeFlow Web Application - Next.js Frontend",
   "private": true,
