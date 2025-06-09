@@ -127,7 +127,9 @@ export async function createCalendarEvent(
     })
 
     // Store sync mapping
-    await storeSyncMapping(userId, slot.id, response.data.id!, 'calendar')
+    if (response.data.id) {
+      await storeSyncMapping(userId, slot.id, response.data.id, 'calendar')
+    }
 
     return response.data
   } catch (error) {
@@ -286,7 +288,7 @@ export async function watchCalendar(
         resource_id: response.data.resourceId,
         resource_uri: response.data.resourceUri,
         channel_id: response.data.id,
-        expiration: new Date(parseInt(response.data.expiration!)).toISOString(),
+        expiration: response.data.expiration ? new Date(parseInt(response.data.expiration)).toISOString() : null,
         calendar_id: calendarId,
         webhook_url: webhookUrl
       })

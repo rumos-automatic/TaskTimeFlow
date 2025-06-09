@@ -214,13 +214,13 @@ export function GoogleIntegration() {
                 <div className="flex items-center space-x-3">
                   {integration.provider_data?.picture && (
                     <img 
-                      src={integration.provider_data.picture}
+                      src={integration.provider_data?.picture}
                       alt="Google Account"
                       className="h-10 w-10 rounded-full"
                     />
                   )}
                   <div>
-                    <p className="font-medium">{integration.provider_email}</p>
+                    <p className="font-medium">{integration.provider_email || 'Unknown Email'}</p>
                     <p className="text-sm text-gray-500">
                       最終同期: {integration.last_synced_at ? 
                         formatDistanceToNow(new Date(integration.last_synced_at), { 

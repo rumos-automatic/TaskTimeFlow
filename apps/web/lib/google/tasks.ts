@@ -97,7 +97,9 @@ export async function createGoogleTask(
     })
 
     // Store sync mapping
-    await storeSyncMapping(userId, task.id, response.data.id!, 'tasks')
+    if (response.data.id) {
+      await storeSyncMapping(userId, task.id, response.data.id, 'tasks')
+    }
 
     return response.data
   } catch (error) {
@@ -321,7 +323,8 @@ export async function syncTasksFromGoogle(
   // Process each Google task
   for (const googleTask of googleTasks) {
     try {
-      const mapping = mappingsByGoogleId.get(googleTask.id!)
+      if (!googleTask.id) continue
+      const mapping = mappingsByGoogleId.get(googleTask.id)
       
       if (mapping) {
         // Update existing TaskTimeFlow task
@@ -362,8 +365,8 @@ export async function syncTasksFromGoogle(
           .select()
           .single()
 
-        if (newTask) {
-          await storeSyncMapping(userId, newTask.id, googleTask.id!, 'tasks')
+        if (newTask && googleTask.id) {
+          await storeSyncMapping(userId, newTask.id, googleTask.id, 'tasks')
           results.created++
         }
       }

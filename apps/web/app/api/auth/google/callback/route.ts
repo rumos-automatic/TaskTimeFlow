@@ -65,12 +65,12 @@ export async function GET(request: NextRequest) {
         access_token: tokens.access_token,
         refresh_token: tokens.refresh_token,
         token_expires_at: new Date(tokens.expiry_date || Date.now() + 3600000).toISOString(),
-        provider_user_id: profile.id,
-        provider_email: profile.email,
+        provider_user_id: profile.id || '',
+        provider_email: profile.email || '',
         provider_data: {
-          name: profile.name,
-          picture: profile.picture,
-          locale: profile.locale
+          name: profile.name || '',
+          picture: profile.picture || '',
+          locale: profile.locale || ''
         },
         updated_at: new Date().toISOString()
       })

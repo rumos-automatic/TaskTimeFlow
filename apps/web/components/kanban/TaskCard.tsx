@@ -150,14 +150,14 @@ export function TaskCard({
               <Tooltip>
                 <TooltipTrigger>
                   <Avatar className="h-6 w-6">
-                    <AvatarImage src={task.assignee.avatar_url} alt={task.assignee.display_name} />
+                    <AvatarImage src={task.assignee?.avatar_url} alt={task.assignee?.display_name} />
                     <AvatarFallback className="text-xs">
-                      {task.assignee.display_name?.charAt(0) || task.assignee.email.charAt(0)}
+                      {task.assignee?.display_name?.charAt(0) || task.assignee?.email?.charAt(0) || '?'}
                     </AvatarFallback>
                   </Avatar>
                 </TooltipTrigger>
                 <TooltipContent>
-                  担当者: {task.assignee.display_name || task.assignee.email}
+                  担当者: {task.assignee?.display_name || task.assignee?.email || 'Unknown'}
                 </TooltipContent>
               </Tooltip>
             )}
