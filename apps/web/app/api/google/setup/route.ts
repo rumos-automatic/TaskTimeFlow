@@ -25,11 +25,23 @@ export async function POST(request: NextRequest) {
       results.calendar = calendar
 
       // Update user settings with calendar ID
+      const { data: currentIntegration } = await supabase
+        .from('integrations')
+        .select('provider_data')
+        .eq('user_id', user.id)
+        .eq('provider', 'google')
+        .single()
+
+      const updatedProviderData = {
+        ...(currentIntegration?.provider_data || {}),
+        calendar_id: calendar.id
+      }
+
       await supabase
         .from('integrations')
         .update({
           calendar_id: calendar.id,
-          provider_data: supabase.sql`provider_data || jsonb_build_object('calendar_id', ${calendar.id})`
+          provider_data: updatedProviderData
         })
         .eq('user_id', user.id)
         .eq('provider', 'google')
