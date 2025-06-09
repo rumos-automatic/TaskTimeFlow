@@ -53,11 +53,17 @@ export function VirtualTimeline({
       if (existingSlot) {
         generatedSlots.push(existingSlot)
       } else if (showEmptySlots) {
+        const now = new Date().toISOString()
         generatedSlots.push({
           id: `empty-${i}`,
+          user_id: '', // Empty for virtual slots
+          task_id: null,
           start_time: slotTime.toISOString(),
           end_time: addMinutes(slotTime, slotDuration).toISOString(),
-          task_id: null,
+          date: selectedDate.toISOString().split('T')[0],
+          status: 'scheduled' as const,
+          created_at: now,
+          updated_at: now,
           task: null,
           is_break: false,
           is_empty: true
