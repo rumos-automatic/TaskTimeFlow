@@ -176,7 +176,7 @@ export function CreateSlotModal({
         {createSlotMutation.error && (
           <Alert variant="destructive">
             <AlertDescription>
-              {createSlotMutation.error.error || 'スケジュールの作成に失敗しました'}
+              {(createSlotMutation.error instanceof Error ? createSlotMutation.error.message : String(createSlotMutation.error)) || 'スケジュールの作成に失敗しました'}
             </AlertDescription>
           </Alert>
         )}
