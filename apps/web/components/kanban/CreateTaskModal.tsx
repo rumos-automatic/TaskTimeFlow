@@ -277,7 +277,6 @@ export function CreateTaskModal({ isOpen, onClose, projectId, defaultStatus = 't
                     mode="single"
                     selected={formData.start_time ? new Date(formData.start_time) : undefined}
                     onSelect={(date) => handleDateSelect(date, 'start')}
-                    initialFocus
                   />
                 </PopoverContent>
               </Popover>
@@ -297,7 +296,6 @@ export function CreateTaskModal({ isOpen, onClose, projectId, defaultStatus = 't
                     mode="single"
                     selected={formData.end_time ? new Date(formData.end_time) : undefined}
                     onSelect={(date) => handleDateSelect(date, 'end')}
-                    initialFocus
                   />
                 </PopoverContent>
               </Popover>
