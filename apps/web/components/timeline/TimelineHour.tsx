@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { Droppable } from '@hello-pangea/dnd'
+import { Droppable } from 'react-beautiful-dnd'
 import { TimelineSlotCard } from './TimelineSlotCard'
 import { TimeBlockSegment } from './TimeBlockSegment'
 import { Badge } from '@/components/ui/badge'

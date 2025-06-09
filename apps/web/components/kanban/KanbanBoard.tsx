@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd'
+import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd'
 import { useTasks, useTaskDragDrop } from '@/hooks/useTasks'
 import { useProject } from '@/hooks/useProjects'
 import { TaskCard } from './TaskCard'

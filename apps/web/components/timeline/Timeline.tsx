@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useRef, useEffect } from 'react'
-import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd'
+import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd'
 import { useTimelineView, useTimelineNavigation } from '@/hooks/useTimeline'
 import { TimelineHour } from './TimelineHour'
 import { TimelineSlotCard } from './TimelineSlotCard'

@@ -1,6 +1,6 @@
 'use client'
 
-import { Draggable } from '@hello-pangea/dnd'
+import { Draggable } from 'react-beautiful-dnd'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'

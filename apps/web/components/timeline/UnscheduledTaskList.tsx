@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { Draggable, Droppable } from '@hello-pangea/dnd'
+import { Draggable, Droppable } from 'react-beautiful-dnd'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
