@@ -102,6 +102,7 @@ export function TaskBreakdownModal({ isOpen, onClose, task }: TaskBreakdownModal
         const taskData = {
           title: subtask.title,
           description: subtask.description,
+          project_id: task.project_id,
           estimated_duration: subtask.estimated_duration,
           priority: subtask.priority,
           energy_level: subtask.energy_level,
