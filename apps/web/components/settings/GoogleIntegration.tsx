@@ -212,18 +212,18 @@ export function GoogleIntegration() {
               {/* Account Info */}
               <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
                 <div className="flex items-center space-x-3">
-                  {integration.provider_data?.picture && (
+                  {(integration as any)?.provider_data?.picture && (
                     <img 
-                      src={integration.provider_data?.picture}
+                      src={(integration as any)?.provider_data?.picture}
                       alt="Google Account"
                       className="h-10 w-10 rounded-full"
                     />
                   )}
                   <div>
-                    <p className="font-medium">{integration.provider_email || 'Unknown Email'}</p>
+                    <p className="font-medium">{(integration as any)?.provider_email || 'Unknown Email'}</p>
                     <p className="text-sm text-gray-500">
-                      最終同期: {integration.last_synced_at ? 
-                        formatDistanceToNow(new Date(integration.last_synced_at), { 
+                      最終同期: {(integration as any)?.last_synced_at ? 
+                        formatDistanceToNow(new Date((integration as any).last_synced_at), { 
                           addSuffix: true,
                           locale: ja 
                         }) : 
@@ -284,7 +284,7 @@ export function GoogleIntegration() {
                     </div>
                     <Switch
                       id="sync-calendar"
-                      checked={integration.sync_calendar}
+                      checked={(integration as any)?.sync_calendar}
                       onCheckedChange={(checked) => handleSettingChange('sync_calendar', checked)}
                     />
                   </div>
@@ -298,7 +298,7 @@ export function GoogleIntegration() {
                     </div>
                     <Switch
                       id="sync-tasks"
-                      checked={integration.sync_tasks}
+                      checked={(integration as any)?.sync_tasks}
                       onCheckedChange={(checked) => handleSettingChange('sync_tasks', checked)}
                     />
                   </div>
@@ -312,7 +312,7 @@ export function GoogleIntegration() {
                     </div>
                     <Switch
                       id="sync-enabled"
-                      checked={integration.sync_enabled}
+                      checked={(integration as any)?.sync_enabled}
                       onCheckedChange={(checked) => handleSettingChange('sync_enabled', checked)}
                     />
                   </div>
@@ -320,7 +320,7 @@ export function GoogleIntegration() {
               </div>
 
               {/* Sync Status */}
-              {integration.status === 'error' && (
+              {(integration as any)?.status === 'error' && (
                 <Alert variant="destructive">
                   <AlertTriangle className="h-4 w-4" />
                   <AlertDescription>
