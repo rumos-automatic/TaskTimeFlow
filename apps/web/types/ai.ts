@@ -289,6 +289,38 @@ export interface HistoricalComparison {
   accuracy_score: number
 }
 
+export interface SchedulingConstraints {
+  working_hours: {
+    start: string // HH:mm format
+    end: string   // HH:mm format
+  }
+  break_duration: number // minutes
+  max_consecutive_work: number // minutes
+  blocked_times: Array<{
+    start: string
+    end: string
+    reason?: string
+  }>
+  energy_levels: {
+    high: string[] // time ranges
+    low: string[]  // time ranges
+  }
+  mandatory_breaks: boolean
+  weekend_work: boolean
+}
+
+export interface SchedulingPreferences {
+  prefer_morning: boolean
+  prefer_afternoon: boolean
+  prefer_evening: boolean
+  batch_similar_tasks: boolean
+  minimize_context_switching: boolean
+  respect_deadlines: boolean
+  optimize_for_energy: boolean
+  allow_overtime: boolean
+  buffer_time_percentage: number // 0-100
+}
+
 export interface ScheduleOptimizationRequest {
   tasks: Task[]
   time_blocks: TimeBlock[]
