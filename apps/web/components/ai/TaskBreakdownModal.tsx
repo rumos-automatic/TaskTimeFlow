@@ -97,7 +97,8 @@ export function TaskBreakdownModal({ isOpen, onClose, task }: TaskBreakdownModal
       )
 
       // Create tasks in sequence to maintain order
-      for (const [index, subtask] of selectedSuggestions.entries()) {
+      for (let i = 0; i < selectedSuggestions.length; i++) {
+        const subtask = selectedSuggestions[i]
         const taskData = {
           title: subtask.title,
           description: subtask.description,
