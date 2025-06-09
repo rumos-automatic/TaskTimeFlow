@@ -249,7 +249,7 @@ export function SignupForm() {
               <Checkbox
                 id="terms"
                 checked={acceptTerms}
-                onCheckedChange={setAcceptTerms}
+                onCheckedChange={(checked) => setAcceptTerms(checked === true)}
                 disabled={isSubmitting || loading}
               />
               <Label htmlFor="terms" className="text-sm">
