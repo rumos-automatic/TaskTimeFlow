@@ -27,7 +27,8 @@ import { AIAssistantPopup } from '@/components/ai/AIAssistantPopup'
 import { SuggestionsPanel } from '@/components/ai/SuggestionsPanel'
 import { generateTimelineHours } from '@/lib/timeline'
 import { cn } from '@/lib/utils'
-import type { TimelineSlot, TimeBlock, DragDropResult } from '@/types/timeline'
+import type { TimelineSlot, TimeBlock } from '@/types/timeline'
+import type { DropResult as DragDropResult } from 'react-beautiful-dnd'
 import type { Task } from '@/types/tasks'
 
 interface TimelineProps {
