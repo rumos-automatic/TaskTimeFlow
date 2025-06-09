@@ -321,5 +321,5 @@ chore: ビルド・設定変更
 
 **TaskTimeFlow** で生産性の新次元を体験してください 🚀
 
-[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/your-username/TaskTimeFlow)
-[![Deploy to Railway](https://railway.app/button.svg)](https://railway.app/new/template?template=https://github.com/your-username/TaskTimeFlow)
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/rumos-automatic/TaskTimeFlow)
+[![Deploy to Railway](https://railway.app/button.svg)](https://railway.app/new/template?template=https://github.com/rumos-automatic/TaskTimeFlow)
