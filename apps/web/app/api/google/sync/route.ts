@@ -169,7 +169,7 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error('Sync API error:', error)
     return NextResponse.json(
-      { error: 'Sync failed', details: error.message },
+      { error: 'Sync failed', details: error instanceof Error ? error.message : String(error) },
       { status: 500 }
     )
   }
