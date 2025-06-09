@@ -34,7 +34,7 @@ export function KanbanBoard({ projectId, className }: KanbanBoardProps) {
   const dragDropMutation = useTaskDragDrop()
 
   // Group tasks by status
-  const tasksByStatus = tasks.reduce((acc, task) => {
+  const tasksByStatus = tasks.reduce((acc: Record<string, Task[]>, task: Task) => {
     if (!acc[task.status]) {
       acc[task.status] = []
     }
@@ -43,8 +43,8 @@ export function KanbanBoard({ projectId, className }: KanbanBoardProps) {
   }, {} as Record<string, Task[]>)
 
   // Sort tasks by position within each column
-  Object.keys(tasksByStatus).forEach(status => {
-    tasksByStatus[status].sort((a, b) => a.position - b.position)
+  Object.keys(tasksByStatus).forEach((status: string) => {
+    tasksByStatus[status].sort((a: Task, b: Task) => a.position - b.position)
   })
 
   const handleDragEnd = (result: DropResult) => {

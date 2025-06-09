@@ -470,7 +470,7 @@ export async function autoScheduleTasks(request: AutoScheduleRequest): Promise<{
     const scheduledSlots: TimelineSlot[] = []
     
     // Sort tasks by priority and energy level
-    const sortedTasks = tasks.sort((a, b) => {
+    const sortedTasks = tasks.sort((a: Task, b: Task) => {
       const priorityWeight = { urgent: 4, high: 3, medium: 2, low: 1 }
       const energyWeight = { high: 3, medium: 2, low: 1 }
       

@@ -68,7 +68,7 @@ export function VirtualTimeline({
     return generatedSlots
   }, [selectedDate, slots, showEmptySlots, slotDuration])
 
-  const renderTimeSlot = useCallback((slot: any, index: number, style: React.CSSProperties) => {
+  const renderTimeSlot = useCallback((slot: TimelineSlot, index: number, style: React.CSSProperties) => {
     const startTime = new Date(slot.start_time)
     const endTime = new Date(slot.end_time)
     const isCurrentHour = new Date().getHours() === startTime.getHours()
@@ -164,7 +164,7 @@ export function VirtualTimeline({
                     
                     <div className="flex items-center justify-between">
                       <div className="flex items-center space-x-2">
-                        {hasTask.labels?.map((label, idx) => (
+                        {hasTask.labels?.map((label: string, idx: number) => (
                           <Badge key={idx} variant="outline" className="text-xs">
                             {label}
                           </Badge>
@@ -192,7 +192,7 @@ export function VirtualTimeline({
     )
   }, [draggedTask, onSlotClick, onSlotDrop])
 
-  const getSlotKey = useCallback((slot: any, index: number) => {
+  const getSlotKey = useCallback((slot: TimelineSlot, index: number) => {
     return slot.id || `slot-${index}`
   }, [])
 
