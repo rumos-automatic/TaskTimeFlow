@@ -317,7 +317,7 @@ export function TaskBreakdownModal({ isOpen, onClose, task }: TaskBreakdownModal
                             )}
 
                             <div className="flex items-center flex-wrap gap-2">
-                              <Badge className={getTaskPriorityColor(subtask.priority)} className="text-xs">
+                              <Badge className={cn(getTaskPriorityColor(subtask.priority), "text-xs")}>
                                 {subtask.priority === 'urgent' ? '緊急' :
                                  subtask.priority === 'high' ? '高' :
                                  subtask.priority === 'medium' ? '中' : '低'}
