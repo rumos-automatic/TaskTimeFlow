@@ -50,13 +50,13 @@ export async function POST(request: NextRequest) {
         .gte('created_at', startDate.toISOString())
         .lte('created_at', endDate.toISOString()),
       
-      // Pomodoro data
+      // Pomodoro data from productivity analytics
       supabase
-        .from('pomodoro_sessions')
-        .select('*')
+        .from('productivity_analytics')
+        .select('date, pomodoro_sessions, pomodoro_completed, focus_time_minutes, break_time_minutes')
         .eq('user_id', user.id)
-        .gte('started_at', startDate.toISOString())
-        .lte('started_at', endDate.toISOString()),
+        .gte('date', startDate.toISOString().split('T')[0])
+        .lte('date', endDate.toISOString().split('T')[0]),
       
       // Daily stats
       supabase
