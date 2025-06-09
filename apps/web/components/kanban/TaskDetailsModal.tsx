@@ -49,7 +49,8 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger
 } from '@/components/ui/dropdown-menu'
-import { formatDateTime, formatTaskDuration, getTaskPriorityColor, getTaskStatusColor } from '@/lib/tasks'
+import { formatTaskDuration, getTaskPriorityColor, getTaskStatusColor } from '@/lib/tasks'
+import { formatDateTime } from '@/lib/utils'
 import type { Task, UpdateTaskInput, TaskPriority, EnergyLevel, TaskStatus, TaskContext } from '@/types/tasks'
 
 interface TaskDetailsModalProps {
