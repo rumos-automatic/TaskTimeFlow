@@ -109,7 +109,11 @@ export function SuggestionsPanel({
       })
 
       // Mark suggestion as applied
-      setAppliedSuggestions(prev => new Set([...prev, suggestion.id]))
+      setAppliedSuggestions(prev => {
+        const newSet = new Set(prev)
+        newSet.add(suggestion.id)
+        return newSet
+      })
       
       // Remove from current suggestions
       setSuggestions(prev => prev.filter(s => s.id !== suggestion.id))
