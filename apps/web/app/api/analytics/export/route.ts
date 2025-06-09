@@ -58,13 +58,13 @@ export async function POST(request: NextRequest) {
         .gte('date', startDate.toISOString().split('T')[0])
         .lte('date', endDate.toISOString().split('T')[0]),
       
-      // Daily stats
+      // Daily stats from productivity analytics
       supabase
-        .rpc('get_daily_productivity_stats', {
-          user_uuid: user.id,
-          start_date: format(startDate, 'yyyy-MM-dd'),
-          end_date: format(endDate, 'yyyy-MM-dd')
-        })
+        .from('productivity_analytics')
+        .select('*')
+        .eq('user_id', user.id)
+        .gte('date', startDate.toISOString().split('T')[0])
+        .lte('date', endDate.toISOString().split('T')[0])
     ])
 
     if (exportFormat === 'csv') {
