@@ -150,7 +150,7 @@ export function CreateTaskModal({ isOpen, onClose, projectId, defaultStatus = 't
         {createTaskMutation.error && (
           <Alert variant="destructive">
             <AlertDescription>
-              {createTaskMutation.error.error || 'タスクの作成に失敗しました'}
+              {createTaskMutation.error instanceof Error ? createTaskMutation.error.message : String(createTaskMutation.error) || 'タスクの作成に失敗しました'}
             </AlertDescription>
           </Alert>
         )}
