@@ -252,8 +252,11 @@ export class OpenAIService extends BaseAIService {
 
   private calculateConfidence(response: any): number {
     // Simple confidence calculation based on response completeness
-    if (response.choices[0].finish_reason === 'stop') return 85
-    if (response.choices[0].finish_reason === 'length') return 70
+    const firstChoice = response.choices?.[0]
+    if (!firstChoice) return 50
+    
+    if (firstChoice.finish_reason === 'stop') return 85
+    if (firstChoice.finish_reason === 'length') return 70
     return 60
   }
 }
@@ -321,8 +324,8 @@ export class ClaudeService extends BaseAIService {
   }
 
   private calculateConfidence(response: any): number {
-    if (response.stop_reason === 'end_turn') return 85
-    if (response.stop_reason === 'max_tokens') return 70
+    if (response?.stop_reason === 'end_turn') return 85
+    if (response?.stop_reason === 'max_tokens') return 70
     return 60
   }
 }
@@ -373,8 +376,15 @@ export class GeminiService extends BaseAIService {
 
       const data = await response.json()
 
+      const firstCandidate = data.candidates?.[0]
+      const responseText = firstCandidate?.content?.parts?.[0]?.text
+      
+      if (!responseText) {
+        throw new Error('Invalid response format from Gemini API')
+      }
+
       return {
-        response: data.candidates[0].content.parts[0].text,
+        response: responseText,
         confidence_score: this.calculateConfidence(data)
       }
     } catch (error) {
@@ -395,7 +405,9 @@ export class GeminiService extends BaseAIService {
   }
 
   private calculateConfidence(response: any): number {
-    const candidate = response.candidates[0]
+    const candidate = response.candidates?.[0]
+    if (!candidate) return 50
+    
     if (candidate.finishReason === 'STOP') return 85
     if (candidate.finishReason === 'MAX_TOKENS') return 70
     return 60

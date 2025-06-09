@@ -37,12 +37,22 @@ export function TaskCompletionChart({ data, timeRange }: TaskCompletionChartProp
     }
   }
 
-  const CustomTooltip = ({ active, payload, label }: { active?: boolean; payload?: any[]; label?: string }) => {
+  interface TooltipPayload {
+    name: string
+    value: number
+    color: string
+  }
+
+  const CustomTooltip = ({ active, payload, label }: { 
+    active?: boolean; 
+    payload?: TooltipPayload[]; 
+    label?: string 
+  }) => {
     if (active && payload && payload.length) {
       return (
         <div className="bg-white p-3 border rounded-lg shadow-lg">
           <p className="font-medium text-sm mb-2">{label ? formatDate(label) : ''}</p>
-          {payload.map((entry: { name: string; value: number; color: string }, index: number) => (
+          {payload.map((entry, index: number) => (
             <p key={index} className="text-xs" style={{ color: entry.color }}>
               <span className="font-medium">{entry.name}: </span>
               {entry.name === '完了率' ? `${entry.value.toFixed(1)}%` : `${entry.value}個`}

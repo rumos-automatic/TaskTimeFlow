@@ -1,7 +1,13 @@
 'use client'
 
-import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react'
+import React, { useState, useEffect, useRef, useMemo, useCallback, forwardRef, useImperativeHandle } from 'react'
 import { cn } from '@/lib/utils'
+
+export interface VirtualListRef {
+  scrollToIndex: (index: number, align?: 'start' | 'center' | 'end') => void
+  scrollToTop: () => void
+  scrollToBottom: () => void
+}
 
 interface VirtualListProps<T> {
   items: T[]
@@ -15,7 +21,7 @@ interface VirtualListProps<T> {
   getItemKey?: (item: T, index: number) => string | number
 }
 
-export function VirtualList<T>({
+export const VirtualList = forwardRef<VirtualListRef, VirtualListProps<any>>(function VirtualList<T>({
   items,
   itemHeight,
   containerHeight,
@@ -25,7 +31,7 @@ export function VirtualList<T>({
   onScroll,
   estimatedItemHeight = 50,
   getItemKey
-}: VirtualListProps<T>) {
+}: VirtualListProps<T>, ref) {
   const [scrollTop, setScrollTop] = useState(0)
   const containerRef = useRef<HTMLDivElement>(null)
   const scrollElementRef = useRef<HTMLDivElement>(null)
@@ -129,7 +135,7 @@ export function VirtualList<T>({
   }, [itemOffsets, itemHeights, containerHeight, totalHeight])
 
   // Expose scroll functions
-  React.useImperativeHandle(containerRef, () => ({
+  useImperativeHandle(ref, () => ({
     scrollToIndex,
     scrollToTop: () => scrollToIndex(0),
     scrollToBottom: () => scrollToIndex(items.length - 1, 'end')
@@ -137,14 +143,13 @@ export function VirtualList<T>({
 
   return (
     <div
-      ref={containerRef}
+      ref={scrollElementRef}
       className={cn('overflow-auto', className)}
       style={{ height: containerHeight }}
+      onScroll={handleScroll}
     >
       <div
-        ref={scrollElementRef}
         style={{ height: totalHeight, position: 'relative' }}
-        onScroll={handleScroll}
       >
         {visibleItems.map(({ item, index, offset, height }) => {
           const key = getItemKey ? getItemKey(item, index) : index
@@ -173,7 +178,7 @@ export function VirtualList<T>({
       </div>
     </div>
   )
-}
+})
 
 // Hook for managing virtual list state
 export function useVirtualList<T>({

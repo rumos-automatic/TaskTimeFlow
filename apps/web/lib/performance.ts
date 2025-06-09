@@ -34,8 +34,8 @@ function sendToAnalytics(metric: any) {
   }
 
   // Send to Vercel Analytics
-  if (window.va) {
-    window.va('track', 'Web Vitals', {
+  if (typeof window !== 'undefined' && 'va' in window && typeof (window as any).va === 'function') {
+    (window as any).va('track', 'Web Vitals', {
       metric: metric.name,
       value: metric.value,
       label: metric.id,
@@ -268,7 +268,11 @@ export function trackMemoryUsage() {
     return null
   }
 
-  const memory = (performance as any).memory
+  const memory = (performance as any).memory as {
+    usedJSHeapSize: number;
+    totalJSHeapSize: number;
+    jsHeapSizeLimit: number;
+  }
   
   return {
     usedJSHeapSize: Math.round(memory.usedJSHeapSize / 1024 / 1024), // MB
@@ -287,7 +291,10 @@ export function trackBundleSize() {
   let totalSize = 0
 
   scripts.forEach(script => {
-    fetch(script.getAttribute('src')!)
+    const src = script.getAttribute('src')
+    if (!src) return
+    
+    fetch(src)
       .then(response => {
         const size = parseInt(response.headers.get('content-length') || '0')
         totalSize += size

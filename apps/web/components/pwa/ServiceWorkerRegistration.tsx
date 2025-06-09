@@ -10,10 +10,15 @@ interface ServiceWorkerRegistrationProps {
   children?: React.ReactNode
 }
 
+interface BeforeInstallPromptEvent extends Event {
+  prompt(): Promise<void>
+  userChoice: Promise<{ outcome: 'accepted' | 'dismissed' }>
+}
+
 export function ServiceWorkerRegistration({ children }: ServiceWorkerRegistrationProps) {
   const [swRegistration, setSwRegistration] = useState<ServiceWorkerRegistration | null>(null)
   const [updateAvailable, setUpdateAvailable] = useState(false)
-  const [installPrompt, setInstallPrompt] = useState<any>(null)
+  const [installPrompt, setInstallPrompt] = useState<BeforeInstallPromptEvent | null>(null)
   const [showInstallBanner, setShowInstallBanner] = useState(false)
   const [isInstalled, setIsInstalled] = useState(false)
 
@@ -31,7 +36,7 @@ export function ServiceWorkerRegistration({ children }: ServiceWorkerRegistratio
     // Listen for install prompt
     const handleBeforeInstallPrompt = (e: Event) => {
       e.preventDefault()
-      setInstallPrompt(e)
+      setInstallPrompt(e as BeforeInstallPromptEvent)
       setShowInstallBanner(true)
     }
 
