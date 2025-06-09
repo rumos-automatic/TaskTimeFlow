@@ -216,7 +216,7 @@ export function Timeline({ className, initialDate }: TimelineProps) {
               context={{
                 current_date: currentDate.toISOString(),
                 view_mode: 'timeline',
-                scheduled_slots: timelineView.slots
+                scheduled_slots: timelineView.timeline_slots
               }}
               className="max-h-60"
               autoRefresh={true}
