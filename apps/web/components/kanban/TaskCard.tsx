@@ -21,9 +21,21 @@ interface TaskCardProps {
   task: Task
   isDragging?: boolean
   onClick?: () => void
+  onDragStart?: () => void
+  onDragEnd?: () => void
+  className?: string
+  draggable?: boolean
 }
 
-export function TaskCard({ task, isDragging = false, onClick }: TaskCardProps) {
+export function TaskCard({ 
+  task, 
+  isDragging = false, 
+  onClick, 
+  onDragStart, 
+  onDragEnd, 
+  className, 
+  draggable = false 
+}: TaskCardProps) {
   const dueDateStatus = getTaskDueDateStatus(task)
   const isOverdue = isTaskOverdue(task)
 
@@ -76,8 +88,12 @@ export function TaskCard({ task, isDragging = false, onClick }: TaskCardProps) {
           ${isDragging ? 'shadow-xl border-tasktime-200 bg-tasktime-50' : 'hover:shadow-md'}
           ${isOverdue ? 'border-l-4 border-l-danger-500' : ''}
           ${dueDateStatus === 'due_soon' ? 'border-l-4 border-l-warning-500' : ''}
+          ${className || ''}
         `}
         onClick={onClick}
+        onDragStart={onDragStart}
+        onDragEnd={onDragEnd}
+        draggable={draggable}
       >
         <CardContent className="p-4">
           {/* Header with priority and assignee */}
