@@ -1,0 +1,138 @@
+{
+  "name": "TaskTimeFlow",
+  "short_name": "TaskTimeFlow",
+  "description": "かんばん方式とタイムラインを統合した革新的生産性向上SaaS",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#3B82F6",
+  "orientation": "portrait-primary",
+  "scope": "/",
+  "lang": "ja",
+  "categories": ["productivity", "business", "utilities"],
+  "dir": "ltr",
+  "icons": [
+    {
+      "src": "/icons/icon-72x72.png",
+      "sizes": "72x72",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icons/icon-96x96.png",
+      "sizes": "96x96",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icons/icon-128x128.png",
+      "sizes": "128x128",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icons/icon-144x144.png",
+      "sizes": "144x144",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icons/icon-152x152.png",
+      "sizes": "152x152",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icons/icon-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icons/icon-384x384.png",
+      "sizes": "384x384",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icons/icon-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "/screenshots/desktop-home.png",
+      "sizes": "1280x720",
+      "type": "image/png",
+      "platform": "wide",
+      "label": "TaskTimeFlow Dashboard"
+    },
+    {
+      "src": "/screenshots/mobile-kanban.png",
+      "sizes": "375x812",
+      "type": "image/png",
+      "platform": "narrow",
+      "label": "Kanban Board Mobile View"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "新しいタスク",
+      "short_name": "新規タスク",
+      "description": "新しいタスクを作成",
+      "url": "/tasks?action=create",
+      "icons": [
+        {
+          "src": "/icons/shortcut-new-task.png",
+          "sizes": "96x96"
+        }
+      ]
+    },
+    {
+      "name": "ポモドーロタイマー",
+      "short_name": "ポモドーロ",
+      "description": "ポモドーロタイマーを開始",
+      "url": "/pomodoro",
+      "icons": [
+        {
+          "src": "/icons/shortcut-pomodoro.png",
+          "sizes": "96x96"
+        }
+      ]
+    },
+    {
+      "name": "統計",
+      "short_name": "分析",
+      "description": "生産性分析を表示",
+      "url": "/analytics",
+      "icons": [
+        {
+          "src": "/icons/shortcut-analytics.png",
+          "sizes": "96x96"
+        }
+      ]
+    }
+  ],
+  "related_applications": [],
+  "prefer_related_applications": false,
+  "edge_side_panel": {
+    "preferred_width": 400
+  },
+  "protocol_handlers": [
+    {
+      "protocol": "web+tasktimeflow",
+      "url": "/task/%s"
+    }
+  ],
+  "file_handlers": [
+    {
+      "action": "/import",
+      "accept": {
+        "text/csv": [".csv"],
+        "application/json": [".json"]
+      }
+    }
+  ]
+}

@@ -1,0 +1,43 @@
+version: '3.8'
+
+# Development-optimized docker-compose configuration
+services:
+  web:
+    build:
+      target: development
+    environment:
+      - NODE_ENV=development
+      - NEXT_TELEMETRY_DISABLED=1
+      - WATCHPACK_POLLING=true
+    volumes:
+      - ./apps/web:/app/apps/web:cached
+      - ./packages:/app/packages:cached
+      - web_node_modules:/app/apps/web/node_modules
+      - web_next:/app/apps/web/.next
+    stdin_open: true
+    tty: true
+
+  api:
+    build:
+      target: development
+    environment:
+      - NODE_ENV=development
+    volumes:
+      - ./apps/api:/app/apps/api:cached
+      - ./packages:/app/packages:cached
+      - api_node_modules:/app/apps/api/node_modules
+      - api_dist:/app/apps/api/dist
+    stdin_open: true
+    tty: true
+
+  redis:
+    command: redis-server --appendonly yes
+    volumes:
+      - redis_dev_data:/data
+
+volumes:
+  web_node_modules:
+  web_next:
+  api_node_modules:
+  api_dist:
+  redis_dev_data:

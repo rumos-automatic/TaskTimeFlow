@@ -1,0 +1,470 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TaskTimeFlow - UI Prototype</title>
+    <link rel="stylesheet" href="assets/styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+</head>
+<body>
+    <!-- 背景 -->
+    <div class="background">
+        <div class="bg-gradient"></div>
+        <div class="bg-shapes">
+            <div class="shape shape-1"></div>
+            <div class="shape shape-2"></div>
+            <div class="shape shape-3"></div>
+        </div>
+    </div>
+
+    <!-- メインアプリケーション -->
+    <div class="app">
+        <!-- ヘッダー -->
+        <header class="header glass-panel">
+            <div class="header-left">
+                <div class="logo">
+                    <i class="fas fa-stream"></i>
+                    <span>TaskTimeFlow</span>
+                </div>
+                <nav class="main-nav">
+                    <button class="nav-tab active" data-view="kanban">
+                        <i class="fas fa-columns"></i>
+                        かんばん
+                    </button>
+                    <button class="nav-tab" data-view="timeline">
+                        <i class="fas fa-calendar-alt"></i>
+                        タイムライン
+                    </button>
+                    <button class="nav-tab" data-view="analytics">
+                        <i class="fas fa-chart-bar"></i>
+                        分析
+                    </button>
+                </nav>
+            </div>
+            <div class="header-right">
+                <div class="search-box">
+                    <i class="fas fa-search"></i>
+                    <input type="text" placeholder="タスクを検索...">
+                </div>
+                <div class="header-actions">
+                    <button class="icon-btn">
+                        <i class="fas fa-bell"></i>
+                        <span class="notification-dot"></span>
+                    </button>
+                    <button class="icon-btn">
+                        <i class="fas fa-user-circle"></i>
+                    </button>
+                    <button class="icon-btn">
+                        <i class="fas fa-cog"></i>
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <!-- メインコンテンツ -->
+        <main class="main-content">
+            <!-- サイドバー -->
+            <aside class="sidebar glass-panel">
+                <div class="sidebar-section">
+                    <h3>フィルター</h3>
+                    <div class="filter-group">
+                        <label class="filter-option">
+                            <input type="checkbox" checked>
+                            <span>高優先度</span>
+                        </label>
+                        <label class="filter-option">
+                            <input type="checkbox" checked>
+                            <span>中優先度</span>
+                        </label>
+                        <label class="filter-option">
+                            <input type="checkbox">
+                            <span>低優先度</span>
+                        </label>
+                    </div>
+                </div>
+                <div class="sidebar-section">
+                    <h3>ラベル</h3>
+                    <div class="label-list">
+                        <span class="label label-dev">開発</span>
+                        <span class="label label-design">デザイン</span>
+                        <span class="label label-bug">バグ修正</span>
+                        <span class="label label-meeting">会議</span>
+                    </div>
+                </div>
+                <div class="sidebar-section">
+                    <h3>クイック統計</h3>
+                    <div class="quick-stats">
+                        <div class="stat-item">
+                            <span class="stat-number">8</span>
+                            <span class="stat-label">今日の完了</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-number">2.5h</span>
+                            <span class="stat-label">作業時間</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-number">6</span>
+                            <span class="stat-label">ポモドーロ</span>
+                        </div>
+                    </div>
+                </div>
+            </aside>
+
+            <!-- コンテンツエリア -->
+            <div class="content-area">
+                <!-- かんばんビュー -->
+                <div id="kanban-view" class="view active">
+                    <div class="kanban-board">
+                        <!-- ToDo列 -->
+                        <div class="kanban-column glass-panel">
+                            <div class="column-header">
+                                <h3>ToDo <span class="task-count">5</span></h3>
+                                <button class="add-task-btn">
+                                    <i class="fas fa-plus"></i>
+                                </button>
+                            </div>
+                            <div class="task-list">
+                                <div class="task-card glass-card">
+                                    <div class="task-header">
+                                        <h4>📝 プロトタイプ作成</h4>
+                                        <div class="task-priority high">🔴</div>
+                                    </div>
+                                    <p class="task-description">UIプロトタイプの作成とデザイン確認</p>
+                                    <div class="task-meta">
+                                        <span class="task-due">期限: 今日</span>
+                                        <span class="task-estimate">⏱️ 2時間</span>
+                                    </div>
+                                    <div class="task-labels">
+                                        <span class="label label-dev">開発</span>
+                                        <span class="label label-design">デザイン</span>
+                                    </div>
+                                </div>
+                                <div class="task-card glass-card">
+                                    <div class="task-header">
+                                        <h4>📋 API設計書作成</h4>
+                                        <div class="task-priority medium">🟡</div>
+                                    </div>
+                                    <p class="task-description">RESTful APIの設計書を作成する</p>
+                                    <div class="task-meta">
+                                        <span class="task-due">期限: 明日</span>
+                                        <span class="task-estimate">⏱️ 1.5時間</span>
+                                    </div>
+                                    <div class="task-labels">
+                                        <span class="label label-dev">開発</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 進行中列 -->
+                        <div class="kanban-column glass-panel">
+                            <div class="column-header">
+                                <h3>進行中 <span class="task-count">3</span></h3>
+                            </div>
+                            <div class="task-list">
+                                <div class="task-card glass-card active">
+                                    <div class="task-header">
+                                        <h4>🚀 データベース設計</h4>
+                                        <div class="task-priority high">🔴</div>
+                                    </div>
+                                    <p class="task-description">PostgreSQLのスキーマ設計</p>
+                                    <div class="task-progress">
+                                        <div class="progress-bar">
+                                            <div class="progress-fill" style="width: 65%"></div>
+                                        </div>
+                                        <span class="progress-text">65% 完了</span>
+                                    </div>
+                                    <div class="task-meta">
+                                        <span class="task-time">実行中: 1時間25分</span>
+                                    </div>
+                                    <div class="task-labels">
+                                        <span class="label label-dev">開発</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- レビュー列 -->
+                        <div class="kanban-column glass-panel">
+                            <div class="column-header">
+                                <h3>レビュー <span class="task-count">2</span></h3>
+                            </div>
+                            <div class="task-list">
+                                <div class="task-card glass-card">
+                                    <div class="task-header">
+                                        <h4>👀 UI/UXレビュー</h4>
+                                        <div class="task-priority medium">🟡</div>
+                                    </div>
+                                    <p class="task-description">デザインの最終確認</p>
+                                    <div class="task-meta">
+                                        <span class="task-due">期限: 今日</span>
+                                    </div>
+                                    <div class="task-labels">
+                                        <span class="label label-design">デザイン</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 完了列 -->
+                        <div class="kanban-column glass-panel">
+                            <div class="column-header">
+                                <h3>完了 <span class="task-count">8</span></h3>
+                            </div>
+                            <div class="task-list">
+                                <div class="task-card glass-card completed">
+                                    <div class="task-header">
+                                        <h4>✅ 要件定義書作成</h4>
+                                        <div class="task-priority medium">🟡</div>
+                                    </div>
+                                    <div class="task-meta">
+                                        <span class="task-completed">完了: 14:30</span>
+                                        <span class="task-actual">実績: 2.5時間</span>
+                                    </div>
+                                </div>
+                                <div class="task-card glass-card completed">
+                                    <div class="task-header">
+                                        <h4>✅ システム設計</h4>
+                                        <div class="task-priority high">🔴</div>
+                                    </div>
+                                    <div class="task-meta">
+                                        <span class="task-completed">完了: 16:45</span>
+                                        <span class="task-actual">実績: 3.0時間</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- タイムラインビュー -->
+                <div id="timeline-view" class="view">
+                    <div class="timeline-header glass-panel">
+                        <div class="timeline-nav">
+                            <button class="timeline-btn">← 前日</button>
+                            <h2>2024年6月8日（土）</h2>
+                            <button class="timeline-btn">翌日 →</button>
+                        </div>
+                        <div class="view-controls">
+                            <button class="view-btn active">日</button>
+                            <button class="view-btn">週</button>
+                            <button class="view-btn">月</button>
+                        </div>
+                    </div>
+                    <div class="timeline-content glass-panel">
+                        <div class="timeline-grid">
+                            <div class="time-slots">
+                                <div class="time-slot" data-hour="8">
+                                    <span class="time-label">8:00</span>
+                                    <div class="slot-content empty">
+                                        <span class="slot-hint">ドラッグしてタスクを追加</span>
+                                    </div>
+                                </div>
+                                <div class="time-slot" data-hour="9">
+                                    <span class="time-label">9:00</span>
+                                    <div class="slot-content">
+                                        <div class="timeline-task">
+                                            <h4>📧 メール確認</h4>
+                                            <span class="task-duration">30分</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="time-slot" data-hour="10">
+                                    <span class="time-label">10:00</span>
+                                    <div class="slot-content">
+                                        <div class="timeline-task">
+                                            <h4>🚀 データベース設計</h4>
+                                            <span class="task-duration">2時間</span>
+                                            <div class="task-status">進行中</div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="time-slot" data-hour="12">
+                                    <span class="time-label">12:00</span>
+                                    <div class="slot-content">
+                                        <div class="timeline-task break">
+                                            <h4>🍽️ 昼食</h4>
+                                            <span class="task-duration">1時間</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="time-slot" data-hour="13">
+                                    <span class="time-label">13:00</span>
+                                    <div class="slot-content">
+                                        <div class="timeline-task">
+                                            <h4>📝 プロトタイプ作成</h4>
+                                            <span class="task-duration">3時間</span>
+                                            <div class="task-labels">
+                                                <span class="label label-dev">開発</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="time-slot" data-hour="16">
+                                    <span class="time-label">16:00</span>
+                                    <div class="slot-content">
+                                        <div class="timeline-task">
+                                            <h4>👀 レビュー</h4>
+                                            <span class="task-duration">1時間</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="time-slot" data-hour="17">
+                                    <span class="time-label">17:00</span>
+                                    <div class="slot-content empty">
+                                        <span class="slot-hint">空き時間</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 分析ビュー -->
+                <div id="analytics-view" class="view">
+                    <div class="analytics-header glass-panel">
+                        <h2>📊 分析レポート</h2>
+                        <div class="period-selector">
+                            <select>
+                                <option>今週</option>
+                                <option>今月</option>
+                                <option>全期間</option>
+                            </select>
+                            <button class="export-btn">
+                                <i class="fas fa-download"></i>
+                                エクスポート
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="analytics-content">
+                        <div class="stats-grid">
+                            <div class="stat-card glass-panel">
+                                <div class="stat-icon">📝</div>
+                                <div class="stat-info">
+                                    <h3>28</h3>
+                                    <p>完了タスク数</p>
+                                </div>
+                            </div>
+                            <div class="stat-card glass-panel">
+                                <div class="stat-icon">⏱️</div>
+                                <div class="stat-info">
+                                    <h3>42.5h</h3>
+                                    <p>総作業時間</p>
+                                </div>
+                            </div>
+                            <div class="stat-card glass-panel">
+                                <div class="stat-icon">🍅</div>
+                                <div class="stat-info">
+                                    <h3>85</h3>
+                                    <p>ポモドーロ</p>
+                                </div>
+                            </div>
+                            <div class="stat-card glass-panel">
+                                <div class="stat-icon">📈</div>
+                                <div class="stat-info">
+                                    <h3>92%</h3>
+                                    <p>生産性スコア</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="charts-grid">
+                            <div class="chart-card glass-panel">
+                                <h3>日別完了タスク数</h3>
+                                <div class="chart-placeholder">
+                                    <div class="bar-chart">
+                                        <div class="bar" style="height: 60%">6</div>
+                                        <div class="bar" style="height: 40%">4</div>
+                                        <div class="bar" style="height: 80%">8</div>
+                                        <div class="bar" style="height: 100%">10</div>
+                                        <div class="bar" style="height: 30%">3</div>
+                                        <div class="bar" style="height: 70%">7</div>
+                                        <div class="bar" style="height: 50%">5</div>
+                                    </div>
+                                    <div class="chart-labels">
+                                        <span>月</span><span>火</span><span>水</span><span>木</span><span>金</span><span>土</span><span>日</span>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="chart-card glass-panel">
+                                <h3>時間帯別作業分布</h3>
+                                <div class="chart-placeholder">
+                                    <div class="time-chart">
+                                        <div class="time-bar" style="height: 30%">9時</div>
+                                        <div class="time-bar" style="height: 70%">10時</div>
+                                        <div class="time-bar" style="height: 100%">14時</div>
+                                        <div class="time-bar" style="height: 80%">15時</div>
+                                        <div class="time-bar" style="height: 60%">16時</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="completed-tasks glass-panel">
+                            <h3>完了タスク一覧</h3>
+                            <div class="task-history">
+                                <div class="history-item">
+                                    <div class="history-date">6/8 14:30</div>
+                                    <div class="history-task">
+                                        <span class="task-title">✅ データベース設計完了</span>
+                                        <span class="task-time">(実績: 2.5h)</span>
+                                    </div>
+                                    <div class="history-note">📝 想定より時間がかかった</div>
+                                </div>
+                                <div class="history-item">
+                                    <div class="history-date">6/8 16:45</div>
+                                    <div class="history-task">
+                                        <span class="task-title">✅ API設計書作成</span>
+                                        <span class="task-time">(実績: 1.2h)</span>
+                                    </div>
+                                </div>
+                                <div class="history-item">
+                                    <div class="history-date">6/7 19:20</div>
+                                    <div class="history-task">
+                                        <span class="task-title">✅ UIコンポーネント作成</span>
+                                        <span class="task-time">(実績: 3.0h)</span>
+                                    </div>
+                                    <div class="history-note">📝 予定通り完了</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <!-- ポモドーロタイマー -->
+        <div class="pomodoro-timer glass-panel">
+            <div class="timer-display">
+                <span class="timer-time">24:35</span>
+                <div class="timer-progress">
+                    <div class="progress-ring">
+                        <div class="progress-fill" style="--progress: 65%"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="timer-controls">
+                <button class="timer-btn">
+                    <i class="fas fa-pause"></i>
+                </button>
+                <button class="timer-btn">
+                    <i class="fas fa-stop"></i>
+                </button>
+                <button class="timer-btn">
+                    <i class="fas fa-forward"></i>
+                </button>
+            </div>
+            <div class="timer-info">
+                <span class="current-task">作業中: データベース設計</span>
+                <span class="session-count">3/8セッション</span>
+            </div>
+        </div>
+    </div>
+
+    <script src="assets/script.js"></script>
+</body>
+</html>

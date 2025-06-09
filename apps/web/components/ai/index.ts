@@ -1,0 +1,5 @@
+export { AIAssistantPopup } from './AIAssistantPopup'
+export { AISettingsModal } from './AISettingsModal'
+export { ScheduleOptimizer } from './ScheduleOptimizer'
+export { SuggestionsPanel } from './SuggestionsPanel'
+export { TaskBreakdownModal } from './TaskBreakdownModal'

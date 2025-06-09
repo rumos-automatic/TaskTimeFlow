@@ -1,0 +1,1122 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TaskTimeFlow v3 Final - Ultimate UI</title>
+    <link rel="stylesheet" href="assets/styles-v3-final.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+</head>
+<body>
+    <!-- 背景 -->
+    <div class="background">
+        <div class="bg-gradient"></div>
+        <div class="bg-shapes">
+            <div class="shape shape-1"></div>
+            <div class="shape shape-2"></div>
+            <div class="shape shape-3"></div>
+        </div>
+    </div>
+
+    <!-- メインアプリケーション -->
+    <div class="app">
+        <!-- ヘッダー -->
+        <header class="header glass-panel">
+            <div class="header-section header-left">
+                <div class="logo">
+                    <i class="fas fa-stream"></i>
+                    <span>TaskTimeFlow</span>
+                    <span class="version-badge">v3 Final</span>
+                </div>
+            </div>
+            
+            <div class="header-section header-center">
+                <div class="smart-filters">
+                    <button class="smart-filter active" data-filter="all">
+                        <i class="fas fa-list"></i>
+                        すべて
+                        <span class="filter-count">12</span>
+                    </button>
+                    <button class="smart-filter" data-filter="now">
+                        <i class="fas fa-bolt"></i>
+                        今すぐできる
+                        <span class="filter-count">3</span>
+                    </button>
+                    <button class="smart-filter" data-filter="quick">
+                        <i class="fas fa-clock"></i>
+                        15分以内
+                        <span class="filter-count">5</span>
+                    </button>
+                    <button class="smart-filter" data-filter="focus">
+                        <i class="fas fa-brain"></i>
+                        集中力必要
+                        <span class="filter-count">2</span>
+                    </button>
+                </div>
+            </div>
+            
+            <div class="header-section header-right">
+                <div class="layout-controls">
+                    <button class="layout-btn" id="swapLayout" title="左右入れ替え">
+                        <i class="fas fa-exchange-alt"></i>
+                    </button>
+                    <button class="layout-btn" id="toggleAssistant" title="実行アシスタント">
+                        <i class="fas fa-robot"></i>
+                    </button>
+                </div>
+                <div class="user-section">
+                    <div class="productivity-score">
+                        <span class="score-label">今日</span>
+                        <span class="score-value">85%</span>
+                    </div>
+                    <button class="user-btn">
+                        <i class="fas fa-user-circle"></i>
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <!-- メインワークスペース -->
+        <main class="workspace" id="mainWorkspace">
+            <!-- リサイザー -->
+            <div class="resizer" id="resizer"></div>
+            
+            <!-- タスクエリア -->
+            <section class="task-area" id="taskArea">
+                <div class="task-area-header">
+                    <h2>🎯 タスク管理</h2>
+                    <div class="area-controls">
+                        <button class="control-btn" id="addColumn">
+                            <i class="fas fa-plus"></i>
+                            カラム追加
+                        </button>
+                        <button class="control-btn" id="editColumns">
+                            <i class="fas fa-edit"></i>
+                            編集
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="kanban-board" id="kanbanBoard">
+                    <!-- ToDo カラム -->
+                    <div class="kanban-column" data-column="todo">
+                        <div class="column-header">
+                            <div class="column-title">
+                                <span class="column-icon">📝</span>
+                                <span class="column-name" contenteditable="false">ToDo</span>
+                                <span class="task-count">5</span>
+                            </div>
+                            <div class="column-actions">
+                                <button class="column-action" title="タスク追加">
+                                    <i class="fas fa-plus"></i>
+                                </button>
+                                <button class="column-action column-menu" title="メニュー">
+                                    <i class="fas fa-ellipsis-v"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="task-list" data-status="todo">
+                            <div class="task-card" draggable="true" data-task-id="1">
+                                <div class="task-header">
+                                    <h4>📧 メール返信（緊急）</h4>
+                                    <div class="task-priority urgent"></div>
+                                </div>
+                                <div class="task-meta">
+                                    <span class="duration">
+                                        <i class="fas fa-clock"></i>
+                                        15分
+                                    </span>
+                                    <span class="context">
+                                        <i class="fas fa-mobile-alt"></i>
+                                        どこでも
+                                    </span>
+                                </div>
+                                <div class="task-labels">
+                                    <span class="label label-urgent">緊急</span>
+                                </div>
+                            </div>
+                            
+                            <div class="task-card" draggable="true" data-task-id="2">
+                                <div class="task-header">
+                                    <h4>📝 会議議事録確認</h4>
+                                    <div class="task-priority high"></div>
+                                </div>
+                                <div class="task-meta">
+                                    <span class="duration">
+                                        <i class="fas fa-clock"></i>
+                                        10分
+                                    </span>
+                                    <span class="context">
+                                        <i class="fas fa-laptop"></i>
+                                        PC必要
+                                    </span>
+                                </div>
+                            </div>
+                            
+                            <div class="task-card" draggable="true" data-task-id="3">
+                                <div class="task-header">
+                                    <h4>🏗️ プロジェクト企画書作成</h4>
+                                    <div class="task-priority medium"></div>
+                                </div>
+                                <div class="task-meta">
+                                    <span class="duration warning">
+                                        <i class="fas fa-exclamation-triangle"></i>
+                                        4時間（分割推奨）
+                                    </span>
+                                </div>
+                                <div class="split-suggestion">
+                                    <button class="split-btn">
+                                        <i class="fas fa-cut"></i>
+                                        AI分割
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 進行中 カラム -->
+                    <div class="kanban-column" data-column="in-progress">
+                        <div class="column-header">
+                            <div class="column-title">
+                                <span class="column-icon">🚀</span>
+                                <span class="column-name" contenteditable="false">進行中</span>
+                                <span class="task-count">2</span>
+                            </div>
+                            <div class="column-actions">
+                                <button class="column-action" title="タスク追加">
+                                    <i class="fas fa-plus"></i>
+                                </button>
+                                <button class="column-action column-menu" title="メニュー">
+                                    <i class="fas fa-ellipsis-v"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="task-list" data-status="in-progress">
+                            <div class="task-card in-progress" draggable="true" data-task-id="4">
+                                <div class="task-header">
+                                    <h4>🚀 データベース設計</h4>
+                                    <div class="task-priority high"></div>
+                                </div>
+                                <div class="task-progress">
+                                    <div class="progress-bar">
+                                        <div class="progress-fill" style="width: 65%"></div>
+                                    </div>
+                                    <span class="progress-text">65% 完了</span>
+                                </div>
+                                <div class="task-meta">
+                                    <span class="duration">
+                                        <i class="fas fa-clock"></i>
+                                        実行中: 1時間25分
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- レビュー カラム -->
+                    <div class="kanban-column" data-column="review">
+                        <div class="column-header">
+                            <div class="column-title">
+                                <span class="column-icon">👀</span>
+                                <span class="column-name" contenteditable="false">レビュー</span>
+                                <span class="task-count">1</span>
+                            </div>
+                            <div class="column-actions">
+                                <button class="column-action" title="タスク追加">
+                                    <i class="fas fa-plus"></i>
+                                </button>
+                                <button class="column-action column-menu" title="メニュー">
+                                    <i class="fas fa-ellipsis-v"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="task-list" data-status="review">
+                            <div class="task-card" draggable="true" data-task-id="5">
+                                <div class="task-header">
+                                    <h4>👀 UI/UXレビュー</h4>
+                                    <div class="task-priority medium"></div>
+                                </div>
+                                <div class="task-meta">
+                                    <span class="duration">
+                                        <i class="fas fa-clock"></i>
+                                        30分
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 完了 カラム -->
+                    <div class="kanban-column" data-column="completed">
+                        <div class="column-header">
+                            <div class="column-title">
+                                <span class="column-icon">✅</span>
+                                <span class="column-name" contenteditable="false">完了</span>
+                                <span class="task-count">4</span>
+                            </div>
+                            <div class="column-actions">
+                                <button class="column-action" title="タスク追加">
+                                    <i class="fas fa-plus"></i>
+                                </button>
+                                <button class="column-action column-menu" title="メニュー">
+                                    <i class="fas fa-ellipsis-v"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="task-list" data-status="completed">
+                            <div class="task-card completed" draggable="true" data-task-id="6">
+                                <div class="task-header">
+                                    <h4>✅ 要件定義書作成</h4>
+                                </div>
+                                <div class="task-meta">
+                                    <span class="completed-time">
+                                        <i class="fas fa-check"></i>
+                                        完了: 14:30
+                                    </span>
+                                </div>
+                            </div>
+                            
+                            <div class="task-card completed" draggable="true" data-task-id="7">
+                                <div class="task-header">
+                                    <h4>✅ システム設計</h4>
+                                </div>
+                                <div class="task-meta">
+                                    <span class="completed-time">
+                                        <i class="fas fa-check"></i>
+                                        完了: 16:45
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- タイムラインエリア -->
+            <section class="timeline-area" id="timelineArea">
+                <div class="timeline-header">
+                    <div class="timeline-nav">
+                        <button class="nav-btn">
+                            <i class="fas fa-chevron-left"></i>
+                        </button>
+                        <h2>📅 2024年6月8日（土）</h2>
+                        <button class="nav-btn">
+                            <i class="fas fa-chevron-right"></i>
+                        </button>
+                    </div>
+                    <div class="timeline-controls">
+                        <button class="view-btn active" data-view="day">日</button>
+                        <button class="view-btn" data-view="week">週</button>
+                        <div class="timeline-stats">
+                            <span class="stat">
+                                <i class="fas fa-tasks"></i>
+                                予定: 6件
+                            </span>
+                            <span class="stat">
+                                <i class="fas fa-hourglass-half"></i>
+                                空き: 4.5h
+                            </span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="timeline-content glass-panel">
+                    <!-- 現在時刻インジケーター -->
+                    <div class="current-time-indicator" style="top: 44%;">
+                        <div class="time-line"></div>
+                        <div class="time-badge">現在 10:30</div>
+                    </div>
+
+                    <!-- 24時間連続タイムライン -->
+                    <div class="timeline-grid" id="timelineGrid">
+                        <!-- 0:00 -->
+                        <div class="time-slot" data-hour="0">
+                            <div class="time-label">0:00</div>
+                            <div class="slot-content empty">
+                                <div class="slot-hint">💤 睡眠時間</div>
+                            </div>
+                        </div>
+
+                        <!-- 1:00 -->
+                        <div class="time-slot" data-hour="1">
+                            <div class="time-label">1:00</div>
+                            <div class="slot-content empty">
+                                <div class="slot-hint">💤 深夜</div>
+                            </div>
+                        </div>
+
+                        <!-- 2:00 -->
+                        <div class="time-slot" data-hour="2">
+                            <div class="time-label">2:00</div>
+                            <div class="slot-content empty">
+                                <div class="slot-hint">💤 深夜</div>
+                            </div>
+                        </div>
+
+                        <!-- 3:00 -->
+                        <div class="time-slot" data-hour="3">
+                            <div class="time-label">3:00</div>
+                            <div class="slot-content empty">
+                                <div class="slot-hint">💤 深夜</div>
+                            </div>
+                        </div>
+
+                        <!-- 4:00 -->
+                        <div class="time-slot" data-hour="4">
+                            <div class="time-label">4:00</div>
+                            <div class="slot-content empty">
+                                <div class="slot-hint">💤 深夜</div>
+                            </div>
+                        </div>
+
+                        <!-- 5:00 -->
+                        <div class="time-slot" data-hour="5">
+                            <div class="time-label">5:00</div>
+                            <div class="slot-content empty">
+                                <div class="slot-hint">💤 深夜</div>
+                            </div>
+                        </div>
+
+                        <!-- 6:00 -->
+                        <div class="time-slot" data-hour="6">
+                            <div class="time-label">6:00</div>
+                            <div class="slot-content empty drop-zone">
+                                <div class="drop-hint">
+                                    <i class="fas fa-sun"></i>
+                                    <span>🌅 早朝ルーチン</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 7:00 -->
+                        <div class="time-slot" data-hour="7">
+                            <div class="time-label">7:00</div>
+                            <div class="slot-content empty drop-zone">
+                                <div class="drop-hint">
+                                    <i class="fas fa-coffee"></i>
+                                    <span>☀️ 朝の準備</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 8:00 -->
+                        <div class="time-slot" data-hour="8">
+                            <div class="time-label">8:00</div>
+                            <div class="slot-content empty drop-zone optimal">
+                                <div class="drop-hint">
+                                    <i class="fas fa-brain"></i>
+                                    <span>🚀 高エネルギー</span>
+                                    <div class="auto-suggest optimal">
+                                        <span>最適: 集中力が必要なタスク</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 9:00 -->
+                        <div class="time-slot" data-hour="9">
+                            <div class="time-label">9:00</div>
+                            <div class="slot-content scheduled">
+                                <div class="timeline-task completed">
+                                    <div class="task-header">
+                                        <h4>📧 メール確認</h4>
+                                        <div class="task-actions">
+                                            <button class="complete-btn completed" title="完了済み">
+                                                <i class="fas fa-check"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <div class="task-status completed">完了</div>
+                                    <div class="task-duration">30分</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 10:00 -->
+                        <div class="time-slot" data-hour="10">
+                            <div class="time-label">10:00</div>
+                            <div class="slot-content scheduled current">
+                                <div class="timeline-task in-progress">
+                                    <div class="task-header">
+                                        <h4>🚀 データベース設計</h4>
+                                        <div class="task-actions">
+                                            <button class="complete-btn" title="完了にする">
+                                                <i class="fas fa-check"></i>
+                                            </button>
+                                            <button class="pause-btn" title="一時停止">
+                                                <i class="fas fa-pause"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <div class="task-status in-progress">実行中</div>
+                                    <div class="task-progress">
+                                        <div class="progress-bar">
+                                            <div class="progress-fill" style="width: 65%"></div>
+                                        </div>
+                                        <span>65% 完了</span>
+                                    </div>
+                                    <div class="task-duration">1.5時間 (残り30分)</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 11:00 -->
+                        <div class="time-slot" data-hour="11">
+                            <div class="time-label">11:00</div>
+                            <div class="slot-content empty drop-zone optimal">
+                                <div class="drop-hint">
+                                    <i class="fas fa-rocket"></i>
+                                    <span>🚀 高エネルギー</span>
+                                    <div class="auto-suggest optimal">
+                                        <span>最適: 創造的なタスク</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 12:00 -->
+                        <div class="time-slot" data-hour="12">
+                            <div class="time-label">12:00</div>
+                            <div class="slot-content scheduled">
+                                <div class="timeline-task break">
+                                    <div class="task-header">
+                                        <h4>🍽️ 昼食</h4>
+                                    </div>
+                                    <div class="task-duration">1時間</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 13:00 -->
+                        <div class="time-slot" data-hour="13">
+                            <div class="time-label">13:00</div>
+                            <div class="slot-content empty">
+                                <div class="slot-hint">🍽️ 昼休み</div>
+                            </div>
+                        </div>
+
+                        <!-- 14:00 -->
+                        <div class="time-slot" data-hour="14">
+                            <div class="time-label">14:00</div>
+                            <div class="slot-content scheduled">
+                                <div class="timeline-task">
+                                    <div class="task-header">
+                                        <h4>👥 チーム会議</h4>
+                                        <div class="task-actions">
+                                            <button class="complete-btn" title="完了にする">
+                                                <i class="fas fa-check"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <div class="task-status scheduled">予定</div>
+                                    <div class="task-duration">1時間</div>
+                                    <div class="sync-status">
+                                        <i class="fab fa-google"></i>
+                                        Googleカレンダー同期済み
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 15:00 -->
+                        <div class="time-slot" data-hour="15">
+                            <div class="time-label">15:00</div>
+                            <div class="slot-content empty drop-zone">
+                                <div class="drop-hint">
+                                    <i class="fas fa-battery-three-quarters"></i>
+                                    <span>⚡ 中エネルギー</span>
+                                    <div class="auto-suggest">
+                                        <span>推奨: 中程度のタスク</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 16:00 -->
+                        <div class="time-slot" data-hour="16">
+                            <div class="time-label">16:00</div>
+                            <div class="slot-content empty drop-zone">
+                                <div class="drop-hint">
+                                    <i class="fas fa-battery-half"></i>
+                                    <span>⚡ 中エネルギー</span>
+                                    <div class="auto-suggest">
+                                        <span>推奨: レビュー・確認作業</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 17:00 -->
+                        <div class="time-slot" data-hour="17">
+                            <div class="time-label">17:00</div>
+                            <div class="slot-content empty drop-zone">
+                                <div class="drop-hint">
+                                    <i class="fas fa-battery-quarter"></i>
+                                    <span>🌆 低エネルギー</span>
+                                    <div class="auto-suggest">
+                                        <span>推奨: 軽作業・整理</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 18:00 -->
+                        <div class="time-slot" data-hour="18">
+                            <div class="time-label">18:00</div>
+                            <div class="slot-content empty drop-zone low-energy">
+                                <div class="drop-hint">
+                                    <i class="fas fa-battery-quarter"></i>
+                                    <span>🌆 低エネルギー</span>
+                                    <div class="auto-suggest">
+                                        <span>推奨: ルーチンワーク</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 19:00 -->
+                        <div class="time-slot" data-hour="19">
+                            <div class="time-label">19:00</div>
+                            <div class="slot-content empty">
+                                <div class="slot-hint">🍽️ 夕食時間</div>
+                            </div>
+                        </div>
+
+                        <!-- 20:00 -->
+                        <div class="time-slot" data-hour="20">
+                            <div class="time-label">20:00</div>
+                            <div class="slot-content empty">
+                                <div class="slot-hint">💆 プライベート時間</div>
+                            </div>
+                        </div>
+
+                        <!-- 21:00 -->
+                        <div class="time-slot" data-hour="21">
+                            <div class="time-label">21:00</div>
+                            <div class="slot-content empty">
+                                <div class="slot-hint">📚 学習・読書</div>
+                            </div>
+                        </div>
+
+                        <!-- 22:00 -->
+                        <div class="time-slot" data-hour="22">
+                            <div class="time-label">22:00</div>
+                            <div class="slot-content empty">
+                                <div class="slot-hint">😌 リラックス時間</div>
+                            </div>
+                        </div>
+
+                        <!-- 23:00 -->
+                        <div class="time-slot" data-hour="23">
+                            <div class="time-label">23:00</div>
+                            <div class="slot-content empty">
+                                <div class="slot-hint">🛏️ 就寝準備</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- 実行アシスタントポップアップ -->
+    <div class="assistant-popup" id="assistantPopup">
+        <div class="popup-header">
+            <div class="popup-title">
+                <i class="fas fa-robot"></i>
+                <span>実行アシスタント</span>
+            </div>
+            <button class="popup-close" id="closeAssistant">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        
+        <div class="popup-content">
+            <div class="assistant-section">
+                <div class="pomodoro-timer">
+                    <div class="timer-display">
+                        <span class="timer-time">24:35</span>
+                        <div class="timer-progress">
+                            <div class="progress-ring" style="--progress: 65%"></div>
+                        </div>
+                    </div>
+                    <div class="timer-controls">
+                        <button class="timer-btn">
+                            <i class="fas fa-pause"></i>
+                        </button>
+                        <button class="timer-btn">
+                            <i class="fas fa-stop"></i>
+                        </button>
+                    </div>
+                    <div class="timer-info">
+                        <span class="current-task">データベース設計</span>
+                        <span class="session-count">3/8セッション</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="assistant-section">
+                <div class="smart-suggestions">
+                    <h3>🤖 AI提案</h3>
+                    <div class="suggestions">
+                        <div class="suggestion-item">
+                            <i class="fas fa-lightbulb"></i>
+                            <span>15:00の空き時間に「UI/UXレビュー」はいかがですか？</span>
+                            <button class="suggestion-action">実行</button>
+                        </div>
+                        <div class="suggestion-item">
+                            <i class="fas fa-magic"></i>
+                            <span>「プロジェクト企画書」を3つのタスクに分割できます</span>
+                            <button class="suggestion-action">分割</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="assistant-section">
+                <div class="daily-progress">
+                    <h3>📊 今日の進捗</h3>
+                    <div class="progress-stats">
+                        <div class="progress-item">
+                            <span class="label">完了率</span>
+                            <div class="progress-bar">
+                                <div class="progress-fill" style="width: 40%"></div>
+                            </div>
+                            <span class="value">4/10</span>
+                        </div>
+                        <div class="progress-item">
+                            <span class="label">予定化率</span>
+                            <div class="progress-bar">
+                                <div class="progress-fill" style="width: 75%"></div>
+                            </div>
+                            <span class="value">75%</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- カラム編集モーダル -->
+    <div class="modal-overlay" id="columnEditModal">
+        <div class="modal glass-panel">
+            <div class="modal-header">
+                <h3>カラム編集</h3>
+                <button class="modal-close">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-content">
+                <div class="column-editor">
+                    <div class="column-list" id="columnList">
+                        <!-- カラムが動的に生成される -->
+                    </div>
+                    <button class="add-column-btn" id="addNewColumn">
+                        <i class="fas fa-plus"></i>
+                        新しいカラムを追加
+                    </button>
+                </div>
+            </div>
+            <div class="modal-actions">
+                <button class="btn-secondary" id="cancelEdit">キャンセル</button>
+                <button class="btn-primary" id="saveColumns">保存</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 設定モーダル -->
+    <div class="modal-overlay" id="settingsModal">
+        <div class="modal glass-panel settings-modal">
+            <div class="modal-header">
+                <h3>⚙️ 設定</h3>
+                <button class="modal-close" id="closeSettings">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-content">
+                <div class="settings-container">
+                    <!-- 設定タブ -->
+                    <div class="settings-tabs">
+                        <button class="tab-btn active" data-tab="integrations">
+                            <i class="fas fa-link"></i>
+                            連携設定
+                        </button>
+                        <button class="tab-btn" data-tab="timeline">
+                            <i class="fas fa-clock"></i>
+                            タイムライン
+                        </button>
+                        <button class="tab-btn" data-tab="ai">
+                            <i class="fas fa-brain"></i>
+                            AI設定
+                        </button>
+                        <button class="tab-btn" data-tab="general">
+                            <i class="fas fa-cog"></i>
+                            一般
+                        </button>
+                        <button class="tab-btn" data-tab="data">
+                            <i class="fas fa-database"></i>
+                            データ
+                        </button>
+                    </div>
+
+                    <!-- 設定内容 -->
+                    <div class="settings-content">
+                        <!-- 連携設定タブ -->
+                        <div class="tab-content active" data-tab="integrations">
+                            <div class="setting-section">
+                                <h4><i class="fab fa-google"></i> Google連携</h4>
+                                <div class="setting-item">
+                                    <div class="setting-info">
+                                        <label>Google Calendar</label>
+                                        <span class="setting-desc">タスクをGoogleカレンダーと同期</span>
+                                    </div>
+                                    <div class="setting-control">
+                                        <div class="connection-status disconnected" id="calendarStatus">
+                                            <i class="fas fa-times-circle"></i>
+                                            未接続
+                                        </div>
+                                        <button class="btn-connect" id="connectCalendar">
+                                            <i class="fab fa-google"></i>
+                                            接続
+                                        </button>
+                                    </div>
+                                </div>
+                                <div class="setting-item">
+                                    <div class="setting-info">
+                                        <label>Google Tasks</label>
+                                        <span class="setting-desc">タスク管理をGoogle Tasksと同期</span>
+                                    </div>
+                                    <div class="setting-control">
+                                        <div class="connection-status disconnected" id="tasksStatus">
+                                            <i class="fas fa-times-circle"></i>
+                                            未接続
+                                        </div>
+                                        <button class="btn-connect" id="connectTasks">
+                                            <i class="fab fa-google"></i>
+                                            接続
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="setting-section">
+                                <h4><i class="fas fa-cloud"></i> 外部サービス</h4>
+                                <div class="setting-item">
+                                    <div class="setting-info">
+                                        <label>Slack通知</label>
+                                        <span class="setting-desc">タスク完了をSlackに通知</span>
+                                    </div>
+                                    <div class="setting-control">
+                                        <div class="connection-status disconnected">
+                                            <i class="fas fa-times-circle"></i>
+                                            未接続
+                                        </div>
+                                        <button class="btn-connect">
+                                            <i class="fab fa-slack"></i>
+                                            接続
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- タイムライン設定タブ -->
+                        <div class="tab-content" data-tab="timeline">
+                            <div class="setting-section">
+                                <h4><i class="fas fa-palette"></i> 時間ブロック設定</h4>
+                                <div class="timeline-blocks" id="timelineBlocks">
+                                    <!-- 時間ブロックが動的に生成される -->
+                                </div>
+                                <button class="btn-secondary" id="addTimeBlock">
+                                    <i class="fas fa-plus"></i>
+                                    ブロック追加
+                                </button>
+                                <button class="btn-outline" id="resetTimeBlocks">
+                                    <i class="fas fa-undo"></i>
+                                    デフォルトに戻す
+                                </button>
+                            </div>
+
+                            <div class="setting-section">
+                                <h4><i class="fas fa-sliders-h"></i> 表示設定</h4>
+                                <div class="setting-item">
+                                    <div class="setting-info">
+                                        <label>時間表示形式</label>
+                                        <span class="setting-desc">12時間制 / 24時間制</span>
+                                    </div>
+                                    <div class="setting-control">
+                                        <select id="timeFormat">
+                                            <option value="24">24時間制</option>
+                                            <option value="12">12時間制</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="setting-item">
+                                    <div class="setting-info">
+                                        <label>週の開始日</label>
+                                        <span class="setting-desc">カレンダー表示の週開始日</span>
+                                    </div>
+                                    <div class="setting-control">
+                                        <select id="weekStart">
+                                            <option value="0">日曜日</option>
+                                            <option value="1">月曜日</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- AI設定タブ -->
+                        <div class="tab-content" data-tab="ai">
+                            <div class="setting-section">
+                                <h4><i class="fas fa-key"></i> APIキー設定</h4>
+                                <div class="setting-item">
+                                    <div class="setting-info">
+                                        <label>OpenAI API Key</label>
+                                        <span class="setting-desc">GPT-4によるタスク分割・提案</span>
+                                    </div>
+                                    <div class="setting-control">
+                                        <input type="password" id="openaiKey" placeholder="sk-..." class="api-key-input">
+                                        <button class="btn-test" id="testOpenAI">テスト</button>
+                                    </div>
+                                </div>
+                                <div class="setting-item">
+                                    <div class="setting-info">
+                                        <label>Claude API Key</label>
+                                        <span class="setting-desc">Claude 3によるスマート提案</span>
+                                    </div>
+                                    <div class="setting-control">
+                                        <input type="password" id="claudeKey" placeholder="sk-ant-..." class="api-key-input">
+                                        <button class="btn-test" id="testClaude">テスト</button>
+                                    </div>
+                                </div>
+                                <div class="setting-item">
+                                    <div class="setting-info">
+                                        <label>Google Gemini API Key</label>
+                                        <span class="setting-desc">Gemini Proによる高度な分析</span>
+                                    </div>
+                                    <div class="setting-control">
+                                        <input type="password" id="geminiKey" placeholder="AIza..." class="api-key-input">
+                                        <button class="btn-test" id="testGemini">テスト</button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="setting-section">
+                                <h4><i class="fas fa-magic"></i> AI機能設定</h4>
+                                <div class="setting-item">
+                                    <div class="setting-info">
+                                        <label>優先AI</label>
+                                        <span class="setting-desc">メインで使用するAI</span>
+                                    </div>
+                                    <div class="setting-control">
+                                        <select id="preferredAI">
+                                            <option value="openai">OpenAI GPT-4</option>
+                                            <option value="claude">Claude 3</option>
+                                            <option value="gemini">Google Gemini</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="setting-item">
+                                    <div class="setting-info">
+                                        <label>自動提案</label>
+                                        <span class="setting-desc">AIによる自動タスク提案を有効化</span>
+                                    </div>
+                                    <div class="setting-control">
+                                        <label class="toggle">
+                                            <input type="checkbox" id="autoSuggestions" checked>
+                                            <span class="slider"></span>
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 一般設定タブ -->
+                        <div class="tab-content" data-tab="general">
+                            <div class="setting-section">
+                                <h4><i class="fas fa-bell"></i> 通知設定</h4>
+                                <div class="setting-item">
+                                    <div class="setting-info">
+                                        <label>デスクトップ通知</label>
+                                        <span class="setting-desc">タスク開始・完了時の通知</span>
+                                    </div>
+                                    <div class="setting-control">
+                                        <label class="toggle">
+                                            <input type="checkbox" id="desktopNotifications" checked>
+                                            <span class="slider"></span>
+                                        </label>
+                                    </div>
+                                </div>
+                                <div class="setting-item">
+                                    <div class="setting-info">
+                                        <label>音声通知</label>
+                                        <span class="setting-desc">ポモドーロ完了時の音声</span>
+                                    </div>
+                                    <div class="setting-control">
+                                        <label class="toggle">
+                                            <input type="checkbox" id="soundNotifications" checked>
+                                            <span class="slider"></span>
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="setting-section">
+                                <h4><i class="fas fa-palette"></i> テーマ設定</h4>
+                                <div class="setting-item">
+                                    <div class="setting-info">
+                                        <label>カラーテーマ</label>
+                                        <span class="setting-desc">アプリのカラーテーマ</span>
+                                    </div>
+                                    <div class="setting-control">
+                                        <select id="colorTheme">
+                                            <option value="default">デフォルト（紫）</option>
+                                            <option value="blue">ブルー</option>
+                                            <option value="green">グリーン</option>
+                                            <option value="orange">オレンジ</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="setting-item">
+                                    <div class="setting-info">
+                                        <label>背景効果</label>
+                                        <span class="setting-desc">ガラスモーフィズム効果</span>
+                                    </div>
+                                    <div class="setting-control">
+                                        <label class="toggle">
+                                            <input type="checkbox" id="glassEffect" checked>
+                                            <span class="slider"></span>
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="setting-section">
+                                <h4><i class="fas fa-language"></i> 言語・地域</h4>
+                                <div class="setting-item">
+                                    <div class="setting-info">
+                                        <label>言語</label>
+                                        <span class="setting-desc">表示言語</span>
+                                    </div>
+                                    <div class="setting-control">
+                                        <select id="language">
+                                            <option value="ja">日本語</option>
+                                            <option value="en">English</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="setting-item">
+                                    <div class="setting-info">
+                                        <label>タイムゾーン</label>
+                                        <span class="setting-desc">表示するタイムゾーン</span>
+                                    </div>
+                                    <div class="setting-control">
+                                        <select id="timezone">
+                                            <option value="Asia/Tokyo">Asia/Tokyo (JST)</option>
+                                            <option value="UTC">UTC</option>
+                                            <option value="America/New_York">America/New_York (EST)</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- データ管理タブ -->
+                        <div class="tab-content" data-tab="data">
+                            <div class="setting-section">
+                                <h4><i class="fas fa-download"></i> データエクスポート</h4>
+                                <div class="setting-item">
+                                    <div class="setting-info">
+                                        <label>バックアップ作成</label>
+                                        <span class="setting-desc">すべての設定とデータをエクスポート</span>
+                                    </div>
+                                    <div class="setting-control">
+                                        <button class="btn-primary" id="exportData">
+                                            <i class="fas fa-download"></i>
+                                            エクスポート
+                                        </button>
+                                    </div>
+                                </div>
+                                <div class="setting-item">
+                                    <div class="setting-info">
+                                        <label>データインポート</label>
+                                        <span class="setting-desc">バックアップファイルから復元</span>
+                                    </div>
+                                    <div class="setting-control">
+                                        <input type="file" id="importFile" accept=".json" style="display: none;">
+                                        <button class="btn-secondary" id="importData">
+                                            <i class="fas fa-upload"></i>
+                                            インポート
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="setting-section">
+                                <h4><i class="fas fa-trash-alt"></i> データリセット</h4>
+                                <div class="setting-item">
+                                    <div class="setting-info">
+                                        <label>設定リセット</label>
+                                        <span class="setting-desc">設定を初期状態に戻す</span>
+                                    </div>
+                                    <div class="setting-control">
+                                        <button class="btn-danger" id="resetSettings">
+                                            <i class="fas fa-undo"></i>
+                                            設定リセット
+                                        </button>
+                                    </div>
+                                </div>
+                                <div class="setting-item">
+                                    <div class="setting-info">
+                                        <label>全データ削除</label>
+                                        <span class="setting-desc">すべてのタスクと設定を削除</span>
+                                    </div>
+                                    <div class="setting-control">
+                                        <button class="btn-danger" id="clearAllData">
+                                            <i class="fas fa-trash"></i>
+                                            全削除
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="setting-section">
+                                <h4><i class="fas fa-info-circle"></i> アプリ情報</h4>
+                                <div class="app-info">
+                                    <div class="info-item">
+                                        <span class="label">バージョン:</span>
+                                        <span class="value">v3.0 Final</span>
+                                    </div>
+                                    <div class="info-item">
+                                        <span class="label">最終更新:</span>
+                                        <span class="value">2024年6月8日</span>
+                                    </div>
+                                    <div class="info-item">
+                                        <span class="label">ストレージ使用量:</span>
+                                        <span class="value" id="storageUsage">計算中...</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-actions">
+                <button class="btn-secondary" id="cancelSettings">キャンセル</button>
+                <button class="btn-primary" id="saveSettings">設定を保存</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- フローティングアクション -->
+    <div class="floating-actions">
+        <button class="fab main-fab">
+            <i class="fas fa-plus"></i>
+        </button>
+    </div>
+
+    <script src="assets/script-v3-final.js"></script>
+</body>
+</html>

@@ -1,0 +1,96 @@
+import { Meta } from '@storybook/addon-docs';
+
+<Meta title="Introduction" />
+
+# TaskTimeFlow Design System
+
+Welcome to the TaskTimeFlow component library! This is a comprehensive design system built for the TaskTimeFlow productivity application.
+
+## Features
+
+- **Glass Morphism Design**: Modern, elegant UI with translucent glass-like effects
+- **24-Hour Timeline Components**: Specialized components for continuous timeline management
+- **Kanban Board Elements**: Drag-and-drop task management components
+- **Accessibility First**: All components are built with WCAG 2.1 AA compliance
+- **TypeScript Support**: Full type safety and IntelliSense support
+- **Responsive Design**: Mobile-first approach with tablet and desktop optimizations
+
+## Tech Stack
+
+- **React 18** with TypeScript
+- **Tailwind CSS** for styling
+- **Radix UI** for accessible primitives
+- **Framer Motion** for animations
+- **Next.js 14** with App Router
+
+## Component Categories
+
+### UI Components
+Basic building blocks and form elements:
+- Buttons, Inputs, Checkboxes
+- Progress bars, Sliders, Tabs
+- Modals, Toasts, Tooltips
+
+### Layout Components
+Structural elements for page organization:
+- Containers, Grids, Panels
+- Navigation, Headers, Sidebars
+
+### Task Management
+Specialized components for productivity:
+- Task Cards, Kanban Boards
+- Timeline Views, Schedule Grids
+- Pomodoro Timers, Progress Trackers
+
+### Analytics & Visualization
+Data presentation components:
+- Charts, Graphs, Metrics
+- Dashboards, Reports
+
+## Design Principles
+
+### Glass Morphism
+Our signature design aesthetic featuring:
+- Semi-transparent backgrounds with backdrop blur
+- Subtle borders and shadows
+- Gradient overlays and glassmorphic effects
+
+### Continuous Timeline
+Breaking away from traditional segmented calendars:
+- 24-hour continuous scrolling
+- Energy-based time slot highlighting
+- Smooth drag-and-drop interactions
+
+### Productivity Focus
+Every component is designed for efficiency:
+- Minimal cognitive load
+- Quick actions and shortcuts
+- Clear visual hierarchy
+
+## Getting Started
+
+Import components from the shared UI package:
+
+```typescript
+import { Button, Progress, Tabs } from '@tasktimeflow/ui'
+import { TaskCard, Timeline, KanbanBoard } from '@/components'
+```
+
+Browse the component stories to see examples and interactive documentation.
+
+## Customization
+
+All components use CSS variables for theming:
+
+```css
+:root {
+  --tasktime-primary: 102 126 234;
+  --tasktime-secondary: 118 75 162;
+  --glass-bg: rgba(255, 255, 255, 0.1);
+  --glass-border: rgba(255, 255, 255, 0.2);
+}
+```
+
+## Support
+
+For questions or contributions, please refer to our [GitHub repository](https://github.com/tasktimeflow/tasktimeflow).
