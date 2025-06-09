@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd'
+import { DragDropContext, Droppable, Draggable, DropResult } from 'react-beautiful-dnd'
 import { useTasks, useTaskDragDrop } from '@/hooks/useTasks'
 import { useProject } from '@/hooks/useProjects'
 import { TaskCard } from './TaskCard'
@@ -47,15 +47,24 @@ export function KanbanBoard({ projectId, className }: KanbanBoardProps) {
     tasksByStatus[status].sort((a, b) => a.position - b.position)
   })
 
-  const handleDragEnd = (result: DragDropResult) => {
-    const { destination, source } = result
+  const handleDragEnd = (result: DropResult) => {
+    const { destination, source, draggableId, reason } = result
 
     if (!destination) return
     if (destination.droppableId === source.droppableId && destination.index === source.index) {
       return
     }
 
-    dragDropMutation.mutate(result)
+    // Convert DropResult to DragDropResult for mutation
+    const dragDropResult: DragDropResult = {
+      draggableId,
+      type: 'task', // assuming task type
+      source,
+      destination,
+      reason: reason as 'DROP' | 'CANCEL'
+    }
+
+    dragDropMutation.mutate(dragDropResult)
   }
 
   const handleCreateTask = (columnId: string) => {

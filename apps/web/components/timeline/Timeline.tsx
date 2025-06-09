@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useRef, useEffect } from 'react'
-import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd'
+import { DragDropContext, Droppable, Draggable, DropResult } from 'react-beautiful-dnd'
 import { useTimelineView, useTimelineNavigation } from '@/hooks/useTimeline'
 import { TimelineHour } from './TimelineHour'
 import { TimelineSlotCard } from './TimelineSlotCard'
@@ -101,7 +101,7 @@ export function Timeline({ className, initialDate }: TimelineProps) {
     setSelectedSlot(slot)
   }
 
-  const handleDragEnd = (result: DragDropResult) => {
+  const handleDragEnd = (result: DropResult) => {
     // Handle drag and drop logic here
     console.log('Drag end:', result)
     // This would typically update the timeline slot positions
