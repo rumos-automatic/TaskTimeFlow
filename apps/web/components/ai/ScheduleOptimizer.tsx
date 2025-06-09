@@ -39,8 +39,8 @@ import type { Task } from '@/types/tasks'
 import type { 
   ScheduleOptimizationResponse, 
   OptimizationGoal,
-  SchedulingConstraints,
-  SchedulingPreferences,
+  SchedulingConstraints as AISchedulingConstraints,
+  SchedulingPreferences as AISchedulingPreferences,
   OptimizedTimelineSlot,
   ScheduleImprovement 
 } from '@/types/ai'
@@ -54,8 +54,8 @@ interface ScheduleOptimizerProps {
 }
 
 interface OptimizationSettings {
-  constraints: SchedulingConstraints
-  preferences: SchedulingPreferences
+  constraints: AISchedulingConstraints
+  preferences: AISchedulingPreferences
   goals: OptimizationGoal[]
 }
 
@@ -108,9 +108,40 @@ export function ScheduleOptimizer({
 
   const handleOptimization = async () => {
     try {
+      // Convert AI constraints format to timeline constraints format
+      const timelineConstraints = {
+        working_hours: {
+          start: parseInt(settings.constraints.working_hours.start.split(':')[0]),
+          end: parseInt(settings.constraints.working_hours.end.split(':')[0])
+        },
+        break_duration: settings.constraints.break_duration,
+        focus_session_duration: Math.min(settings.constraints.max_consecutive_work, 120), // Convert max consecutive work to focus session
+        buffer_time: 5, // Default buffer time
+        respect_energy_levels: true, // Default to true
+        respect_contexts: true, // Default to true
+        existing_slots: [], // Empty for now
+        unavailable_times: settings.constraints.blocked_times.map(block => ({
+          start_time: block.start,
+          end_time: block.end,
+          reason: block.reason
+        }))
+      }
+
+      // Convert AI preferences to timeline preferences format  
+      const timelinePreferences = {
+        prefer_morning: settings.preferences.prefer_morning,
+        prefer_afternoon: settings.preferences.prefer_afternoon,
+        prefer_evening: settings.preferences.prefer_evening,
+        group_similar_tasks: settings.preferences.batch_similar_tasks,
+        respect_task_order: false, // Default
+        minimize_context_switches: settings.preferences.minimize_context_switching,
+        batch_meetings: false, // Default
+        protect_deep_work: settings.preferences.optimize_for_energy
+      }
+
       const result = await performScheduleOptimization(tasks, {
-        constraints: settings.constraints,
-        preferences: settings.preferences,
+        constraints: timelineConstraints,
+        preferences: timelinePreferences,
         optimization_goals: settings.goals,
         time_blocks: [] // This would be populated from user's time blocks
       })
