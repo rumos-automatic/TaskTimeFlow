@@ -69,18 +69,24 @@ export function ScheduleOptimizer({
   const [optimization, setOptimization] = useState<ScheduleOptimizationResponse | null>(null)
   const [settings, setSettings] = useState<OptimizationSettings>({
     constraints: {
-      working_hours: { start: 9, end: 17 },
+      working_hours: { start: "09:00", end: "17:00" },
       break_duration: 15,
-      focus_session_duration: 25,
-      buffer_time: 5,
-      respect_energy_levels: true,
-      respect_contexts: true
+      max_consecutive_work: 120,
+      blocked_times: [],
+      energy_levels: { high: ["09:00-11:00"], low: ["14:00-15:00"] },
+      mandatory_breaks: true,
+      weekend_work: false
     },
     preferences: {
       prefer_morning: false,
       prefer_afternoon: false,
-      group_similar_tasks: true,
-      minimize_context_switches: true
+      prefer_evening: false,
+      batch_similar_tasks: true,
+      minimize_context_switching: true,
+      respect_deadlines: true,
+      optimize_for_energy: true,
+      allow_overtime: false,
+      buffer_time_percentage: 10
     },
     goals: [
       { type: 'maximize_productivity', weight: 0.5 },
@@ -232,9 +238,9 @@ export function ScheduleOptimizer({
                         <Label className="text-sm">作業開始時刻</Label>
                         <div className="mt-2">
                           <Slider
-                            value={[settings.constraints.working_hours.start]}
+                            value={[parseInt(settings.constraints.working_hours.start.split(':')[0])]}
                             onValueChange={([value]) => 
-                              handleSettingChange('constraints.working_hours.start', value)
+                              handleSettingChange('constraints.working_hours.start', `${value.toString().padStart(2, '0')}:00`)
                             }
                             max={23}
                             min={0}
@@ -242,7 +248,7 @@ export function ScheduleOptimizer({
                             className="w-full"
                           />
                           <div className="text-sm text-gray-500 mt-1">
-                            {settings.constraints.working_hours.start}:00
+                            {settings.constraints.working_hours.start}
                           </div>
                         </div>
                       </div>
@@ -251,9 +257,9 @@ export function ScheduleOptimizer({
                         <Label className="text-sm">作業終了時刻</Label>
                         <div className="mt-2">
                           <Slider
-                            value={[settings.constraints.working_hours.end]}
+                            value={[parseInt(settings.constraints.working_hours.end.split(':')[0])]}
                             onValueChange={([value]) => 
-                              handleSettingChange('constraints.working_hours.end', value)
+                              handleSettingChange('constraints.working_hours.end', `${value.toString().padStart(2, '0')}:00`)
                             }
                             max={23}
                             min={1}
@@ -261,7 +267,7 @@ export function ScheduleOptimizer({
                             className="w-full"
                           />
                           <div className="text-sm text-gray-500 mt-1">
-                            {settings.constraints.working_hours.end}:00
+                            {settings.constraints.working_hours.end}
                           </div>
                         </div>
                       </div>
@@ -288,20 +294,20 @@ export function ScheduleOptimizer({
                       </div>
                       
                       <div>
-                        <Label className="text-sm">集中セッション時間 (分)</Label>
+                        <Label className="text-sm">最大連続作業時間 (分)</Label>
                         <div className="mt-2">
                           <Slider
-                            value={[settings.constraints.focus_session_duration]}
+                            value={[settings.constraints.max_consecutive_work]}
                             onValueChange={([value]) => 
-                              handleSettingChange('constraints.focus_session_duration', value)
+                              handleSettingChange('constraints.max_consecutive_work', value)
                             }
-                            max={120}
+                            max={240}
                             min={15}
-                            step={5}
+                            step={15}
                             className="w-full"
                           />
                           <div className="text-sm text-gray-500 mt-1">
-                            {settings.constraints.focus_session_duration}分
+                            {settings.constraints.max_consecutive_work}分
                           </div>
                         </div>
                       </div>
@@ -309,21 +315,21 @@ export function ScheduleOptimizer({
 
                     <div className="space-y-3">
                       <div className="flex items-center justify-between">
-                        <Label className="text-sm">エネルギーレベルを考慮</Label>
+                        <Label className="text-sm">必須休憩時間</Label>
                         <Switch
-                          checked={settings.constraints.respect_energy_levels}
+                          checked={settings.constraints.mandatory_breaks}
                           onCheckedChange={(checked) => 
-                            handleSettingChange('constraints.respect_energy_levels', checked)
+                            handleSettingChange('constraints.mandatory_breaks', checked)
                           }
                         />
                       </div>
                       
                       <div className="flex items-center justify-between">
-                        <Label className="text-sm">コンテキストを考慮</Label>
+                        <Label className="text-sm">週末作業を許可</Label>
                         <Switch
-                          checked={settings.constraints.respect_contexts}
+                          checked={settings.constraints.weekend_work}
                           onCheckedChange={(checked) => 
-                            handleSettingChange('constraints.respect_contexts', checked)
+                            handleSettingChange('constraints.weekend_work', checked)
                           }
                         />
                       </div>
@@ -360,9 +366,9 @@ export function ScheduleOptimizer({
                     <div className="flex items-center justify-between">
                       <Label className="text-sm">類似タスクをグループ化</Label>
                       <Switch
-                        checked={settings.preferences.group_similar_tasks}
+                        checked={settings.preferences.batch_similar_tasks}
                         onCheckedChange={(checked) => 
-                          handleSettingChange('preferences.group_similar_tasks', checked)
+                          handleSettingChange('preferences.batch_similar_tasks', checked)
                         }
                       />
                     </div>
@@ -370,11 +376,60 @@ export function ScheduleOptimizer({
                     <div className="flex items-center justify-between">
                       <Label className="text-sm">コンテキスト切り替えを最小化</Label>
                       <Switch
-                        checked={settings.preferences.minimize_context_switches}
+                        checked={settings.preferences.minimize_context_switching}
                         onCheckedChange={(checked) => 
-                          handleSettingChange('preferences.minimize_context_switches', checked)
+                          handleSettingChange('preferences.minimize_context_switching', checked)
                         }
                       />
+                    </div>
+                    
+                    <div className="flex items-center justify-between">
+                      <Label className="text-sm">締切を尊重</Label>
+                      <Switch
+                        checked={settings.preferences.respect_deadlines}
+                        onCheckedChange={(checked) => 
+                          handleSettingChange('preferences.respect_deadlines', checked)
+                        }
+                      />
+                    </div>
+                    
+                    <div className="flex items-center justify-between">
+                      <Label className="text-sm">エネルギーレベルで最適化</Label>
+                      <Switch
+                        checked={settings.preferences.optimize_for_energy}
+                        onCheckedChange={(checked) => 
+                          handleSettingChange('preferences.optimize_for_energy', checked)
+                        }
+                      />
+                    </div>
+                    
+                    <div className="flex items-center justify-between">
+                      <Label className="text-sm">残業を許可</Label>
+                      <Switch
+                        checked={settings.preferences.allow_overtime}
+                        onCheckedChange={(checked) => 
+                          handleSettingChange('preferences.allow_overtime', checked)
+                        }
+                      />
+                    </div>
+                    
+                    <div>
+                      <Label className="text-sm">バッファ時間 (%)</Label>
+                      <div className="mt-2">
+                        <Slider
+                          value={[settings.preferences.buffer_time_percentage]}
+                          onValueChange={([value]) => 
+                            handleSettingChange('preferences.buffer_time_percentage', value)
+                          }
+                          max={50}
+                          min={0}
+                          step={5}
+                          className="w-full"
+                        />
+                        <div className="text-sm text-gray-500 mt-1">
+                          {settings.preferences.buffer_time_percentage}%
+                        </div>
+                      </div>
                     </div>
                   </CardContent>
                 </Card>
