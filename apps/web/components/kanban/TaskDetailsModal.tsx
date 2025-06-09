@@ -234,7 +234,9 @@ export function TaskDetailsModal({ task, isOpen, onClose }: TaskDetailsModalProp
         {(updateTaskMutation.error || deleteTaskMutation.error) && (
           <Alert variant="destructive">
             <AlertDescription>
-              {updateTaskMutation.error?.error || deleteTaskMutation.error?.error || 'エラーが発生しました'}
+              {(updateTaskMutation.error instanceof Error ? updateTaskMutation.error.message : String(updateTaskMutation.error)) || 
+               (deleteTaskMutation.error instanceof Error ? deleteTaskMutation.error.message : String(deleteTaskMutation.error)) || 
+               'エラーが発生しました'}
             </AlertDescription>
           </Alert>
         )}
