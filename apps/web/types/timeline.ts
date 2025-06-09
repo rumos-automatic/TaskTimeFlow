@@ -1,7 +1,7 @@
 export interface TimelineSlot {
   id: string
   user_id: string
-  task_id: string
+  task_id: string | null
   start_time: string
   end_time: string
   date: string
@@ -13,8 +13,12 @@ export interface TimelineSlot {
   created_at: string
   updated_at: string
   
+  // Virtual properties for UI
+  is_break?: boolean
+  is_empty?: boolean
+  
   // Populated fields
-  task?: Task
+  task?: Task | null
 }
 
 export interface TimeBlock {
