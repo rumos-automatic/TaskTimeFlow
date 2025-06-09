@@ -182,7 +182,7 @@ export function AISettingsModal({ isOpen, onClose }: AISettingsModalProps) {
                   </CardHeader>
                   <CardContent className="pt-0">
                     <Select
-                      value={preferences.preferred_provider}
+                      value={preferences?.preferred_provider || 'openai'}
                       onValueChange={(value: AIProviderType) => 
                         handlePreferenceChange('preferred_provider', value)
                       }
@@ -339,7 +339,7 @@ export function AISettingsModal({ isOpen, onClose }: AISettingsModalProps) {
                     <div className="flex items-center justify-between">
                       <Label className="text-sm">自動提案</Label>
                       <Switch
-                        checked={preferences.auto_suggestions}
+                        checked={preferences?.auto_suggestions || false}
                         onCheckedChange={(checked) => handlePreferenceChange('auto_suggestions', checked)}
                       />
                     </div>
@@ -347,7 +347,7 @@ export function AISettingsModal({ isOpen, onClose }: AISettingsModalProps) {
                     <div className="space-y-2">
                       <Label className="text-sm">提案頻度</Label>
                       <Select
-                        value={preferences.suggestion_frequency}
+                        value={preferences?.suggestion_frequency || 'medium'}
                         onValueChange={(value: 'low' | 'medium' | 'high') => 
                           handlePreferenceChange('suggestion_frequency', value)
                         }
@@ -366,7 +366,7 @@ export function AISettingsModal({ isOpen, onClose }: AISettingsModalProps) {
                     <div className="flex items-center justify-between">
                       <Label className="text-sm">自動適用</Label>
                       <Switch
-                        checked={preferences.auto_apply_suggestions}
+                        checked={preferences?.auto_apply_suggestions || false}
                         onCheckedChange={(checked) => handlePreferenceChange('auto_apply_suggestions', checked)}
                       />
                     </div>
@@ -374,7 +374,7 @@ export function AISettingsModal({ isOpen, onClose }: AISettingsModalProps) {
                     <div className="flex items-center justify-between">
                       <Label className="text-sm">学習モード</Label>
                       <Switch
-                        checked={preferences.learning_mode}
+                        checked={preferences?.learning_mode || false}
                         onCheckedChange={(checked) => handlePreferenceChange('learning_mode', checked)}
                       />
                     </div>
@@ -390,7 +390,7 @@ export function AISettingsModal({ isOpen, onClose }: AISettingsModalProps) {
                     <div className="space-y-2">
                       <Label className="text-sm">プライバシーレベル</Label>
                       <Select
-                        value={preferences.privacy_level}
+                        value={preferences?.privacy_level || 'balanced'}
                         onValueChange={(value: 'minimal' | 'balanced' | 'full') => 
                           handlePreferenceChange('privacy_level', value)
                         }
@@ -418,7 +418,7 @@ export function AISettingsModal({ isOpen, onClose }: AISettingsModalProps) {
                       <Label className="text-sm">月額制限 (USD)</Label>
                       <div className="space-y-2">
                         <Slider
-                          value={[preferences.cost_limit_monthly]}
+                          value={[preferences?.cost_limit_monthly || 50]}
                           onValueChange={([value]) => handlePreferenceChange('cost_limit_monthly', value)}
                           max={100}
                           min={1}
@@ -426,7 +426,7 @@ export function AISettingsModal({ isOpen, onClose }: AISettingsModalProps) {
                           className="w-full"
                         />
                         <div className="text-sm text-gray-500">
-                          ${preferences.cost_limit_monthly}/月
+                          ${preferences?.cost_limit_monthly || 50}/月
                         </div>
                       </div>
                     </div>
@@ -525,7 +525,7 @@ export function AISettingsModal({ isOpen, onClose }: AISettingsModalProps) {
                     <div className="space-y-2">
                       <Label className="text-sm">トーン設定</Label>
                       <Select
-                        value={preferences.tone_preference}
+                        value={preferences?.tone_preference || 'friendly'}
                         onValueChange={(value: 'formal' | 'casual' | 'technical' | 'friendly') => 
                           handlePreferenceChange('tone_preference', value)
                         }
