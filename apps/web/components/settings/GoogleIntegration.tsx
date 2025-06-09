@@ -10,7 +10,6 @@ import { Label } from '@/components/ui/label'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Progress } from '@/components/ui/progress'
 import { 
-  Google,
   Calendar,
   CheckCircle,
   XCircle,
@@ -21,6 +20,7 @@ import {
   Unlink,
   Activity
 } from 'lucide-react'
+import { Google } from '@/components/icons/Google'
 import { useToast } from '@/hooks/use-toast'
 import { useGoogleIntegration } from '@/hooks/useGoogleIntegration'
 import { formatDistanceToNow } from 'date-fns'

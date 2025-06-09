@@ -219,7 +219,7 @@ export function useBulkTaskOperations() {
   const bulkUpdate = useMutation({
     mutationFn: async ({ taskIds, updates }: { taskIds: string[]; updates: UpdateTaskInput }) => {
       const results = await Promise.all(
-        taskIds.map(taskId => updateTask.mutateAsync({ taskId, updates }))
+        taskIds.map(taskId => updateTask.mutateAsync({ taskId, input: updates }))
       )
       return results
     },
