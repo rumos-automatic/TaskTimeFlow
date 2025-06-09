@@ -41,7 +41,7 @@ export function TaskCompletionChart({ data, timeRange }: TaskCompletionChartProp
     if (active && payload && payload.length) {
       return (
         <div className="bg-white p-3 border rounded-lg shadow-lg">
-          <p className="font-medium text-sm mb-2">{formatDate(label)}</p>
+          <p className="font-medium text-sm mb-2">{label ? formatDate(label) : ''}</p>
           {payload.map((entry: { name: string; value: number; color: string }, index: number) => (
             <p key={index} className="text-xs" style={{ color: entry.color }}>
               <span className="font-medium">{entry.name}: </span>

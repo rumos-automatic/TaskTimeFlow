@@ -159,7 +159,7 @@ export function TimelineSlotCard({ slot, onClick, isDragging = false }: Timeline
                   <Avatar className="h-5 w-5">
                     <AvatarImage src={task.assignee.avatar_url} alt={task.assignee.display_name} />
                     <AvatarFallback className="text-xs">
-                      {task.assignee.display_name?.charAt(0) || task.assignee.email.charAt(0)}
+                      {task.assignee?.display_name?.charAt(0) || task.assignee?.email?.charAt(0) || '?'}
                     </AvatarFallback>
                   </Avatar>
                 )}

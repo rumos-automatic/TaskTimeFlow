@@ -433,12 +433,12 @@ export function TaskDetailsModal({ task, isOpen, onClose }: TaskDetailsModalProp
               {task.assignee ? (
                 <div className="flex items-center space-x-2">
                   <Avatar className="h-6 w-6">
-                    <AvatarImage src={task.assignee.avatar_url} alt={task.assignee.display_name} />
+                    <AvatarImage src={task.assignee?.avatar_url} alt={task.assignee?.display_name} />
                     <AvatarFallback>
-                      {task.assignee.display_name?.charAt(0) || task.assignee.email.charAt(0)}
+                      {task.assignee?.display_name?.charAt(0) || task.assignee?.email?.charAt(0) || '?'}
                     </AvatarFallback>
                   </Avatar>
-                  <span>{task.assignee.display_name || task.assignee.email}</span>
+                  <span>{task.assignee?.display_name || task.assignee?.email || 'Unknown'}</span>
                 </div>
               ) : (
                 <span className="text-gray-500">未割り当て</span>
@@ -450,12 +450,12 @@ export function TaskDetailsModal({ task, isOpen, onClose }: TaskDetailsModalProp
               {task.created_by ? (
                 <div className="flex items-center space-x-2">
                   <Avatar className="h-6 w-6">
-                    <AvatarImage src={task.created_by.avatar_url} alt={task.created_by.display_name} />
+                    <AvatarImage src={task.created_by?.avatar_url} alt={task.created_by?.display_name} />
                     <AvatarFallback>
-                      {task.created_by.display_name?.charAt(0) || task.created_by.email.charAt(0)}
+                      {task.created_by?.display_name?.charAt(0) || task.created_by?.email?.charAt(0) || '?'}
                     </AvatarFallback>
                   </Avatar>
-                  <span>{task.created_by.display_name || task.created_by.email}</span>
+                  <span>{task.created_by?.display_name || task.created_by?.email || 'Unknown'}</span>
                 </div>
               ) : (
                 <span className="text-gray-500">-</span>

@@ -325,7 +325,7 @@ export function useBulkTimelineOperations() {
   const bulkUpdateSlots = useMutation({
     mutationFn: async ({ slotIds, updates }: { slotIds: string[]; updates: UpdateTimelineSlotInput }) => {
       const results = await Promise.all(
-        slotIds.map(slotId => updateSlot.mutateAsync({ slotId, updates }))
+        slotIds.map(slotId => updateSlot.mutateAsync({ slotId, input: updates }))
       )
       return results
     },
