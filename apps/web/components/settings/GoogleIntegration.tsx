@@ -366,13 +366,13 @@ export function GoogleIntegration() {
               <div className="flex items-center justify-between">
                 <span className="text-gray-600">カレンダーID</span>
                 <code className="text-xs bg-gray-100 px-2 py-1 rounded">
-                  {integration?.calendar_id || 'primary'}
+                  {(integration as any)?.calendar_id || 'primary'}
                 </code>
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-gray-600">タスクリストID</span>
                 <code className="text-xs bg-gray-100 px-2 py-1 rounded">
-                  {integration?.task_list_id || '@default'}
+                  {(integration as any)?.task_list_id || '@default'}
                 </code>
               </div>
               <div className="flex items-center justify-between">
