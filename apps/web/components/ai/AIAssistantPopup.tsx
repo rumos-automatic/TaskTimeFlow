@@ -20,7 +20,8 @@ import {
   MessageSquare,
   X,
   Settings,
-  RefreshCw
+  RefreshCw,
+  AlertTriangle
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { formatTaskDuration } from '@/lib/tasks'
