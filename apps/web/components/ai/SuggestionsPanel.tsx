@@ -127,7 +127,11 @@ export function SuggestionsPanel({
   }
 
   const handleDismissSuggestion = async (suggestion: AISuggestion) => {
-    setDismissedSuggestions(prev => new Set([...prev, suggestion.id]))
+    setDismissedSuggestions(prev => {
+      const newSet = new Set(prev)
+      newSet.add(suggestion.id)
+      return newSet
+    })
     setSuggestions(prev => prev.filter(s => s.id !== suggestion.id))
     
     await logSuggestionFeedback(suggestion.id, 'dismissed')
