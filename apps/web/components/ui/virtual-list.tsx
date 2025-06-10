@@ -31,7 +31,7 @@ export const VirtualList = forwardRef<VirtualListRef, VirtualListProps<any>>(fun
   onScroll,
   estimatedItemHeight = 50,
   getItemKey
-}: VirtualListProps<T>, ref) {
+}: VirtualListProps<T>, ref: React.Ref<VirtualListRef>) {
   const [scrollTop, setScrollTop] = useState(0)
   const containerRef = useRef<HTMLDivElement>(null)
   const scrollElementRef = useRef<HTMLDivElement>(null)
