@@ -16,17 +16,22 @@ import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Plus, Filter, Search, Settings } from 'lucide-react'
 import { AIAssistantPopup } from '@/components/ai/AIAssistantPopup'
 import { SuggestionsPanel } from '@/components/ai/SuggestionsPanel'
-import type { Task, KanbanColumn, DragDropResult } from '@/types/tasks'
+import type { Task, KanbanColumn, DragDropResult, TaskStatus } from '@/types/tasks'
 
 interface KanbanBoardProps {
   projectId: string
   className?: string
 }
 
+// Type guard to check if a string is a valid TaskStatus
+function isValidTaskStatus(status: string): status is TaskStatus {
+  return ['todo', 'in_progress', 'review', 'completed', 'cancelled'].includes(status)
+}
+
 export function KanbanBoard({ projectId, className }: KanbanBoardProps) {
   const [selectedTask, setSelectedTask] = useState<Task | null>(null)
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
-  const [createModalColumn, setCreateModalColumn] = useState<string>('todo')
+  const [createModalColumn, setCreateModalColumn] = useState<TaskStatus>('todo')
 
   // Fetch project and tasks data
   const { data: project, isLoading: projectLoading, error: projectError } = useProject(projectId)
@@ -68,8 +73,12 @@ export function KanbanBoard({ projectId, className }: KanbanBoardProps) {
   }
 
   const handleCreateTask = (columnId: string) => {
-    setCreateModalColumn(columnId)
-    setIsCreateModalOpen(true)
+    if (isValidTaskStatus(columnId)) {
+      setCreateModalColumn(columnId)
+      setIsCreateModalOpen(true)
+    } else {
+      console.warn(`Invalid task status: ${columnId}`)
+    }
   }
 
   const handleTaskClick = (task: Task) => {
