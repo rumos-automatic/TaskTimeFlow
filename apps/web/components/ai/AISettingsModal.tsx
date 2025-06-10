@@ -72,9 +72,6 @@ export function AISettingsModal({ isOpen, onClose }: AISettingsModalProps) {
   })
   
   const { preferences, isLoading, updatePreferences, isUpdating } = useAIPreferences()
-  
-  // Type-safe preferences with proper typing
-  const safePreferences = preferences
   const { availableProviders, validateApiKey } = useAIProviders()
   const { data: usageStats } = useAIUsageStatistics()
 
@@ -156,6 +153,9 @@ export function AISettingsModal({ isOpen, onClose }: AISettingsModalProps) {
       </Dialog>
     )
   }
+
+  // Type assertion after null check - use Partial to handle incomplete data
+  const safePreferences = preferences as Partial<UserAIPreferences>
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
