@@ -27,6 +27,35 @@ const initialState: AuthState = {
   initialized: false
 }
 
+// Helper function to convert database user to typed User
+function convertDatabaseUserToUser(dbUser: any): User {
+  return {
+    id: dbUser.id,
+    email: dbUser.email,
+    display_name: dbUser.display_name,
+    avatar_url: dbUser.avatar_url,
+    timezone: dbUser.timezone,
+    language: dbUser.language,
+    subscription_tier: dbUser.subscription_tier,
+    subscription_status: dbUser.subscription_status,
+    subscription_expires_at: dbUser.subscription_expires_at,
+    trial_ends_at: dbUser.trial_ends_at,
+    created_at: dbUser.created_at,
+    updated_at: dbUser.updated_at,
+    last_login_at: dbUser.last_login_at,
+    notification_preferences: dbUser.notification_preferences || {
+      desktop: true,
+      sound: true,
+      email_digest: 'weekly'
+    },
+    ai_preferences: dbUser.ai_preferences || {
+      preferred_provider: 'openai',
+      auto_suggestions: true,
+      api_keys_encrypted: {}
+    }
+  }
+}
+
 // Auth reducer
 function authReducer(state: AuthState, action: AuthAction): AuthState {
   switch (action.type) {
@@ -469,8 +498,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
               .single()
 
             if (userProfile) {
-              dispatch({ type: 'SET_USER', payload: userProfile as User })
-              dispatch({ type: 'SET_SESSION', payload: session as AuthSession })
+              dispatch({ type: 'SET_USER', payload: convertDatabaseUserToUser(userProfile) })
+              dispatch({ type: 'SET_SESSION', payload: session })
             }
           }
           
@@ -501,14 +530,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           .single()
 
         if (userProfile) {
-          dispatch({ type: 'SET_USER', payload: userProfile as User })
-          dispatch({ type: 'SET_SESSION', payload: session as AuthSession })
+          dispatch({ type: 'SET_USER', payload: convertDatabaseUserToUser(userProfile) })
+          dispatch({ type: 'SET_SESSION', payload: session })
         }
       } else if (event === 'SIGNED_OUT') {
         dispatch({ type: 'SET_USER', payload: null })
         dispatch({ type: 'SET_SESSION', payload: null })
       } else if (event === 'TOKEN_REFRESHED' && session) {
-        dispatch({ type: 'SET_SESSION', payload: session as AuthSession })
+        dispatch({ type: 'SET_SESSION', payload: session })
       }
     })
 

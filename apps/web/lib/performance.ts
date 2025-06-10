@@ -34,8 +34,8 @@ function sendToAnalytics(metric: any) {
   }
 
   // Send to Vercel Analytics
-  if (typeof window !== 'undefined' && 'va' in window && typeof (window as any).va === 'function') {
-    (window as any).va('track', 'Web Vitals', {
+  if (typeof window !== 'undefined' && window.va) {
+    window.va('track', 'Web Vitals', {
       metric: metric.name,
       value: metric.value,
       label: metric.id,
@@ -126,8 +126,11 @@ export class PerformanceMonitor {
     try {
       const observer = new PerformanceObserver((list) => {
         list.getEntries().forEach((entry) => {
-          if (entry.entryType === 'layout-shift' && !(entry as any).hadRecentInput) {
-            this.logLayoutShift(entry)
+          if (entry.entryType === 'layout-shift') {
+            const layoutShift = entry as LayoutShift
+            if (!layoutShift.hadRecentInput) {
+              this.logLayoutShift(entry)
+            }
           }
         })
       })
@@ -191,9 +194,9 @@ export class PerformanceMonitor {
   }
 
   private logLayoutShift(entry: PerformanceEntry) {
-    const value = (entry as any).value
-    if (value > 0.1) { // Significant layout shift
-      console.warn(`Layout shift detected: ${value.toFixed(4)}`)
+    const layoutShift = entry as LayoutShift
+    if (layoutShift.value > 0.1) { // Significant layout shift
+      console.warn(`Layout shift detected: ${layoutShift.value.toFixed(4)}`)
     }
   }
 
@@ -264,15 +267,11 @@ export function createVisibilityTracker(element: Element, callback: (isVisible: 
 
 // Memory usage tracking
 export function trackMemoryUsage() {
-  if (typeof window === 'undefined' || !('memory' in performance)) {
+  if (typeof window === 'undefined' || !performance.memory) {
     return null
   }
 
-  const memory = (performance as any).memory as {
-    usedJSHeapSize: number;
-    totalJSHeapSize: number;
-    jsHeapSizeLimit: number;
-  }
+  const memory = performance.memory
   
   return {
     usedJSHeapSize: Math.round(memory.usedJSHeapSize / 1024 / 1024), // MB

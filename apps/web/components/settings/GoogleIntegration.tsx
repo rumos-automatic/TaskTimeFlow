@@ -212,18 +212,18 @@ export function GoogleIntegration() {
               {/* Account Info */}
               <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
                 <div className="flex items-center space-x-3">
-                  {(integration as any)?.provider_data?.picture && (
+                  {(integration as GoogleIntegrationData)?.provider_data?.picture && (
                     <img 
-                      src={(integration as any)?.provider_data?.picture}
+                      src={(integration as GoogleIntegrationData)?.provider_data?.picture}
                       alt="Google Account"
                       className="h-10 w-10 rounded-full"
                     />
                   )}
                   <div>
-                    <p className="font-medium">{(integration as any)?.provider_email || 'Unknown Email'}</p>
+                    <p className="font-medium">{(integration as GoogleIntegrationData)?.provider_email || 'Unknown Email'}</p>
                     <p className="text-sm text-gray-500">
-                      最終同期: {(integration as any)?.last_synced_at ? 
-                        formatDistanceToNow(new Date((integration as any).last_synced_at), { 
+                      最終同期: {(integration as GoogleIntegrationData)?.last_synced_at ? 
+                        formatDistanceToNow(new Date((integration as GoogleIntegrationData).last_synced_at), { 
                           addSuffix: true,
                           locale: ja 
                         }) : 
@@ -284,7 +284,7 @@ export function GoogleIntegration() {
                     </div>
                     <Switch
                       id="sync-calendar"
-                      checked={(integration as any)?.sync_calendar}
+                      checked={(integration as GoogleIntegrationData)?.sync_calendar}
                       onCheckedChange={(checked) => handleSettingChange('sync_calendar', checked)}
                     />
                   </div>
@@ -298,7 +298,7 @@ export function GoogleIntegration() {
                     </div>
                     <Switch
                       id="sync-tasks"
-                      checked={(integration as any)?.sync_tasks}
+                      checked={(integration as GoogleIntegrationData)?.sync_tasks}
                       onCheckedChange={(checked) => handleSettingChange('sync_tasks', checked)}
                     />
                   </div>
@@ -312,7 +312,7 @@ export function GoogleIntegration() {
                     </div>
                     <Switch
                       id="sync-enabled"
-                      checked={(integration as any)?.sync_enabled}
+                      checked={(integration as GoogleIntegrationData)?.sync_enabled}
                       onCheckedChange={(checked) => handleSettingChange('sync_enabled', checked)}
                     />
                   </div>
@@ -320,7 +320,7 @@ export function GoogleIntegration() {
               </div>
 
               {/* Sync Status */}
-              {(integration as any)?.status === 'error' && (
+              {(integration as GoogleIntegrationData)?.status === 'error' && (
                 <Alert variant="destructive">
                   <AlertTriangle className="h-4 w-4" />
                   <AlertDescription>
@@ -366,13 +366,13 @@ export function GoogleIntegration() {
               <div className="flex items-center justify-between">
                 <span className="text-gray-600">カレンダーID</span>
                 <code className="text-xs bg-gray-100 px-2 py-1 rounded">
-                  {(integration as any)?.calendar_id || 'primary'}
+                  {(integration as GoogleIntegrationData)?.calendar_id || 'primary'}
                 </code>
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-gray-600">タスクリストID</span>
                 <code className="text-xs bg-gray-100 px-2 py-1 rounded">
-                  {(integration as any)?.task_list_id || '@default'}
+                  {(integration as GoogleIntegrationData)?.task_list_id || '@default'}
                 </code>
               </div>
               <div className="flex items-center justify-between">

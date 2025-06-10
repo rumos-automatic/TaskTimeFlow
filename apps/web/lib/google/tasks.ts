@@ -219,7 +219,7 @@ export async function syncTasksToGoogle(
     created: 0,
     updated: 0,
     deleted: 0,
-    errors: [] as any[]
+    errors: [] as GoogleSyncError[]
   }
 
   // Get existing sync mappings
@@ -236,7 +236,7 @@ export async function syncTasksToGoogle(
   // Get all Google tasks for comparison
   const googleTasks = await getTasks(userId, taskListId, { showCompleted: true })
   const googleTasksById = new Map(
-    googleTasks.map(t => [t.id!, t])
+    googleTasks.filter(t => t.id).map(t => [t.id!, t])
   )
 
   // Process each TaskTimeFlow task
@@ -270,7 +270,7 @@ export async function syncTasksToGoogle(
       }
     } catch (error) {
       console.error(`Error syncing task ${task.id}:`, error)
-      results.errors.push({ taskId: task.id, error: error.message })
+      results.errors.push({ taskId: task.id, error: (error as Error).message })
     }
   }
 
@@ -283,7 +283,7 @@ export async function syncTasksToGoogle(
         results.deleted++
       } catch (error) {
         console.error(`Error deleting Google task ${mapping.google_id}:`, error)
-        results.errors.push({ googleId: mapping.google_id, error: error.message })
+        results.errors.push({ googleId: mapping.google_id, error: (error as Error).message })
       }
     }
   }
@@ -303,7 +303,7 @@ export async function syncTasksFromGoogle(
   const results = {
     created: 0,
     updated: 0,
-    errors: [] as any[]
+    errors: [] as GoogleSyncError[]
   }
 
   // Get all Google tasks

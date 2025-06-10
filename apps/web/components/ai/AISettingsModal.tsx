@@ -41,7 +41,7 @@ import {
   RefreshCw
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import type { AIProviderType, UserAIPreferences } from '@/types/ai'
+import type { AIProviderType, UserAIPreferences, AIFeature } from '@/types/ai'
 
 interface AISettingsModalProps {
   isOpen: boolean
@@ -74,7 +74,7 @@ export function AISettingsModal({ isOpen, onClose }: AISettingsModalProps) {
   const { preferences, isLoading, updatePreferences, isUpdating } = useAIPreferences()
   
   // Type-safe preferences with proper typing
-  const safePreferences = preferences as UserAIPreferences | undefined
+  const safePreferences = preferences
   const { availableProviders, validateApiKey } = useAIProviders()
   const { data: usageStats } = useAIUsageStatistics()
 
@@ -120,7 +120,10 @@ export function AISettingsModal({ isOpen, onClose }: AISettingsModalProps) {
     }
   }
 
-  const handlePreferenceChange = (key: keyof UserAIPreferences, value: any) => {
+  const handlePreferenceChange = <K extends keyof UserAIPreferences>(
+    key: K, 
+    value: UserAIPreferences[K]
+  ) => {
     updatePreferences({ [key]: value })
   }
 
@@ -316,7 +319,7 @@ export function AISettingsModal({ isOpen, onClose }: AISettingsModalProps) {
                               </td>
                               {availableProviders.map(provider => (
                                 <td key={provider.id} className="text-center py-2">
-                                  {provider.features.includes(feature as any) ? (
+                                  {provider.features.includes(feature as AIFeature) ? (
                                     <CheckCircle2 className="h-4 w-4 text-green-500 mx-auto" />
                                   ) : (
                                     <span className="text-gray-300">-</span>

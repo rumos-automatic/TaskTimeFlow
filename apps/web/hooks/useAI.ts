@@ -249,7 +249,7 @@ export function useAIUsageStatistics() {
         }
         
         return acc
-      }, [] as any[])
+      }, [] as MonthlyUsage[])
 
       return {
         total_sessions: totalSessions,

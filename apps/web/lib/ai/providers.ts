@@ -5,7 +5,8 @@ import type {
   AIInputData, 
   AIOutputData,
   AIConfiguration,
-  AIError
+  AIError,
+  AIFeature
 } from '@/types/ai'
 
 // AI Provider configurations
@@ -159,10 +160,11 @@ export abstract class BaseAIService {
   abstract estimateTokens(text: string): number
   abstract calculateCost(inputTokens: number, outputTokens: number, model: string): number
 
-  protected handleError(error: any, context?: any): AIError {
+  protected handleError(error: APIError | Error | unknown, context?: any): AIError {
+    const apiError = error as APIError
     return {
-      code: error.code || 'UNKNOWN_ERROR',
-      message: error.message || 'An unknown error occurred',
+      code: apiError.code || 'UNKNOWN_ERROR',
+      message: apiError.message || 'An unknown error occurred',
       provider: this.provider.id,
       context
     }
@@ -171,7 +173,7 @@ export abstract class BaseAIService {
 
 // OpenAI Service
 export class OpenAIService extends BaseAIService {
-  private client: any
+  private client: any // TODO: Replace with proper OpenAI client type when imported
 
   constructor(apiKey: string) {
     super(AI_PROVIDERS.openai, apiKey)
@@ -225,7 +227,7 @@ export class OpenAIService extends BaseAIService {
         throw new Error(`OpenAI API error: ${response.status} ${response.statusText}`)
       }
 
-      const data = await response.json()
+      const data: OpenAIResponse = await response.json()
 
       return {
         response: data.choices[0].message.content,
@@ -250,7 +252,7 @@ export class OpenAIService extends BaseAIService {
     return (inputTokens / 1000) * pricing.input + (outputTokens / 1000) * pricing.output
   }
 
-  private calculateConfidence(response: any): number {
+  private calculateConfidence(response: OpenAIResponse): number {
     // Simple confidence calculation based on response completeness
     const firstChoice = response.choices?.[0]
     if (!firstChoice) return 50
@@ -300,7 +302,7 @@ export class ClaudeService extends BaseAIService {
         throw new Error(`Claude API error: ${response.status} ${response.statusText}`)
       }
 
-      const data = await response.json()
+      const data: ClaudeResponse = await response.json()
 
       return {
         response: data.content[0].text,
@@ -323,7 +325,7 @@ export class ClaudeService extends BaseAIService {
     return (inputTokens / 1000) * pricing.input + (outputTokens / 1000) * pricing.output
   }
 
-  private calculateConfidence(response: any): number {
+  private calculateConfidence(response: ClaudeResponse): number {
     if (response?.stop_reason === 'end_turn') return 85
     if (response?.stop_reason === 'max_tokens') return 70
     return 60
@@ -374,7 +376,7 @@ export class GeminiService extends BaseAIService {
         throw new Error(`Gemini API error: ${response.status} ${response.statusText}`)
       }
 
-      const data = await response.json()
+      const data: GeminiResponse = await response.json()
 
       const firstCandidate = data.candidates?.[0]
       const responseText = firstCandidate?.content?.parts?.[0]?.text
@@ -404,7 +406,7 @@ export class GeminiService extends BaseAIService {
     return (inputTokens / 1000) * pricing.input + (outputTokens / 1000) * pricing.output
   }
 
-  private calculateConfidence(response: any): number {
+  private calculateConfidence(response: GeminiResponse): number {
     const candidate = response.candidates?.[0]
     if (!candidate) return 50
     
@@ -471,9 +473,9 @@ export function getDefaultModel(provider: AIProviderType): string {
 
 export function validateProviderSupportsFeature(
   provider: AIProviderType,
-  feature: string
+  feature: AIFeature
 ): boolean {
-  return AI_PROVIDERS[provider].features.includes(feature as any)
+  return AI_PROVIDERS[provider].features.includes(feature)
 }
 
 export function estimateCostForSession(
@@ -491,7 +493,7 @@ export function estimateCostForSession(
 
 export function selectBestProvider(
   requirements: {
-    features: string[]
+    features: AIFeature[]
     maxCost?: number
     maxLatency?: number
     preferAccuracy?: boolean
@@ -501,8 +503,8 @@ export function selectBestProvider(
   
   // Filter providers that support all required features
   const compatibleProviders = providers.filter(provider =>
-    requirements.features.every(feature => 
-      provider.features.includes(feature as any)
+    requirements.features.every((feature: AIFeature) => 
+      provider.features.includes(feature)
     )
   )
 

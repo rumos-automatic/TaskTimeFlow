@@ -202,7 +202,7 @@ export async function syncSlotsToCalendar(
     created: 0,
     updated: 0,
     deleted: 0,
-    errors: [] as any[]
+    errors: [] as GoogleSyncError[]
   }
 
   // Get existing sync mappings

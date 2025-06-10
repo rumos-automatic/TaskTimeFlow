@@ -37,13 +37,13 @@ import {
   Plus
 } from 'lucide-react'
 import { formatDate } from '@/lib/utils'
-import type { CreateTaskInput, TaskPriority, EnergyLevel, TaskContext } from '@/types/tasks'
+import type { CreateTaskInput, TaskPriority, EnergyLevel, TaskContext, TaskStatus } from '@/types/tasks'
 
 interface CreateTaskModalProps {
   isOpen: boolean
   onClose: () => void
   projectId: string
-  defaultStatus?: string
+  defaultStatus?: TaskStatus
 }
 
 export function CreateTaskModal({ isOpen, onClose, projectId, defaultStatus = 'todo' }: CreateTaskModalProps) {
@@ -57,7 +57,7 @@ export function CreateTaskModal({ isOpen, onClose, projectId, defaultStatus = 't
     project_id: projectId,
     priority: 'medium',
     energy_level: 'medium',
-    status: defaultStatus as any,
+    status: defaultStatus,
     labels: [],
     estimated_duration: undefined,
     start_time: undefined,
@@ -77,7 +77,7 @@ export function CreateTaskModal({ isOpen, onClose, projectId, defaultStatus = 't
         project_id: projectId,
         priority: 'medium',
         energy_level: 'medium',
-        status: defaultStatus as any,
+        status: defaultStatus,
         labels: [],
         estimated_duration: undefined,
         start_time: undefined,
@@ -100,7 +100,7 @@ export function CreateTaskModal({ isOpen, onClose, projectId, defaultStatus = 't
       title: formData.title.trim(),
       project_id: projectId,
       assignee_id: user?.id
-    } as CreateTaskInput
+    }
 
     const result = await createTaskMutation.mutateAsync(taskInput)
     
