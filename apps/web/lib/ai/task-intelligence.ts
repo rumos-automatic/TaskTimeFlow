@@ -10,7 +10,8 @@ import type {
   AISuggestion,
   AIProviderType,
   AISession,
-  AIInputData
+  AIInputData,
+  UserAIPreferences
 } from '@/types/ai'
 import type { Task } from '@/types/tasks'
 
@@ -603,7 +604,7 @@ Provide 3-5 actionable suggestions that would meaningfully improve the user's ta
 }
 
 // Helper functions
-export async function getUserAIPreferences(userId: string) {
+export async function getUserAIPreferences(userId: string): Promise<UserAIPreferences> {
   const { data, error } = await supabase
     .from('users')
     .select('ai_preferences')
@@ -612,7 +613,7 @@ export async function getUserAIPreferences(userId: string) {
 
   if (error) throw error
 
-  return data.ai_preferences || {
+  return (data.ai_preferences as UserAIPreferences) || {
     preferred_provider: 'openai',
     auto_suggestions: true,
     learning_mode: true
