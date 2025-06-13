@@ -26,6 +26,28 @@ import { useGoogleIntegration } from '@/hooks/useGoogleIntegration'
 import { formatDistanceToNow } from 'date-fns'
 import { ja } from 'date-fns/locale'
 
+// Type definition for proper TypeScript inference
+interface GoogleIntegration {
+  id: string
+  user_id: string
+  provider: string
+  status: 'active' | 'paused' | 'revoked' | 'error'
+  provider_email: string
+  provider_data: {
+    name?: string
+    picture?: string
+    locale?: string
+  }
+  sync_enabled: boolean
+  sync_calendar: boolean
+  sync_tasks: boolean
+  calendar_id: string
+  task_list_id: string
+  last_synced_at?: string
+  created_at: string
+  updated_at: string
+}
+
 export function GoogleIntegration() {
   const router = useRouter()
   const { toast } = useToast()
@@ -34,7 +56,7 @@ export function GoogleIntegration() {
   const [syncProgress, setSyncProgress] = useState(0)
   
   const { 
-    integration, 
+    integration: integrationData, 
     isLoading, 
     isConnected,
     connect,
@@ -42,6 +64,9 @@ export function GoogleIntegration() {
     sync,
     updateSettings
   } = useGoogleIntegration()
+  
+  // Type-safe integration
+  const integration = integrationData as GoogleIntegration | null
 
   // Handle OAuth redirect results
   useEffect(() => {
