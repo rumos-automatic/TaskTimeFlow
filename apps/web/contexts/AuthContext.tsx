@@ -498,8 +498,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
               .single()
 
             if (userProfile) {
-              dispatch({ type: 'SET_USER', payload: convertDatabaseUserToUser(userProfile) })
-              dispatch({ type: 'SET_SESSION', payload: session })
+              const user = convertDatabaseUserToUser(userProfile)
+              dispatch({ type: 'SET_USER', payload: user })
+              
+              // Convert Supabase session to AuthSession
+              const authSession: AuthSession = {
+                access_token: session.access_token,
+                refresh_token: session.refresh_token,
+                expires_at: session.expires_at,
+                expires_in: session.expires_in || 3600,
+                token_type: session.token_type || 'bearer',
+                user: user
+              }
+              dispatch({ type: 'SET_SESSION', payload: authSession })
             }
           }
           
@@ -530,14 +541,36 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           .single()
 
         if (userProfile) {
-          dispatch({ type: 'SET_USER', payload: convertDatabaseUserToUser(userProfile) })
-          dispatch({ type: 'SET_SESSION', payload: session })
+          const user = convertDatabaseUserToUser(userProfile)
+          dispatch({ type: 'SET_USER', payload: user })
+          
+          // Convert Supabase session to AuthSession
+          const authSession: AuthSession = {
+            access_token: session.access_token,
+            refresh_token: session.refresh_token,
+            expires_at: session.expires_at,
+            expires_in: session.expires_in || 3600,
+            token_type: session.token_type || 'bearer',
+            user: user
+          }
+          dispatch({ type: 'SET_SESSION', payload: authSession })
         }
       } else if (event === 'SIGNED_OUT') {
         dispatch({ type: 'SET_USER', payload: null })
         dispatch({ type: 'SET_SESSION', payload: null })
       } else if (event === 'TOKEN_REFRESHED' && session) {
-        dispatch({ type: 'SET_SESSION', payload: session })
+        // For token refresh, we only update the session tokens, keep existing user
+        if (state.user) {
+          const authSession: AuthSession = {
+            access_token: session.access_token,
+            refresh_token: session.refresh_token,
+            expires_at: session.expires_at,
+            expires_in: session.expires_in || 3600,
+            token_type: session.token_type || 'bearer',
+            user: state.user
+          }
+          dispatch({ type: 'SET_SESSION', payload: authSession })
+        }
       }
     })
 
