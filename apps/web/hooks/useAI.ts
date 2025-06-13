@@ -19,6 +19,7 @@ import {
 import { supabase } from '@/lib/supabase'
 import type { 
   AIProviderType,
+  AIFeature,
   TaskBreakdownRequest,
   TaskBreakdownResponse,
   TimeEstimationRequest,
@@ -274,7 +275,7 @@ export function useAIProviders() {
   const availableProviders = getAvailableProviders()
   
   const selectOptimalProvider = useCallback((requirements: {
-    features: string[]
+    features: AIFeature[]
     maxCost?: number
     maxLatency?: number
     preferAccuracy?: boolean
