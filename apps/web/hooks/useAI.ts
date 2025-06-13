@@ -407,16 +407,14 @@ export function useAIAssistant() {
         tasks,
         time_blocks: [],
         constraints: {
-          working_hours: { start: '09:00', end: '17:00' },
+          working_hours: { start: 9, end: 17 },
           break_duration: 15,
-          max_consecutive_work: 120,
-          blocked_times: [],
-          energy_levels: {
-            high: ['09:00-11:00', '14:00-16:00'],
-            low: ['13:00-14:00']
-          },
-          mandatory_breaks: true,
-          weekend_work: false
+          focus_session_duration: 25,
+          buffer_time: 5,
+          respect_energy_levels: true,
+          respect_contexts: true,
+          existing_slots: [],
+          unavailable_times: []
         },
         preferences: {
           prefer_morning: false,
