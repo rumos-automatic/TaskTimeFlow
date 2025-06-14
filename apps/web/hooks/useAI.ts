@@ -487,19 +487,24 @@ async function getProviderApiKey(provider: AIProviderType): Promise<string> {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) throw new Error('User not authenticated')
 
-  const { data: keys, error } = await supabase
-    .from('user_api_keys')
-    .select('encrypted_key')
-    .eq('user_id', user.id)
-    .eq('provider', provider)
-    .eq('key_type', 'ai_provider')
+  const { data: userData, error } = await supabase
+    .from('users')
+    .select('ai_preferences')
+    .eq('id', user.id)
     .single()
 
-  if (error || !keys) {
+  if (error || !userData) {
+    throw new Error('Failed to fetch user preferences')
+  }
+
+  const preferences = userData.ai_preferences as UserAIPreferences
+  const apiKey = preferences?.api_keys_encrypted?.[provider]
+
+  if (!apiKey) {
     throw new Error(`API key not found for ${provider}`)
   }
 
   // In a real implementation, you would decrypt the key here
   // For now, we'll assume it's stored in a usable format
-  return keys.encrypted_key
+  return apiKey
 }
