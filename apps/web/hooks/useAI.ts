@@ -419,8 +419,12 @@ export function useAIAssistant() {
         preferences: {
           prefer_morning: false,
           prefer_afternoon: false,
+          prefer_evening: false,
           group_similar_tasks: true,
-          minimize_context_switches: true
+          respect_task_order: true,
+          minimize_context_switches: true,
+          batch_meetings: false,
+          protect_deep_work: true
         },
         optimization_goals: [
           { type: 'maximize_productivity', weight: 0.7 },
