@@ -2,7 +2,6 @@
   "name": "tasktimeflow",
   "version": "1.0.0",
   "description": "> **かんばん方式とタイムラインを統合した革新的生産性向上SaaS**",
-  "main": "index.js",
   "directories": {
     "doc": "docs"
   },
