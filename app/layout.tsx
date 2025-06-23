@@ -7,6 +7,9 @@ const inter = Inter({ subsets: ['latin'] })
 export const metadata: Metadata = {
   title: 'TaskTimeFlow',
   description: 'Next-gen task management with timeboxing and Google Calendar integration',
+  icons: {
+    icon: '/favicon.ico',
+  },
 }
 
 export default function RootLayout({
