@@ -104,7 +104,7 @@ export function FocusMode() {
       <div className="flex-1 space-y-4">
         <h3 className="text-sm font-medium flex items-center">
           <TrendingUp className="w-4 h-4 mr-2" />
-          Today's Progress
+          Today&apos;s Progress
         </h3>
         
         <div className="grid grid-cols-2 gap-3">
