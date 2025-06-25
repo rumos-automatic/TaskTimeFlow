@@ -19,7 +19,12 @@ import {
   DragEndEvent,
   DragStartEvent,
   DragOverlay,
-  closestCenter
+  closestCenter,
+  MouseSensor,
+  TouchSensor,
+  KeyboardSensor,
+  useSensor,
+  useSensors
 } from '@dnd-kit/core'
 import { 
   ChevronLeft, 
@@ -49,10 +54,6 @@ export function WorkspaceNew() {
   
   // ドラッグ状態管理
   const [activeTask, setActiveTask] = useState<Task | null>(null)
-  const [isDraggingMobile, setIsDraggingMobile] = useState(false)
-  const [dragPosition, setDragPosition] = useState({ x: 0, y: 0 })
-  const [customDragId, setCustomDragId] = useState<string | null>(null)
-  const [dragStartView, setDragStartView] = useState<string | null>(null)
 
   // フッター要素のref
   const footerRef = React.useRef<HTMLDivElement>(null)
@@ -63,8 +64,38 @@ export function WorkspaceNew() {
     onSwipeRight: prevView,
     threshold: 50,
     targetRef: footerRef,
-    enabled: isMobile && !isDraggingMobile
+    enabled: isMobile && !activeTask
   })
+
+  // ドラッグセンサーの設定
+  const mouseSensor = useSensor(MouseSensor, {
+    activationConstraint: {
+      distance: 10
+    }
+  })
+
+  const touchSensor = useSensor(TouchSensor, {
+    // 300ms長押しでドラッグ開始
+    activationConstraint: {
+      delay: 300,
+      tolerance: 5
+    }
+  })
+
+  const keyboardSensor = useSensor(KeyboardSensor)
+
+  const sensors = useSensors(
+    mouseSensor,
+    touchSensor,
+    keyboardSensor
+  )
+
+  // ハプティックフィードバック
+  const triggerHapticFeedback = React.useCallback(() => {
+    if (isMobile && 'vibrate' in navigator) {
+      navigator.vibrate(10) // 10ms の短い振動
+    }
+  }, [isMobile])
 
   // エッジプル機能（モバイル専用：タスクプール ⇄ タイムライン）
   const {
@@ -88,95 +119,13 @@ export function WorkspaceNew() {
     holdDuration: 300
   })
 
-  // 自動スクロール機能（モバイル専用）
-  useAutoScroll({
-    isDragging: isMobile && isDraggingMobile,
-    dragPosition,
-    scrollThreshold: 100,
-    scrollSpeed: 15
-  })
-
   // スクロールロック機能（モバイル専用）
   useScrollLock({
-    isLocked: isMobile && isDraggingMobile && currentView === 'timeline'
+    isLocked: isMobile && !!activeTask && currentView === 'timeline'
   })
 
-  // カスタムドラッグ開始処理
-  const startCustomDrag = React.useCallback((taskId: string, task: Task, initialPos: { x: number, y: number }) => {
-    if (!isMobile) return
-    
-    setCustomDragId(taskId)
-    setActiveTask(task)
-    setIsDraggingMobile(true)
-    setDragPosition(initialPos)
-    setDragStartView(currentView)
-    startEdgePull()
-  }, [isMobile, currentView, startEdgePull])
-
-  // カスタムドラッグ終了処理
-  const endCustomDrag = React.useCallback(() => {
-    if (!isMobile) return
-    
-    // タイムラインビューでドロップ処理
-    if (currentView === 'timeline' && activeTask && customDragId) {
-      // ドロップ位置に基づいて時間を計算
-      const timelineElement = document.querySelector('[data-timeline="true"]')
-      if (timelineElement) {
-        const rect = timelineElement.getBoundingClientRect()
-        const scrollTop = timelineElement.scrollTop
-        const relativeY = dragPosition.y - rect.top + scrollTop
-        const hourHeight = 64 // 各時間スロットの高さ（64px）
-        const droppedHour = Math.max(0, Math.min(23, Math.floor(relativeY / hourHeight)))
-        const timeString = `${droppedHour.toString().padStart(2, '0')}:00`
-        const today = new Date()
-        
-        moveTaskToTimeline(customDragId, today, timeString)
-      } else {
-        // フォールバック：現在時刻を使用
-        const currentHour = new Date().getHours()
-        const timeString = `${currentHour.toString().padStart(2, '0')}:00`
-        const today = new Date()
-        
-        moveTaskToTimeline(customDragId, today, timeString)
-      }
-    }
-    
-    // 状態をリセット
-    setCustomDragId(null)
-    setActiveTask(null)
-    setIsDraggingMobile(false)
-    setDragStartView(null)
-    endEdgePull()
-  }, [isMobile, currentView, activeTask, customDragId, dragPosition, moveTaskToTimeline, endEdgePull])
-
-  // モバイル用タッチイベント処理
-  const handleTouchMove = React.useCallback((e: TouchEvent) => {
-    if (isMobile && isDraggingMobile && e.touches.length > 0) {
-      e.preventDefault() // ブラウザのデフォルト動作を防止
-      e.stopPropagation() // イベントの伝播を防止
-      const touch = e.touches[0]
-      setDragPosition({ x: touch.clientX, y: touch.clientY })
-    }
-  }, [isMobile, isDraggingMobile])
-
-  const handleTouchEnd = React.useCallback(() => {
-    if (isMobile && isDraggingMobile) {
-      endCustomDrag()
-    }
-  }, [isMobile, isDraggingMobile, endCustomDrag])
-
-  // タッチイベントリスナーの設定
-  React.useEffect(() => {
-    if (isMobile && isDraggingMobile) {
-      document.addEventListener('touchmove', handleTouchMove, { passive: false })
-      document.addEventListener('touchend', handleTouchEnd)
-      
-      return () => {
-        document.removeEventListener('touchmove', handleTouchMove)
-        document.removeEventListener('touchend', handleTouchEnd)
-      }
-    }
-  }, [isMobile, isDraggingMobile, handleTouchMove, handleTouchEnd])
+  // TouchSensorでiOS風のドラッグアンドドロップを実現
+  // 300msの長押しでドラッグ開始、ハプティックフィードバック付き
 
   // ビュー名取得ヘルパー
   const getViewName = (view: string) => {
@@ -198,11 +147,8 @@ export function WorkspaceNew() {
     return ''
   }
 
-  // ドラッグハンドラー（デスクトップのみ）
+  // ドラッグハンドラー
   const handleDragStart = (event: DragStartEvent) => {
-    // モバイルではカスタムドラッグを使用するためスキップ
-    if (isMobile && isDraggingMobile) return
-    
     const activeId = event.active.id.toString()
     
     // 通常のタスクの場合
@@ -215,29 +161,28 @@ export function WorkspaceNew() {
     }
     
     setActiveTask(task || null)
+    
+    // ハプティックフィードバック
+    triggerHapticFeedback()
+    
+    // エッジプル機能開始（モバイルのみ）
+    if (isMobile) {
+      startEdgePull()
+    }
   }
 
   const handleDragEnd = (event: DragEndEvent) => {
-    // モバイルではカスタムドラッグを使用するためスキップ
-    if (isMobile && isDraggingMobile) return
-    
     const { active, over } = event
     setActiveTask(null)
+    
+    // エッジプル機能終了（モバイルのみ）
+    if (isMobile) {
+      endEdgePull()
+    }
 
     const activeId = active.id.toString()
     const overId = over?.id.toString()
 
-    // クロススクリーンドロップ処理（モバイル）
-    // タスクプールからタイムラインビューへのドロップ（over がない場合）
-    if (isMobile && !over && activeTask && currentView === 'timeline' && !activeId.startsWith('scheduled-')) {
-      // 現在時刻をデフォルトスロットとして使用
-      const currentHour = new Date().getHours()
-      const timeString = `${currentHour.toString().padStart(2, '0')}:00`
-      const today = new Date()
-      
-      moveTaskToTimeline(activeId, today, timeString)
-      return
-    }
 
     if (!over) return
 
@@ -266,58 +211,6 @@ export function WorkspaceNew() {
     }
   }
 
-  // モバイル専用ドラッグオーバーレイ
-  const MobileDragOverlay = ({ task }: { task: Task }) => {
-    if (!isDraggingMobile || !task || !customDragId) return null
-
-    const priorityColors = {
-      high: 'border-red-500 bg-red-50 dark:bg-red-950/20',
-      medium: 'border-yellow-500 bg-yellow-50 dark:bg-yellow-950/20',
-      low: 'border-green-500 bg-green-50 dark:bg-green-950/20'
-    }
-
-    const formatTime = (minutes: number) => {
-      if (minutes < 60) return `${minutes}分`
-      const hours = Math.floor(minutes / 60)
-      const mins = minutes % 60
-      return mins > 0 ? `${hours}時間${mins}分` : `${hours}時間`
-    }
-
-    return (
-      <div 
-        className="fixed pointer-events-none z-[9999] transform -translate-x-1/2 -translate-y-1/2 touch-none"
-        style={{
-          left: dragPosition.x,
-          top: dragPosition.y,
-          willChange: 'transform'
-        }}
-      >
-        <div className={`p-4 rounded-lg border-2 shadow-2xl opacity-90 select-none ${priorityColors[task.priority]}`}>
-          <div className="flex items-start justify-between">
-            <div className="flex-1">
-              <h4 className="font-medium text-sm mb-2">{task.title}</h4>
-              <div className="flex items-center space-x-3 text-xs text-muted-foreground">
-                <div className="flex items-center space-x-1">
-                  <Clock className="w-3 h-3" />
-                  <span>{formatTime(task.estimatedTime)}</span>
-                </div>
-                <div className="flex items-center space-x-1">
-                  {task.priority === 'high' && <AlertCircle className="w-3 h-3 text-red-500" />}
-                  {task.priority === 'medium' && <Circle className="w-3 h-3 text-yellow-500" />}
-                  {task.priority === 'low' && <Circle className="w-3 h-3 text-green-500" />}
-                  <span className="capitalize">
-                    {task.priority === 'high' && '高'}
-                    {task.priority === 'medium' && '中'}
-                    {task.priority === 'low' && '低'}
-                  </span>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    )
-  }
 
   // ドラッグオーバーレイ用のタスクカード
   const DragOverlayCard = ({ task }: { task: Task }) => {
@@ -365,6 +258,7 @@ export function WorkspaceNew() {
   if (isMobile) {
     return (
       <DndContext
+        sensors={sensors}
         collisionDetection={closestCenter}
         onDragStart={handleDragStart}
         onDragEnd={handleDragEnd}
@@ -396,7 +290,7 @@ export function WorkspaceNew() {
               </div>
             )}
 
-            <div className={`absolute inset-0 p-4 pb-24 overflow-y-auto ${isDraggingMobile ? 'touch-none select-none' : ''}`}>
+            <div className="absolute inset-0 p-4 pb-24 overflow-y-auto">
               {currentView === 'tasks' && (
                 <div>
                   <div className="flex items-center justify-between mb-6">
@@ -406,10 +300,7 @@ export function WorkspaceNew() {
                       <span className="text-xs text-muted-foreground">同期済み</span>
                     </div>
                   </div>
-                  <TaskPool 
-                    onMobileTaskDragStart={startCustomDrag}
-                    isMobileDragging={isDraggingMobile}
-                  />
+                  <TaskPool />
                 </div>
               )}
               
@@ -426,11 +317,6 @@ export function WorkspaceNew() {
                         <div className="w-3 h-3 bg-blue-500 rounded-sm" />
                         <span className="text-sm text-muted-foreground">タスク</span>
                       </div>
-                      {isDraggingMobile && (
-                        <div className="text-sm text-primary font-medium animate-pulse">
-                          📍 ドロップで配置
-                        </div>
-                      )}
                     </div>
                   </div>
                   <Timeline />
@@ -521,11 +407,8 @@ export function WorkspaceNew() {
         
         {/* ドラッグオーバーレイ */}
         <DragOverlay>
-          {activeTask && !isDraggingMobile && <DragOverlayCard task={activeTask} />}
+          {activeTask && <DragOverlayCard task={activeTask} />}
         </DragOverlay>
-        
-        {/* モバイル専用ドラッグオーバーレイ */}
-        {activeTask && <MobileDragOverlay task={activeTask} />}
       </div>
       </DndContext>
     )
@@ -535,6 +418,7 @@ export function WorkspaceNew() {
   if (viewMode === 'desktop-focus') {
     return (
       <DndContext
+        sensors={sensors}
         collisionDetection={closestCenter}
         onDragStart={handleDragStart}
         onDragEnd={handleDragEnd}
@@ -573,6 +457,7 @@ export function WorkspaceNew() {
   // デスクトップ版：デュアルビュー（タスク + タイムライン）
   return (
     <DndContext
+      sensors={sensors}
       collisionDetection={closestCenter}
       onDragStart={handleDragStart}
       onDragEnd={handleDragEnd}
@@ -593,10 +478,7 @@ export function WorkspaceNew() {
                 <span className="text-xs text-muted-foreground">同期済み</span>
               </div>
             </div>
-            <TaskPool 
-              onMobileTaskDragStart={startCustomDrag}
-              isMobileDragging={isDraggingMobile}
-            />
+            <TaskPool />
           </div>
         </motion.div>
 

@@ -96,7 +96,8 @@ function ScheduledTaskCard({ task, slotId, slotData }: ScheduledTaskCardProps) {
           {!isCompleted && (
             <div 
               {...listeners}
-              className="cursor-move h-full w-full absolute inset-0"
+              className="cursor-move h-full w-full absolute inset-0 touch-none"
+              style={{ touchAction: 'none' }}
             />
           )}
           

@@ -20,15 +20,12 @@ const priorityColors: Record<Priority, string> = {
 
 interface DraggableTaskCardProps {
   task: Task
-  onMobileTaskDragStart?: (taskId: string, task: Task, initialPos: { x: number, y: number }) => void
-  isMobileDragging?: boolean
 }
 
-function DraggableTaskCard({ task, onMobileTaskDragStart, isMobileDragging }: DraggableTaskCardProps) {
+function DraggableTaskCard({ task }: DraggableTaskCardProps) {
   const [showActions, setShowActions] = useState(false)
   const [isEditing, setIsEditing] = useState(false)
   const { updateTask, deleteTask, completeTask } = useTaskStore()
-  const { isMobile } = useViewState()
   const {
     attributes,
     listeners,
@@ -66,15 +63,6 @@ function DraggableTaskCard({ task, onMobileTaskDragStart, isMobileDragging }: Dr
     setShowActions(false)
   }
 
-  // モバイル用タッチ開始処理
-  const handleTouchStart = (e: React.TouchEvent) => {
-    if (isMobile && onMobileTaskDragStart && !isMobileDragging && e.touches.length > 0) {
-      e.preventDefault() // デフォルト動作を防止
-      e.stopPropagation() // イベント伝播を防止
-      const touch = e.touches[0]
-      onMobileTaskDragStart(task.id, task, { x: touch.clientX, y: touch.clientY })
-    }
-  }
 
   if (isEditing) {
     return (
@@ -101,9 +89,9 @@ function DraggableTaskCard({ task, onMobileTaskDragStart, isMobileDragging }: Dr
         <div className="flex items-start justify-between relative">
           {/* ドラッグ可能エリア */}
           <div 
-            {...(isMobile ? {} : listeners)}
-            className="flex-1 cursor-move"
-            onTouchStart={isMobile ? handleTouchStart : undefined}
+            {...listeners}
+            className="flex-1 cursor-move touch-none"
+            style={{ touchAction: 'none' }}
           >
             <h4 className="font-medium text-sm mb-2">{task.title}</h4>
             <div className="flex items-center space-x-3 text-xs text-muted-foreground">
@@ -408,12 +396,7 @@ function AddTaskForm() {
   )
 }
 
-interface TaskPoolProps {
-  onMobileTaskDragStart?: (taskId: string, task: Task, initialPos: { x: number, y: number }) => void
-  isMobileDragging?: boolean
-}
-
-export function TaskPool({ onMobileTaskDragStart, isMobileDragging }: TaskPoolProps = {}) {
+export function TaskPool() {
   const { 
     tasks, 
     selectedCategory, 
@@ -482,8 +465,6 @@ export function TaskPool({ onMobileTaskDragStart, isMobileDragging }: TaskPoolPr
           <DraggableTaskCard 
             key={task.id} 
             task={task} 
-            onMobileTaskDragStart={onMobileTaskDragStart}
-            isMobileDragging={isMobileDragging}
           />
         ))}
         {filteredTasks.length === 0 && (
