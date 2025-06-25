@@ -371,7 +371,7 @@ export function Timeline() {
       <Separator />
 
       {/* Timeline Grid */}
-      <div className="flex-1 overflow-y-auto">
+      <div className="flex-1 overflow-y-auto" data-timeline="true">
         <div className="relative">
           {/* Current Time Indicator */}
           <div 

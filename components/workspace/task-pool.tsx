@@ -10,6 +10,7 @@ import { useSortable } from '@dnd-kit/sortable'
 import { useDroppable } from '@dnd-kit/core'
 import { CSS } from '@dnd-kit/utilities'
 import { Task, Priority, TaskCategory } from '@/lib/types'
+import { useViewState } from '@/lib/hooks/use-view-state'
 
 const priorityColors: Record<Priority, string> = {
   high: 'border-red-500 bg-red-50 dark:bg-red-950/20',
@@ -19,12 +20,15 @@ const priorityColors: Record<Priority, string> = {
 
 interface DraggableTaskCardProps {
   task: Task
+  onMobileTaskDragStart?: (taskId: string, task: Task, initialPos: { x: number, y: number }) => void
+  isMobileDragging?: boolean
 }
 
-function DraggableTaskCard({ task }: DraggableTaskCardProps) {
+function DraggableTaskCard({ task, onMobileTaskDragStart, isMobileDragging }: DraggableTaskCardProps) {
   const [showActions, setShowActions] = useState(false)
   const [isEditing, setIsEditing] = useState(false)
   const { updateTask, deleteTask, completeTask } = useTaskStore()
+  const { isMobile } = useViewState()
   const {
     attributes,
     listeners,
@@ -62,6 +66,14 @@ function DraggableTaskCard({ task }: DraggableTaskCardProps) {
     setShowActions(false)
   }
 
+  // モバイル用タッチ開始処理
+  const handleTouchStart = (e: React.TouchEvent) => {
+    if (isMobile && onMobileTaskDragStart && !isMobileDragging && e.touches.length > 0) {
+      const touch = e.touches[0]
+      onMobileTaskDragStart(task.id, task, { x: touch.clientX, y: touch.clientY })
+    }
+  }
+
   if (isEditing) {
     return (
       <EditTaskCard 
@@ -87,8 +99,9 @@ function DraggableTaskCard({ task }: DraggableTaskCardProps) {
         <div className="flex items-start justify-between relative">
           {/* ドラッグ可能エリア */}
           <div 
-            {...listeners}
+            {...(isMobile ? {} : listeners)}
             className="flex-1 cursor-move"
+            onTouchStart={isMobile ? handleTouchStart : undefined}
           >
             <h4 className="font-medium text-sm mb-2">{task.title}</h4>
             <div className="flex items-center space-x-3 text-xs text-muted-foreground">
@@ -393,7 +406,12 @@ function AddTaskForm() {
   )
 }
 
-export function TaskPool() {
+interface TaskPoolProps {
+  onMobileTaskDragStart?: (taskId: string, task: Task, initialPos: { x: number, y: number }) => void
+  isMobileDragging?: boolean
+}
+
+export function TaskPool({ onMobileTaskDragStart, isMobileDragging }: TaskPoolProps = {}) {
   const { 
     tasks, 
     selectedCategory, 
@@ -459,7 +477,12 @@ export function TaskPool() {
       {/* Task List */}
       <div className="flex-1 overflow-y-auto space-y-3">
         {filteredTasks.map((task) => (
-          <DraggableTaskCard key={task.id} task={task} />
+          <DraggableTaskCard 
+            key={task.id} 
+            task={task} 
+            onMobileTaskDragStart={onMobileTaskDragStart}
+            isMobileDragging={isMobileDragging}
+          />
         ))}
         {filteredTasks.length === 0 && (
           <div className="text-center text-muted-foreground py-8">
