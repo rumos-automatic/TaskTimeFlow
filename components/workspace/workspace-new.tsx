@@ -33,7 +33,7 @@ const slideVariants = {
   })
 }
 
-const swipeConfidenceThreshold = 10000
+const swipeConfidenceThreshold = 5000
 const swipePower = (offset: number, velocity: number) => {
   return Math.abs(offset) * velocity
 }
@@ -50,10 +50,11 @@ export function WorkspaceNew() {
 
   const handleDragEnd = (event: any, { offset, velocity }: any) => {
     const swipe = swipePower(offset.x, velocity.x)
+    const offsetThreshold = 100 // 100px以上のドラッグでも切り替え
 
-    if (swipe < -swipeConfidenceThreshold) {
+    if (swipe < -swipeConfidenceThreshold || offset.x < -offsetThreshold) {
       nextView()
-    } else if (swipe > swipeConfidenceThreshold) {
+    } else if (swipe > swipeConfidenceThreshold || offset.x > offsetThreshold) {
       prevView()
     }
   }
@@ -62,70 +63,13 @@ export function WorkspaceNew() {
   if (isMobile) {
     return (
       <div className="flex flex-col h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800">
-        {/* モバイルナビゲーション */}
-        <div className="flex items-center justify-between p-4 border-b border-border/40 bg-card/50 backdrop-blur-sm">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={prevView}
-            className="p-3 min-w-[44px] min-h-[44px]"
-          >
-            <ChevronLeft className="w-5 h-5" />
-          </Button>
-          
-          <div className="flex items-center space-x-2">
-            <Button
-              variant={currentView === 'tasks' ? 'default' : 'ghost'}
-              size="sm"
-              onClick={() => setCurrentView('tasks')}
-              className="p-3 min-w-[44px] min-h-[44px]"
-            >
-              <ListTodo className="w-4 h-4" />
-            </Button>
-            <Button
-              variant={currentView === 'timeline' ? 'default' : 'ghost'}
-              size="sm"
-              onClick={() => setCurrentView('timeline')}
-              className="p-3 min-w-[44px] min-h-[44px]"
-            >
-              <Calendar className="w-4 h-4" />
-            </Button>
-            <Button
-              variant={currentView === 'focus' ? 'default' : 'ghost'}
-              size="sm"
-              onClick={() => setCurrentView('focus')}
-              className="p-3 min-w-[44px] min-h-[44px]"
-            >
-              <Target className="w-4 h-4" />
-            </Button>
-          </div>
-
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={nextView}
-            className="p-3 min-w-[44px] min-h-[44px]"
-          >
-            <ChevronRight className="w-5 h-5" />
-          </Button>
-        </div>
-
-        {/* スワイプインジケーター */}
-        <div className="flex justify-center py-2 space-x-2">
-          {(['tasks', 'timeline', 'focus'] as const).map((view, index) => (
-            <div
-              key={view}
-              className={`w-2 h-2 rounded-full transition-all duration-200 ${
-                currentView === view 
-                  ? 'bg-primary w-6' 
-                  : 'bg-muted-foreground/30'
-              }`}
-            />
-          ))}
+        {/* シンプルヘッダー */}
+        <div className="flex items-center justify-center p-4 border-b border-border/40 bg-card/50 backdrop-blur-sm">
+          <h1 className="text-lg font-semibold text-foreground">TaskTimeFlow</h1>
         </div>
 
         {/* スライドビュー */}
-        <div className="flex-1 relative overflow-hidden">
+        <div className="flex-1 relative overflow-hidden pb-20">
           <AnimatePresence mode="wait" custom={0}>
             <motion.div
               key={currentView}
@@ -140,7 +84,8 @@ export function WorkspaceNew() {
               }}
               drag="x"
               dragConstraints={{ left: 0, right: 0 }}
-              dragElastic={1}
+              dragElastic={0.7}
+              dragTransition={{ bounceStiffness: 600, bounceDamping: 15 }}
               onDragEnd={handleDragEnd}
               className="absolute inset-0 p-4 touch-pan-y"
               style={{ touchAction: 'pan-y' }}
@@ -191,6 +136,61 @@ export function WorkspaceNew() {
               )}
             </motion.div>
           </AnimatePresence>
+        </div>
+
+        {/* 固定フッターナビゲーション */}
+        <div className="fixed bottom-0 left-0 right-0 bg-card/95 backdrop-blur-md border-t border-border/40 px-4 py-2 pb-4">
+          <div className="flex items-center justify-around max-w-sm mx-auto">
+            <button
+              onClick={() => setCurrentView('tasks')}
+              className={`flex flex-col items-center space-y-1 p-2 rounded-lg transition-all duration-200 min-w-[60px] ${
+                currentView === 'tasks'
+                  ? 'bg-primary/10 text-primary'
+                  : 'text-muted-foreground hover:text-foreground'
+              }`}
+            >
+              <ListTodo className={`w-5 h-5 ${currentView === 'tasks' ? 'scale-110' : ''} transition-transform`} />
+              <span className="text-xs font-medium">タスク</span>
+            </button>
+
+            <button
+              onClick={() => setCurrentView('timeline')}
+              className={`flex flex-col items-center space-y-1 p-2 rounded-lg transition-all duration-200 min-w-[60px] ${
+                currentView === 'timeline'
+                  ? 'bg-primary/10 text-primary'
+                  : 'text-muted-foreground hover:text-foreground'
+              }`}
+            >
+              <Calendar className={`w-5 h-5 ${currentView === 'timeline' ? 'scale-110' : ''} transition-transform`} />
+              <span className="text-xs font-medium">時間</span>
+            </button>
+
+            <button
+              onClick={() => setCurrentView('focus')}
+              className={`flex flex-col items-center space-y-1 p-2 rounded-lg transition-all duration-200 min-w-[60px] ${
+                currentView === 'focus'
+                  ? 'bg-primary/10 text-primary'
+                  : 'text-muted-foreground hover:text-foreground'
+              }`}
+            >
+              <Target className={`w-5 h-5 ${currentView === 'focus' ? 'scale-110' : ''} transition-transform`} />
+              <span className="text-xs font-medium">集中</span>
+            </button>
+          </div>
+
+          {/* スワイプインジケーター */}
+          <div className="flex justify-center pt-2 space-x-2">
+            {(['tasks', 'timeline', 'focus'] as const).map((view) => (
+              <div
+                key={view}
+                className={`h-1 rounded-full transition-all duration-300 ${
+                  currentView === view 
+                    ? 'bg-primary w-8' 
+                    : 'bg-muted-foreground/30 w-2'
+                }`}
+              />
+            ))}
+          </div>
         </div>
       </div>
     )
