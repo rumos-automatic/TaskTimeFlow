@@ -28,6 +28,8 @@ function ScheduledTaskCard({ task, slot }: ScheduledTaskCardProps) {
   const [showActions, setShowActions] = useState(false)
   const [isEditing, setIsEditing] = useState(false)
   const { updateTask, removeTimeSlot } = useTaskStore()
+  
+  console.log('ScheduledTaskCard slot object:', slot)
   const {
     attributes,
     listeners,
@@ -35,7 +37,7 @@ function ScheduledTaskCard({ task, slot }: ScheduledTaskCardProps) {
     transform,
     transition,
     isDragging
-  } = useSortable({ id: `scheduled-${task.id}-${slot.id}` })
+  } = useSortable({ id: `scheduled-${task.id}-${slot.slotId}` })
 
   const style = {
     transform: CSS.Transform.toString(transform),
@@ -49,7 +51,8 @@ function ScheduledTaskCard({ task, slot }: ScheduledTaskCardProps) {
   }
 
   const handleDelete = () => {
-    removeTimeSlot(slot.id)
+    console.log('Deleting timeline task with slotId:', slot.slotId)
+    removeTimeSlot(slot.slotId)
     setShowActions(false)
   }
 
@@ -257,15 +260,12 @@ function DroppableTimeSlot({ time, hour, isBusinessHour, currentHour, scheduledT
         }`}
       >
         {/* Scheduled Tasks at this time */}
-        {tasksAtThisTime.map((slot) => {
-          const task = scheduledTasks.find(t => t.taskId === slot.taskId)
-          if (!task) return null
-
+        {tasksAtThisTime.map((taskWithSlot) => {
           return (
             <ScheduledTaskCard
-              key={slot.id}
-              task={task}
-              slot={slot}
+              key={taskWithSlot.slotId}
+              task={taskWithSlot}
+              slot={taskWithSlot}
             />
           )
         })}
@@ -306,7 +306,14 @@ export function Timeline() {
   // Combine scheduled tasks with their task details
   const scheduledTasks = todaySlots.map(slot => {
     const task = tasks.find(t => t.id === slot.taskId)
-    return { ...slot, ...task }
+    return { 
+      ...task,
+      slotId: slot.id,
+      startTime: slot.startTime,
+      endTime: slot.endTime,
+      date: slot.date,
+      type: slot.type
+    }
   }).filter(item => item.title) // Filter out items without task details
 
   return (

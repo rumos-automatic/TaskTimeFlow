@@ -132,7 +132,10 @@ export const useTaskStore = create<TaskStore>()(
 
       removeTimeSlot: (id) => {
         set((state) => {
+          console.log('removeTimeSlot called with id:', id)
+          console.log('Available timeSlots:', state.timeSlots.map(s => ({ id: s.id, taskId: s.taskId })))
           const slot = state.timeSlots.find((s) => s.id === id)
+          console.log('Found slot:', slot)
           if (slot?.taskId) {
             // Unschedule the task
             return {
