@@ -112,7 +112,8 @@ export const useTaskStore = create<TaskStore>()(
         }
 
         set((state) => ({
-          timeSlots: [...state.timeSlots, newSlot],
+          // 既存の同じタスクのスロットを削除してから新しいスロットを追加
+          timeSlots: [...state.timeSlots.filter(slot => slot.taskId !== taskId), newSlot],
           tasks: state.tasks.map((t) =>
             t.id === taskId
               ? { ...t, scheduledDate: date, scheduledTime: time }

@@ -88,12 +88,8 @@ export function WorkspaceNew() {
     // 2. タイムライン → 別のタイムスロット (スケジュール済みタスクの移動)
     else if (overId.startsWith('timeline-slot-') && activeId.startsWith('scheduled-')) {
       const taskId = activeId.split('-')[1]
-      const slotId = activeId.split('-')[2]
       
-      // 古いスロットを削除
-      removeTimeSlot(slotId)
-      
-      // 新しい時間にスケジュール
+      // 新しい時間にスケジュール（moveTaskToTimelineが既存スロットを自動削除）
       const timeString = overId.replace('timeline-slot-', '')
       const today = new Date()
       moveTaskToTimeline(taskId, today, timeString)

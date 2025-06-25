@@ -1,9 +1,10 @@
 'use client'
 
+import { useState } from 'react'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
-import { Calendar, ChevronLeft, ChevronRight, Clock } from 'lucide-react'
+import { Calendar, ChevronLeft, ChevronRight, Clock, Edit2, Trash2, X } from 'lucide-react'
 import { useDroppable } from '@dnd-kit/core'
 import { useSortable } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
@@ -24,6 +25,9 @@ interface ScheduledTaskCardProps {
 }
 
 function ScheduledTaskCard({ task, slot }: ScheduledTaskCardProps) {
+  const [showActions, setShowActions] = useState(false)
+  const [isEditing, setIsEditing] = useState(false)
+  const { updateTask, removeTimeSlot } = useTaskStore()
   const {
     attributes,
     listeners,
@@ -39,20 +43,167 @@ function ScheduledTaskCard({ task, slot }: ScheduledTaskCardProps) {
     opacity: isDragging ? 0.5 : 1
   }
 
+  const handleEdit = () => {
+    setIsEditing(true)
+    setShowActions(false)
+  }
+
+  const handleDelete = () => {
+    if (confirm(`タスク「${task.title}」をタイムラインから削除しますか？`)) {
+      removeTimeSlot(slot.id)
+    }
+    setShowActions(false)
+  }
+
+  if (isEditing) {
+    return (
+      <EditScheduledTaskCard 
+        task={task}
+        slot={slot}
+        onSave={(updatedTask) => {
+          updateTask(task.id, updatedTask)
+          setIsEditing(false)
+        }}
+        onCancel={() => setIsEditing(false)}
+      />
+    )
+  }
+
   return (
-    <div ref={setNodeRef} style={style} {...attributes} {...listeners}>
+    <div ref={setNodeRef} style={style} {...attributes}>
       <Card
-        className="absolute left-2 right-2 p-2 z-20 bg-blue-100 border-blue-300 dark:bg-blue-950/30 cursor-move hover:bg-blue-200 dark:hover:bg-blue-900/40 transition-colors"
+        className="absolute left-2 right-2 p-2 z-20 bg-blue-100 border-blue-300 dark:bg-blue-950/30 hover:bg-blue-200 dark:hover:bg-blue-900/40 transition-colors group"
         style={{ 
           height: `${task.estimatedTime || 60}px`,
           top: '0px'
         }}
+        onMouseEnter={() => setShowActions(true)}
+        onMouseLeave={() => setShowActions(false)}
       >
-        <div className="text-xs font-medium">{task.title}</div>
-        <div className="text-xs text-muted-foreground flex items-center">
-          <Clock className="w-3 h-3 mr-1" />
-          {task.estimatedTime || 60}分
+        {/* ドラッグハンドル */}
+        <div 
+          {...listeners}
+          className="absolute inset-0 cursor-move z-10"
+          style={{ background: 'transparent' }}
+        />
+        
+        <div className="relative z-20 h-full">
+          <div className="pointer-events-none">
+            <div className="text-xs font-medium">{task.title}</div>
+            <div className="text-xs text-muted-foreground flex items-center">
+              <Clock className="w-3 h-3 mr-1" />
+              {task.estimatedTime || 60}分
+            </div>
+          </div>
+          
+          {/* アクションボタン */}
+          {showActions && (
+            <div className="absolute top-1 right-1 flex space-x-1 pointer-events-auto">
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-5 w-5 p-0 hover:bg-blue-200 dark:hover:bg-blue-800"
+                onClick={handleEdit}
+              >
+                <Edit2 className="w-2.5 h-2.5" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-5 w-5 p-0 hover:bg-red-200 dark:hover:bg-red-800 text-red-600"
+                onClick={handleDelete}
+              >
+                <Trash2 className="w-2.5 h-2.5" />
+              </Button>
+            </div>
+          )}
         </div>
+      </Card>
+    </div>
+  )
+}
+
+interface EditScheduledTaskCardProps {
+  task: any
+  slot: any
+  onSave: (task: any) => void
+  onCancel: () => void
+}
+
+function EditScheduledTaskCard({ task, slot, onSave, onCancel }: EditScheduledTaskCardProps) {
+  const [formData, setFormData] = useState({
+    title: task.title,
+    priority: task.priority,
+    category: task.category,
+    estimatedTime: task.estimatedTime
+  })
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!formData.title.trim()) return
+    onSave(formData)
+  }
+
+  return (
+    <div className="absolute left-2 right-2 z-20" style={{ top: '0px' }}>
+      <Card className="p-3 border-primary bg-white dark:bg-gray-800">
+        <form onSubmit={handleSubmit} className="space-y-2">
+          <input
+            type="text"
+            value={formData.title}
+            onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
+            className="w-full px-2 py-1 border border-border rounded text-xs bg-background text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+            autoFocus
+            required
+          />
+
+          <div className="grid grid-cols-3 gap-1">
+            <select
+              value={formData.priority}
+              onChange={(e) => setFormData(prev => ({ ...prev, priority: e.target.value }))}
+              className="px-1 py-1 border border-border rounded text-xs bg-background"
+            >
+              <option value="high">高</option>
+              <option value="medium">中</option>
+              <option value="low">低</option>
+            </select>
+
+            <select
+              value={formData.category}
+              onChange={(e) => setFormData(prev => ({ ...prev, category: e.target.value }))}
+              className="px-1 py-1 border border-border rounded text-xs bg-background"
+            >
+              <option value="work">仕事</option>
+              <option value="personal">個人</option>
+              <option value="custom">カスタム</option>
+            </select>
+
+            <input
+              type="number"
+              min="5"
+              max="480"
+              value={formData.estimatedTime}
+              onChange={(e) => setFormData(prev => ({ ...prev, estimatedTime: parseInt(e.target.value) || 30 }))}
+              className="px-1 py-1 border border-border rounded text-xs bg-background"
+              placeholder="分"
+            />
+          </div>
+
+          <div className="flex space-x-1">
+            <Button type="submit" size="sm" className="flex-1 h-6 text-xs">
+              保存
+            </Button>
+            <Button 
+              type="button" 
+              variant="outline" 
+              size="sm" 
+              className="h-6 w-6 p-0"
+              onClick={onCancel}
+            >
+              <X className="w-3 h-3" />
+            </Button>
+          </div>
+        </form>
       </Card>
     </div>
   )

@@ -4,7 +4,7 @@ import { useState } from 'react'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
-import { Plus, Circle, Clock, AlertCircle, X } from 'lucide-react'
+import { Plus, Circle, Clock, AlertCircle, X, Edit2, Trash2, MoreVertical } from 'lucide-react'
 import { useTaskStore } from '@/lib/store/use-task-store'
 import { useSortable } from '@dnd-kit/sortable'
 import { useDroppable } from '@dnd-kit/core'
@@ -22,6 +22,9 @@ interface DraggableTaskCardProps {
 }
 
 function DraggableTaskCard({ task }: DraggableTaskCardProps) {
+  const [showActions, setShowActions] = useState(false)
+  const [isEditing, setIsEditing] = useState(false)
+  const { updateTask, deleteTask } = useTaskStore()
   const {
     attributes,
     listeners,
@@ -44,15 +47,49 @@ function DraggableTaskCard({ task }: DraggableTaskCardProps) {
     return mins > 0 ? `${hours}時間${mins}分` : `${hours}時間`
   }
 
+  const handleEdit = () => {
+    setIsEditing(true)
+    setShowActions(false)
+  }
+
+  const handleDelete = () => {
+    if (confirm(`タスク「${task.title}」を削除しますか？`)) {
+      deleteTask(task.id)
+    }
+    setShowActions(false)
+  }
+
+  if (isEditing) {
+    return (
+      <EditTaskCard 
+        task={task} 
+        onSave={(updatedTask) => {
+          updateTask(task.id, updatedTask)
+          setIsEditing(false)
+        }}
+        onCancel={() => setIsEditing(false)}
+      />
+    )
+  }
+
   return (
-    <div ref={setNodeRef} style={style} {...attributes} {...listeners}>
+    <div ref={setNodeRef} style={style} {...attributes}>
       <Card
-        className={`p-4 cursor-move transition-all hover:shadow-md ${
+        className={`p-4 transition-all hover:shadow-md group relative ${
           priorityColors[task.priority]
         }`}
+        onMouseEnter={() => setShowActions(true)}
+        onMouseLeave={() => setShowActions(false)}
       >
-        <div className="flex items-start justify-between">
-          <div className="flex-1">
+        {/* ドラッグハンドル */}
+        <div 
+          {...listeners}
+          className="absolute inset-0 cursor-move z-10"
+          style={{ background: 'transparent' }}
+        />
+        
+        <div className="flex items-start justify-between relative z-20">
+          <div className="flex-1 pointer-events-none">
             <h4 className="font-medium text-sm mb-2">{task.title}</h4>
             <div className="flex items-center space-x-3 text-xs text-muted-foreground">
               <div className="flex items-center space-x-1">
@@ -71,10 +108,113 @@ function DraggableTaskCard({ task }: DraggableTaskCardProps) {
               </div>
             </div>
           </div>
-          <div className="w-2 h-2 bg-current rounded-full opacity-50" />
+          
+          {/* アクションボタン */}
+          {showActions && (
+            <div className="flex space-x-1 pointer-events-auto">
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-6 w-6 p-0 hover:bg-blue-100 dark:hover:bg-blue-900"
+                onClick={handleEdit}
+              >
+                <Edit2 className="w-3 h-3" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-6 w-6 p-0 hover:bg-red-100 dark:hover:bg-red-900 text-red-600"
+                onClick={handleDelete}
+              >
+                <Trash2 className="w-3 h-3" />
+              </Button>
+            </div>
+          )}
         </div>
       </Card>
     </div>
+  )
+}
+
+interface EditTaskCardProps {
+  task: Task
+  onSave: (task: Partial<Task>) => void
+  onCancel: () => void
+}
+
+function EditTaskCard({ task, onSave, onCancel }: EditTaskCardProps) {
+  const [formData, setFormData] = useState({
+    title: task.title,
+    priority: task.priority,
+    category: task.category,
+    estimatedTime: task.estimatedTime
+  })
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!formData.title.trim()) return
+    onSave(formData)
+  }
+
+  return (
+    <Card className="p-4 border-primary">
+      <form onSubmit={handleSubmit} className="space-y-3">
+        <input
+          type="text"
+          value={formData.title}
+          onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
+          className="w-full px-3 py-2 border border-border rounded-md bg-background text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+          autoFocus
+          required
+        />
+
+        <div className="grid grid-cols-3 gap-2">
+          <select
+            value={formData.priority}
+            onChange={(e) => setFormData(prev => ({ ...prev, priority: e.target.value as Priority }))}
+            className="px-2 py-1 border border-border rounded text-xs bg-background"
+          >
+            <option value="high">高</option>
+            <option value="medium">中</option>
+            <option value="low">低</option>
+          </select>
+
+          <select
+            value={formData.category}
+            onChange={(e) => setFormData(prev => ({ ...prev, category: e.target.value as TaskCategory }))}
+            className="px-2 py-1 border border-border rounded text-xs bg-background"
+          >
+            <option value="work">仕事</option>
+            <option value="personal">個人</option>
+            <option value="custom">カスタム</option>
+          </select>
+
+          <input
+            type="number"
+            min="5"
+            max="480"
+            value={formData.estimatedTime}
+            onChange={(e) => setFormData(prev => ({ ...prev, estimatedTime: parseInt(e.target.value) || 30 }))}
+            className="px-2 py-1 border border-border rounded text-xs bg-background"
+            placeholder="分"
+          />
+        </div>
+
+        <div className="flex space-x-2">
+          <Button type="submit" size="sm" className="flex-1">
+            保存
+          </Button>
+          <Button 
+            type="button" 
+            variant="outline" 
+            size="sm" 
+            onClick={onCancel}
+          >
+            <X className="w-4 h-4" />
+          </Button>
+        </div>
+      </form>
+    </Card>
   )
 }
 
