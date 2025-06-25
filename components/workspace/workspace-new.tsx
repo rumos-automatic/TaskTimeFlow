@@ -7,6 +7,7 @@ import { TaskPool } from './task-pool'
 import { Timeline } from './timeline'
 import { FocusMode } from './focus-mode'
 import { useViewState } from '@/lib/hooks/use-view-state'
+import { useSwipe } from '@/lib/hooks/use-swipe'
 import { 
   ChevronLeft, 
   ChevronRight, 
@@ -15,11 +16,6 @@ import {
   Target,
   X
 } from 'lucide-react'
-
-const swipeConfidenceThreshold = 5000
-const swipePower = (offset: number, velocity: number) => {
-  return Math.abs(offset) * velocity
-}
 
 export function WorkspaceNew() {
   const { 
@@ -31,16 +27,12 @@ export function WorkspaceNew() {
     prevView 
   } = useViewState()
 
-  const handleDragEnd = (event: any, { offset, velocity }: any) => {
-    const swipe = swipePower(offset.x, velocity.x)
-    const offsetThreshold = 100 // 100px以上のドラッグでも切り替え
-
-    if (swipe < -swipeConfidenceThreshold || offset.x < -offsetThreshold) {
-      nextView()
-    } else if (swipe > swipeConfidenceThreshold || offset.x > offsetThreshold) {
-      prevView()
-    }
-  }
+  // スワイプジェスチャーの設定
+  useSwipe({
+    onSwipeLeft: nextView,
+    onSwipeRight: prevView,
+    threshold: 50
+  })
 
   // モバイル版：1画面ずつ表示
   if (isMobile) {
@@ -52,13 +44,7 @@ export function WorkspaceNew() {
         </div>
 
         {/* スライドビュー */}
-        <motion.div 
-          className="flex-1 relative overflow-hidden"
-          drag="x"
-          dragConstraints={{ left: 0, right: 0 }}
-          dragElastic={0.2}
-          onDragEnd={handleDragEnd}
-        >
+        <div className="flex-1 relative overflow-hidden">
           <div className="absolute inset-0 p-4 pb-24 overflow-y-auto">
             {currentView === 'tasks' && (
               <div>
@@ -105,7 +91,7 @@ export function WorkspaceNew() {
               </div>
             )}
           </div>
-        </motion.div>
+        </div>
 
         {/* 固定フッターナビゲーション */}
         <div className="fixed bottom-0 left-0 right-0 z-50 bg-card/95 backdrop-blur-md border-t border-border/40 px-4 py-2 pb-4">
