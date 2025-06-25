@@ -185,7 +185,37 @@ export const useTaskStore = create<TaskStore>()(
       partialize: (state) => ({
         tasks: state.tasks,
         timeSlots: state.timeSlots
-      })
+      }),
+      storage: {
+        getItem: (name) => {
+          const str = localStorage.getItem(name)
+          if (!str) return null
+          const parsed = JSON.parse(str)
+          // Convert date strings back to Date objects
+          if (parsed.state?.tasks) {
+            parsed.state.tasks = parsed.state.tasks.map((task: any) => ({
+              ...task,
+              createdAt: task.createdAt ? new Date(task.createdAt) : undefined,
+              updatedAt: task.updatedAt ? new Date(task.updatedAt) : undefined,
+              completedAt: task.completedAt ? new Date(task.completedAt) : undefined,
+              scheduledDate: task.scheduledDate ? new Date(task.scheduledDate) : undefined
+            }))
+          }
+          if (parsed.state?.timeSlots) {
+            parsed.state.timeSlots = parsed.state.timeSlots.map((slot: any) => ({
+              ...slot,
+              date: slot.date ? new Date(slot.date) : new Date()
+            }))
+          }
+          return parsed
+        },
+        setItem: (name, value) => {
+          localStorage.setItem(name, JSON.stringify(value))
+        },
+        removeItem: (name) => {
+          localStorage.removeItem(name)
+        }
+      }
     }
   )
 )

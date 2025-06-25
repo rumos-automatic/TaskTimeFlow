@@ -104,9 +104,11 @@ export function Timeline() {
   
   // Get today's date for filtering
   const today = new Date()
-  const todaySlots = scheduledSlots.filter(slot => 
-    slot.date.toDateString() === today.toDateString()
-  )
+  const todaySlots = scheduledSlots.filter(slot => {
+    // Ensure slot.date is a Date object (handle deserialization)
+    const slotDate = slot.date instanceof Date ? slot.date : new Date(slot.date)
+    return slotDate.toDateString() === today.toDateString()
+  })
 
   // Combine scheduled tasks with their task details
   const scheduledTasks = todaySlots.map(slot => {
