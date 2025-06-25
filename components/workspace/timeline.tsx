@@ -21,15 +21,14 @@ const timeSlots = Array.from({ length: 24 }, (_, i) => {
 
 interface ScheduledTaskCardProps {
   task: any
-  slot: any
+  slotId: string
+  slotData: any
 }
 
-function ScheduledTaskCard({ task, slot }: ScheduledTaskCardProps) {
+function ScheduledTaskCard({ task, slotId, slotData }: ScheduledTaskCardProps) {
   const [showActions, setShowActions] = useState(false)
   const [isEditing, setIsEditing] = useState(false)
   const { updateTask, removeTimeSlot } = useTaskStore()
-  
-  console.log('ScheduledTaskCard slot object:', slot)
   const {
     attributes,
     listeners,
@@ -37,7 +36,7 @@ function ScheduledTaskCard({ task, slot }: ScheduledTaskCardProps) {
     transform,
     transition,
     isDragging
-  } = useSortable({ id: `scheduled-${task.id}-${slot.slotId}` })
+  } = useSortable({ id: `scheduled-${task.id}-${slotId}` })
 
   const style = {
     transform: CSS.Transform.toString(transform),
@@ -51,8 +50,7 @@ function ScheduledTaskCard({ task, slot }: ScheduledTaskCardProps) {
   }
 
   const handleDelete = () => {
-    console.log('Deleting timeline task with slotId:', slot.slotId)
-    removeTimeSlot(slot.slotId)
+    removeTimeSlot(slotId)
     setShowActions(false)
   }
 
@@ -60,7 +58,7 @@ function ScheduledTaskCard({ task, slot }: ScheduledTaskCardProps) {
     return (
       <EditScheduledTaskCard 
         task={task}
-        slot={slot}
+        slot={slotData}
         onSave={(updatedTask) => {
           updateTask(task.id, updatedTask)
           setIsEditing(false)
@@ -75,7 +73,7 @@ function ScheduledTaskCard({ task, slot }: ScheduledTaskCardProps) {
       <Card
         className="absolute left-2 right-2 p-2 z-20 bg-blue-100 border-blue-300 dark:bg-blue-950/30 hover:bg-blue-200 dark:hover:bg-blue-900/40 transition-colors group"
         style={{ 
-          height: `${task.estimatedTime || 60}px`,
+          height: `${slotData.estimatedTime || 60}px`,
           top: '0px'
         }}
         onMouseEnter={() => setShowActions(true)}
@@ -93,7 +91,7 @@ function ScheduledTaskCard({ task, slot }: ScheduledTaskCardProps) {
             <div className="text-xs font-medium">{task.title}</div>
             <div className="text-xs text-muted-foreground flex items-center">
               <Clock className="w-3 h-3 mr-1" />
-              {task.estimatedTime || 60}分
+              {slotData.estimatedTime || 60}分
             </div>
           </div>
           
@@ -234,9 +232,9 @@ function DroppableTimeSlot({ time, hour, isBusinessHour, currentHour, scheduledT
     id: `timeline-slot-${time}`
   })
 
-  const tasksAtThisTime = scheduledTasks.filter(slot => {
-    if (!slot.startTime) return false
-    const slotHour = parseInt(slot.startTime.split(':')[0])
+  const tasksAtThisTime = scheduledTasks.filter(item => {
+    if (!item.slotData.startTime) return false
+    const slotHour = parseInt(item.slotData.startTime.split(':')[0])
     return slotHour === hour
   })
 
@@ -260,12 +258,13 @@ function DroppableTimeSlot({ time, hour, isBusinessHour, currentHour, scheduledT
         }`}
       >
         {/* Scheduled Tasks at this time */}
-        {tasksAtThisTime.map((taskWithSlot) => {
+        {tasksAtThisTime.map((item) => {
           return (
             <ScheduledTaskCard
-              key={taskWithSlot.slotId}
-              task={taskWithSlot}
-              slot={taskWithSlot}
+              key={item.slotId}
+              task={item.task}
+              slotId={item.slotId}
+              slotData={item.slotData}
             />
           )
         })}
@@ -307,14 +306,17 @@ export function Timeline() {
   const scheduledTasks = todaySlots.map(slot => {
     const task = tasks.find(t => t.id === slot.taskId)
     return { 
-      ...task,
+      task: task,
       slotId: slot.id,
-      startTime: slot.startTime,
-      endTime: slot.endTime,
-      date: slot.date,
-      type: slot.type
+      slotData: {
+        startTime: slot.startTime,
+        endTime: slot.endTime,
+        date: slot.date,
+        type: slot.type,
+        estimatedTime: task?.estimatedTime || 60
+      }
     }
-  }).filter(item => item.title) // Filter out items without task details
+  }).filter(item => item.task?.title) // Filter out items without task details
 
   return (
     <div className="space-y-4 h-full flex flex-col">
