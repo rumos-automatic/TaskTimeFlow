@@ -56,7 +56,7 @@ function ScheduledTaskCard({ task, slotId, slotData }: ScheduledTaskCardProps) {
 
   const handleComplete = () => {
     completeTask(task.id)
-    removeTimeSlot(slotId) // スケジュール済みタスクを完了時にタイムラインからも削除
+    // 完了タスクはタイムライン上にグレーアウトして残す（削除しない）
     setShowActions(false)
   }
 
