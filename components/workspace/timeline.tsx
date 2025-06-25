@@ -49,7 +49,8 @@ function ScheduledTaskCard({ task, slot }: ScheduledTaskCardProps) {
   }
 
   const handleDelete = () => {
-    if (confirm(`タスク「${task.title}」をタイムラインから削除しますか？`)) {
+    const confirmed = window.confirm(`タスク「${task.title}」をタイムラインから削除しますか？`)
+    if (confirmed) {
       removeTimeSlot(slot.id)
     }
     setShowActions(false)
@@ -80,15 +81,15 @@ function ScheduledTaskCard({ task, slot }: ScheduledTaskCardProps) {
         onMouseEnter={() => setShowActions(true)}
         onMouseLeave={() => setShowActions(false)}
       >
-        {/* ドラッグハンドル */}
-        <div 
-          {...listeners}
-          className="absolute inset-0 cursor-move z-10"
-          style={{ background: 'transparent' }}
-        />
-        
-        <div className="relative z-20 h-full">
-          <div className="pointer-events-none">
+        <div className="relative h-full">
+          {/* ドラッグ可能エリア */}
+          <div 
+            {...listeners}
+            className="cursor-move h-full w-full absolute inset-0"
+          />
+          
+          {/* コンテンツエリア */}
+          <div className="relative h-full pointer-events-none">
             <div className="text-xs font-medium">{task.title}</div>
             <div className="text-xs text-muted-foreground flex items-center">
               <Clock className="w-3 h-3 mr-1" />
@@ -98,7 +99,7 @@ function ScheduledTaskCard({ task, slot }: ScheduledTaskCardProps) {
           
           {/* アクションボタン */}
           {showActions && (
-            <div className="absolute top-1 right-1 flex space-x-1 pointer-events-auto">
+            <div className="absolute top-1 right-1 flex space-x-1 pointer-events-auto z-10">
               <Button
                 variant="ghost"
                 size="sm"
@@ -135,13 +136,18 @@ function EditScheduledTaskCard({ task, slot, onSave, onCancel }: EditScheduledTa
     title: task.title,
     priority: task.priority,
     category: task.category,
-    estimatedTime: task.estimatedTime
+    estimatedTime: task.estimatedTime as number | ''
   })
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     if (!formData.title.trim()) return
-    onSave(formData)
+    // 空文字列の場合はデフォルト値を設定
+    const finalData = {
+      ...formData,
+      estimatedTime: formData.estimatedTime === '' ? 30 : formData.estimatedTime
+    }
+    onSave(finalData)
   }
 
   return (
@@ -183,7 +189,13 @@ function EditScheduledTaskCard({ task, slot, onSave, onCancel }: EditScheduledTa
               min="5"
               max="480"
               value={formData.estimatedTime}
-              onChange={(e) => setFormData(prev => ({ ...prev, estimatedTime: parseInt(e.target.value) || 30 }))}
+              onChange={(e) => {
+                const value = e.target.value
+                setFormData(prev => ({ 
+                  ...prev, 
+                  estimatedTime: value === '' ? '' : (parseInt(value) || 30)
+                }))
+              }}
               className="px-1 py-1 border border-border rounded text-xs bg-background"
               placeholder="分"
             />

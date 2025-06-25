@@ -53,7 +53,8 @@ function DraggableTaskCard({ task }: DraggableTaskCardProps) {
   }
 
   const handleDelete = () => {
-    if (confirm(`タスク「${task.title}」を削除しますか？`)) {
+    const confirmed = window.confirm(`タスク「${task.title}」を削除しますか？`)
+    if (confirmed) {
       deleteTask(task.id)
     }
     setShowActions(false)
@@ -81,15 +82,12 @@ function DraggableTaskCard({ task }: DraggableTaskCardProps) {
         onMouseEnter={() => setShowActions(true)}
         onMouseLeave={() => setShowActions(false)}
       >
-        {/* ドラッグハンドル */}
-        <div 
-          {...listeners}
-          className="absolute inset-0 cursor-move z-10"
-          style={{ background: 'transparent' }}
-        />
-        
-        <div className="flex items-start justify-between relative z-20">
-          <div className="flex-1 pointer-events-none">
+        <div className="flex items-start justify-between relative">
+          {/* ドラッグ可能エリア */}
+          <div 
+            {...listeners}
+            className="flex-1 cursor-move"
+          >
             <h4 className="font-medium text-sm mb-2">{task.title}</h4>
             <div className="flex items-center space-x-3 text-xs text-muted-foreground">
               <div className="flex items-center space-x-1">
@@ -111,7 +109,7 @@ function DraggableTaskCard({ task }: DraggableTaskCardProps) {
           
           {/* アクションボタン */}
           {showActions && (
-            <div className="flex space-x-1 pointer-events-auto">
+            <div className="flex space-x-1 ml-2">
               <Button
                 variant="ghost"
                 size="sm"
@@ -147,13 +145,18 @@ function EditTaskCard({ task, onSave, onCancel }: EditTaskCardProps) {
     title: task.title,
     priority: task.priority,
     category: task.category,
-    estimatedTime: task.estimatedTime
+    estimatedTime: task.estimatedTime as number | ''
   })
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     if (!formData.title.trim()) return
-    onSave(formData)
+    // 空文字列の場合はデフォルト値を設定
+    const finalData = {
+      ...formData,
+      estimatedTime: formData.estimatedTime === '' ? 30 : formData.estimatedTime
+    }
+    onSave(finalData)
   }
 
   return (
@@ -194,7 +197,13 @@ function EditTaskCard({ task, onSave, onCancel }: EditTaskCardProps) {
             min="5"
             max="480"
             value={formData.estimatedTime}
-            onChange={(e) => setFormData(prev => ({ ...prev, estimatedTime: parseInt(e.target.value) || 30 }))}
+            onChange={(e) => {
+              const value = e.target.value
+              setFormData(prev => ({ 
+                ...prev, 
+                estimatedTime: value === '' ? '' : (parseInt(value) || 30)
+              }))
+            }}
             className="px-2 py-1 border border-border rounded text-xs bg-background"
             placeholder="分"
           />
@@ -225,7 +234,7 @@ function AddTaskForm() {
     title: '',
     priority: 'medium' as Priority,
     category: 'work' as TaskCategory,
-    estimatedTime: 30
+    estimatedTime: 30 as number | ''
   })
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -236,7 +245,7 @@ function AddTaskForm() {
       title: formData.title,
       priority: formData.priority,
       category: formData.category,
-      estimatedTime: formData.estimatedTime,
+      estimatedTime: formData.estimatedTime === '' ? 30 : formData.estimatedTime,
       status: 'todo'
     })
 
@@ -292,7 +301,13 @@ function AddTaskForm() {
               min="5"
               max="480"
               value={formData.estimatedTime}
-              onChange={(e) => setFormData(prev => ({ ...prev, estimatedTime: parseInt(e.target.value) || 30 }))}
+              onChange={(e) => {
+                const value = e.target.value
+                setFormData(prev => ({ 
+                  ...prev, 
+                  estimatedTime: value === '' ? '' : (parseInt(value) || 30)
+                }))
+              }}
               className="px-2 py-1 border border-border rounded text-xs bg-background"
               placeholder="分"
             />
