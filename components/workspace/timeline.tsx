@@ -49,10 +49,7 @@ function ScheduledTaskCard({ task, slot }: ScheduledTaskCardProps) {
   }
 
   const handleDelete = () => {
-    const confirmed = window.confirm(`タスク「${task.title}」をタイムラインから削除しますか？`)
-    if (confirmed) {
-      removeTimeSlot(slot.id)
-    }
+    removeTimeSlot(slot.id)
     setShowActions(false)
   }
 

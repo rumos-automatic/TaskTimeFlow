@@ -53,10 +53,7 @@ function DraggableTaskCard({ task }: DraggableTaskCardProps) {
   }
 
   const handleDelete = () => {
-    const confirmed = window.confirm(`タスク「${task.title}」を削除しますか？`)
-    if (confirmed) {
-      deleteTask(task.id)
-    }
+    deleteTask(task.id)
     setShowActions(false)
   }
 
