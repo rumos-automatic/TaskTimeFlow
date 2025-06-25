@@ -7,6 +7,7 @@ import { Separator } from '@/components/ui/separator'
 import { Plus, Circle, Clock, AlertCircle, X } from 'lucide-react'
 import { useTaskStore } from '@/lib/store/use-task-store'
 import { useSortable } from '@dnd-kit/sortable'
+import { useDroppable } from '@dnd-kit/core'
 import { CSS } from '@dnd-kit/utilities'
 import { Task, Priority, TaskCategory } from '@/lib/types'
 
@@ -192,13 +193,22 @@ export function TaskPool() {
     getUnscheduledTasks 
   } = useTaskStore()
 
+  const { setNodeRef, isOver } = useDroppable({
+    id: 'task-pool'
+  })
+
   const unscheduledTasks = getUnscheduledTasks()
   const filteredTasks = selectedCategory === 'all' 
     ? unscheduledTasks 
     : unscheduledTasks.filter(task => task.category === selectedCategory)
 
   return (
-    <div className="space-y-4 h-full flex flex-col">
+    <div 
+      ref={setNodeRef}
+      className={`space-y-4 h-full flex flex-col transition-colors ${
+        isOver ? 'bg-muted/20' : ''
+      }`}
+    >
       {/* Category Tabs */}
       <div className="flex space-x-2">
         <Button 

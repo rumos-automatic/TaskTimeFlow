@@ -5,6 +5,8 @@ import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
 import { Calendar, ChevronLeft, ChevronRight, Clock } from 'lucide-react'
 import { useDroppable } from '@dnd-kit/core'
+import { useSortable } from '@dnd-kit/sortable'
+import { CSS } from '@dnd-kit/utilities'
 import { useTaskStore } from '@/lib/store/use-task-store'
 
 const timeSlots = Array.from({ length: 24 }, (_, i) => {
@@ -15,6 +17,46 @@ const timeSlots = Array.from({ length: 24 }, (_, i) => {
     isBusinessHour: hour >= 9 && hour <= 17
   }
 })
+
+interface ScheduledTaskCardProps {
+  task: any
+  slot: any
+}
+
+function ScheduledTaskCard({ task, slot }: ScheduledTaskCardProps) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging
+  } = useSortable({ id: `scheduled-${task.id}-${slot.id}` })
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1
+  }
+
+  return (
+    <div ref={setNodeRef} style={style} {...attributes} {...listeners}>
+      <Card
+        className="absolute left-2 right-2 p-2 z-20 bg-blue-100 border-blue-300 dark:bg-blue-950/30 cursor-move hover:bg-blue-200 dark:hover:bg-blue-900/40 transition-colors"
+        style={{ 
+          height: `${task.estimatedTime || 60}px`,
+          top: '0px'
+        }}
+      >
+        <div className="text-xs font-medium">{task.title}</div>
+        <div className="text-xs text-muted-foreground flex items-center">
+          <Clock className="w-3 h-3 mr-1" />
+          {task.estimatedTime || 60}分
+        </div>
+      </Card>
+    </div>
+  )
+}
 
 interface DroppableTimeSlotProps {
   time: string
@@ -60,20 +102,11 @@ function DroppableTimeSlot({ time, hour, isBusinessHour, currentHour, scheduledT
           if (!task) return null
 
           return (
-            <Card
+            <ScheduledTaskCard
               key={slot.id}
-              className="absolute left-2 right-2 p-2 z-20 bg-blue-100 border-blue-300 dark:bg-blue-950/30"
-              style={{ 
-                height: `${task.estimatedTime || 60}px`,
-                top: '0px'
-              }}
-            >
-              <div className="text-xs font-medium">{task.title}</div>
-              <div className="text-xs text-muted-foreground flex items-center">
-                <Clock className="w-3 h-3 mr-1" />
-                {task.estimatedTime || 60}分
-              </div>
-            </Card>
+              task={task}
+              slot={slot}
+            />
           )
         })}
 
