@@ -69,6 +69,8 @@ function DraggableTaskCard({ task, onMobileTaskDragStart, isMobileDragging }: Dr
   // モバイル用タッチ開始処理
   const handleTouchStart = (e: React.TouchEvent) => {
     if (isMobile && onMobileTaskDragStart && !isMobileDragging && e.touches.length > 0) {
+      e.preventDefault() // デフォルト動作を防止
+      e.stopPropagation() // イベント伝播を防止
       const touch = e.touches[0]
       onMobileTaskDragStart(task.id, task, { x: touch.clientX, y: touch.clientY })
     }

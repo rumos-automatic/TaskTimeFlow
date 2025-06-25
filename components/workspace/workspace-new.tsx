@@ -10,6 +10,8 @@ import { FocusMode } from './focus-mode'
 import { useViewState } from '@/lib/hooks/use-view-state'
 import { useSwipe } from '@/lib/hooks/use-swipe'
 import { useEdgePull } from '@/lib/hooks/use-edge-pull'
+import { useAutoScroll } from '@/lib/hooks/use-auto-scroll'
+import { useScrollLock } from '@/lib/hooks/use-scroll-lock'
 import { useTaskStore } from '@/lib/store/use-task-store'
 import { Task } from '@/lib/types'
 import { 
@@ -83,7 +85,20 @@ export function WorkspaceNew() {
     },
     enabled: isMobile && !!activeTask && (currentView === 'tasks' || currentView === 'timeline'),
     edgeThreshold: 40,
-    holdDuration: 600
+    holdDuration: 300
+  })
+
+  // 自動スクロール機能（モバイル専用）
+  useAutoScroll({
+    isDragging: isMobile && isDraggingMobile,
+    dragPosition,
+    scrollThreshold: 100,
+    scrollSpeed: 15
+  })
+
+  // スクロールロック機能（モバイル専用）
+  useScrollLock({
+    isLocked: isMobile && isDraggingMobile && currentView === 'timeline'
   })
 
   // カスタムドラッグ開始処理
@@ -108,7 +123,8 @@ export function WorkspaceNew() {
       const timelineElement = document.querySelector('[data-timeline="true"]')
       if (timelineElement) {
         const rect = timelineElement.getBoundingClientRect()
-        const relativeY = dragPosition.y - rect.top
+        const scrollTop = timelineElement.scrollTop
+        const relativeY = dragPosition.y - rect.top + scrollTop
         const hourHeight = 64 // 各時間スロットの高さ（64px）
         const droppedHour = Math.max(0, Math.min(23, Math.floor(relativeY / hourHeight)))
         const timeString = `${droppedHour.toString().padStart(2, '0')}:00`
@@ -137,6 +153,7 @@ export function WorkspaceNew() {
   const handleTouchMove = React.useCallback((e: TouchEvent) => {
     if (isMobile && isDraggingMobile && e.touches.length > 0) {
       e.preventDefault() // ブラウザのデフォルト動作を防止
+      e.stopPropagation() // イベントの伝播を防止
       const touch = e.touches[0]
       setDragPosition({ x: touch.clientX, y: touch.clientY })
     }
@@ -409,6 +426,11 @@ export function WorkspaceNew() {
                         <div className="w-3 h-3 bg-blue-500 rounded-sm" />
                         <span className="text-sm text-muted-foreground">タスク</span>
                       </div>
+                      {isDraggingMobile && (
+                        <div className="text-sm text-primary font-medium animate-pulse">
+                          📍 ドロップで配置
+                        </div>
+                      )}
                     </div>
                   </div>
                   <Timeline />
