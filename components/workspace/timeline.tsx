@@ -4,6 +4,8 @@ import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
 import { Calendar, ChevronLeft, ChevronRight, Clock } from 'lucide-react'
+import { useDroppable } from '@dnd-kit/core'
+import { useTaskStore } from '@/lib/store/use-task-store'
 
 const timeSlots = Array.from({ length: 24 }, (_, i) => {
   const hour = i
@@ -14,35 +16,103 @@ const timeSlots = Array.from({ length: 24 }, (_, i) => {
   }
 })
 
-const mockEvents = [
-  {
-    id: '1',
-    title: 'デイリースタンダップ',
-    time: '09:00',
-    duration: 30,
-    type: 'event',
-    color: 'purple'
-  },
-  {
-    id: '2',
-    title: 'デザインレビュー',
-    time: '14:00',
-    duration: 60,
-    type: 'event',
-    color: 'purple'
-  },
-  {
-    id: '3',
-    title: 'コードレビュー',
-    time: '10:00',
-    duration: 45,
-    type: 'task',
-    color: 'blue'
-  }
-]
+interface DroppableTimeSlotProps {
+  time: string
+  hour: number
+  isBusinessHour: boolean
+  currentHour: number
+  scheduledTasks: any[]
+}
+
+function DroppableTimeSlot({ time, hour, isBusinessHour, currentHour, scheduledTasks }: DroppableTimeSlotProps) {
+  const { setNodeRef, isOver } = useDroppable({
+    id: `timeline-slot-${time}`
+  })
+
+  const tasksAtThisTime = scheduledTasks.filter(slot => {
+    if (!slot.startTime) return false
+    const slotHour = parseInt(slot.startTime.split(':')[0])
+    return slotHour === hour
+  })
+
+  return (
+    <div
+      key={time}
+      className={`relative border-b border-border/20 h-16 flex items-start ${
+        isBusinessHour ? 'bg-muted/10' : ''
+      } ${hour === currentHour ? 'bg-blue-50 dark:bg-blue-950/20' : ''}`}
+    >
+      {/* Time Label */}
+      <div className="w-16 text-xs text-muted-foreground p-2 font-mono">
+        {time}
+      </div>
+
+      {/* Drop Zone */}
+      <div 
+        ref={setNodeRef}
+        className={`flex-1 min-h-full border-l border-border/20 p-2 relative transition-colors ${
+          isOver ? 'bg-blue-100 dark:bg-blue-950/30 border-blue-300' : ''
+        }`}
+      >
+        {/* Scheduled Tasks at this time */}
+        {tasksAtThisTime.map((slot) => {
+          const task = scheduledTasks.find(t => t.taskId === slot.taskId)
+          if (!task) return null
+
+          return (
+            <Card
+              key={slot.id}
+              className="absolute left-2 right-2 p-2 z-20 bg-blue-100 border-blue-300 dark:bg-blue-950/30"
+              style={{ 
+                height: `${task.estimatedTime || 60}px`,
+                top: '0px'
+              }}
+            >
+              <div className="text-xs font-medium">{task.title}</div>
+              <div className="text-xs text-muted-foreground flex items-center">
+                <Clock className="w-3 h-3 mr-1" />
+                {task.estimatedTime || 60}分
+              </div>
+            </Card>
+          )
+        })}
+
+        {/* Available Time Slot Indicator */}
+        {tasksAtThisTime.length === 0 && (
+          <div className={`absolute inset-0 border-2 border-dashed transition-all ${
+            isOver 
+              ? 'border-blue-400 bg-blue-50/50 dark:bg-blue-950/20' 
+              : 'border-transparent hover:border-border/40'
+          }`}>
+            <div className={`flex items-center justify-center h-full text-xs transition-opacity ${
+              isOver 
+                ? 'text-blue-600 opacity-100' 
+                : 'text-muted-foreground opacity-0 hover:opacity-100'
+            }`}>
+              {isOver ? 'ここにドロップ' : 'タスクをドロップ'}
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}
 
 export function Timeline() {
   const currentHour = new Date().getHours()
+  const { timeSlots: scheduledSlots, tasks } = useTaskStore()
+  
+  // Get today's date for filtering
+  const today = new Date()
+  const todaySlots = scheduledSlots.filter(slot => 
+    slot.date.toDateString() === today.toDateString()
+  )
+
+  // Combine scheduled tasks with their task details
+  const scheduledTasks = todaySlots.map(slot => {
+    const task = tasks.find(t => t.id === slot.taskId)
+    return { ...slot, ...task }
+  }).filter(item => item.title) // Filter out items without task details
 
   return (
     <div className="space-y-4 h-full flex flex-col">
@@ -84,53 +154,14 @@ export function Timeline() {
 
           {/* Time Slots */}
           {timeSlots.map((slot) => (
-            <div
+            <DroppableTimeSlot
               key={slot.time}
-              className={`relative border-b border-border/20 h-16 flex items-start ${
-                slot.isBusinessHour ? 'bg-muted/10' : ''
-              } ${slot.hour === currentHour ? 'bg-blue-50 dark:bg-blue-950/20' : ''}`}
-            >
-              {/* Time Label */}
-              <div className="w-16 text-xs text-muted-foreground p-2 font-mono">
-                {slot.time}
-              </div>
-
-              {/* Drop Zone */}
-              <div className="flex-1 min-h-full border-l border-border/20 p-2 relative">
-                {/* Events/Tasks at this time */}
-                {mockEvents
-                  .filter(event => event.time === slot.time)
-                  .map((event) => (
-                    <Card
-                      key={event.id}
-                      className={`absolute left-2 right-2 p-2 z-20 ${
-                        event.type === 'event' 
-                          ? 'bg-purple-100 border-purple-300 dark:bg-purple-950/30' 
-                          : 'bg-blue-100 border-blue-300 dark:bg-blue-950/30'
-                      }`}
-                      style={{ 
-                        height: `${event.duration}px`,
-                        top: '0px'
-                      }}
-                    >
-                      <div className="text-xs font-medium">{event.title}</div>
-                      <div className="text-xs text-muted-foreground flex items-center">
-                        <Clock className="w-3 h-3 mr-1" />
-                        {event.duration}分
-                      </div>
-                    </Card>
-                  ))}
-
-                {/* Available Time Slot Indicator */}
-                {!mockEvents.some(event => event.time === slot.time) && (
-                  <div className="absolute inset-0 border-2 border-dashed border-transparent hover:border-border/40 transition-colors">
-                    <div className="flex items-center justify-center h-full text-xs text-muted-foreground opacity-0 hover:opacity-100 transition-opacity">
-                      タスクをドロップ
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
+              time={slot.time}
+              hour={slot.hour}
+              isBusinessHour={slot.isBusinessHour}
+              currentHour={currentHour}
+              scheduledTasks={scheduledTasks}
+            />
           ))}
         </div>
       </div>

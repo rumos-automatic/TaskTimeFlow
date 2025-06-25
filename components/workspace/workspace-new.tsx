@@ -1,5 +1,6 @@
 'use client'
 
+import { useState } from 'react'
 import { motion } from 'framer-motion'
 import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
@@ -8,13 +9,25 @@ import { Timeline } from './timeline'
 import { FocusMode } from './focus-mode'
 import { useViewState } from '@/lib/hooks/use-view-state'
 import { useSwipe } from '@/lib/hooks/use-swipe'
+import { useTaskStore } from '@/lib/store/use-task-store'
+import { Task } from '@/lib/types'
+import { 
+  DndContext,
+  DragEndEvent,
+  DragStartEvent,
+  DragOverlay,
+  closestCenter
+} from '@dnd-kit/core'
 import { 
   ChevronLeft, 
   ChevronRight, 
   ListTodo, 
   Calendar, 
   Target,
-  X
+  X,
+  Clock,
+  AlertCircle,
+  Circle
 } from 'lucide-react'
 
 export function WorkspaceNew() {
@@ -27,6 +40,11 @@ export function WorkspaceNew() {
     prevView 
   } = useViewState()
 
+  const { moveTaskToTimeline, tasks } = useTaskStore()
+  
+  // ドラッグ状態管理
+  const [activeTask, setActiveTask] = useState<Task | null>(null)
+
   // スワイプジェスチャーの設定
   useSwipe({
     onSwipeLeft: nextView,
@@ -34,64 +52,133 @@ export function WorkspaceNew() {
     threshold: 50
   })
 
+  // ドラッグハンドラー
+  const handleDragStart = (event: DragStartEvent) => {
+    const task = tasks.find(t => t.id === event.active.id)
+    setActiveTask(task || null)
+  }
+
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event
+    setActiveTask(null)
+
+    if (!over) return
+
+    // タイムラインにドロップした場合
+    if (over.id === 'timeline' || over.id.toString().startsWith('timeline-slot-')) {
+      const taskId = active.id.toString()
+      const now = new Date()
+      const timeString = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`
+      
+      moveTaskToTimeline(taskId, now, timeString)
+    }
+  }
+
+  // ドラッグオーバーレイ用のタスクカード
+  const DragOverlayCard = ({ task }: { task: Task }) => {
+    const priorityColors = {
+      high: 'border-red-500 bg-red-50 dark:bg-red-950/20',
+      medium: 'border-yellow-500 bg-yellow-50 dark:bg-yellow-950/20',
+      low: 'border-green-500 bg-green-50 dark:bg-green-950/20'
+    }
+
+    const formatTime = (minutes: number) => {
+      if (minutes < 60) return `${minutes}分`
+      const hours = Math.floor(minutes / 60)
+      const mins = minutes % 60
+      return mins > 0 ? `${hours}時間${mins}分` : `${hours}時間`
+    }
+
+    return (
+      <div className={`p-4 rounded-lg border-2 shadow-lg ${priorityColors[task.priority]}`}>
+        <div className="flex items-start justify-between">
+          <div className="flex-1">
+            <h4 className="font-medium text-sm mb-2">{task.title}</h4>
+            <div className="flex items-center space-x-3 text-xs text-muted-foreground">
+              <div className="flex items-center space-x-1">
+                <Clock className="w-3 h-3" />
+                <span>{formatTime(task.estimatedTime)}</span>
+              </div>
+              <div className="flex items-center space-x-1">
+                {task.priority === 'high' && <AlertCircle className="w-3 h-3 text-red-500" />}
+                {task.priority === 'medium' && <Circle className="w-3 h-3 text-yellow-500" />}
+                {task.priority === 'low' && <Circle className="w-3 h-3 text-green-500" />}
+                <span className="capitalize">
+                  {task.priority === 'high' && '高'}
+                  {task.priority === 'medium' && '中'}
+                  {task.priority === 'low' && '低'}
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
   // モバイル版：1画面ずつ表示
   if (isMobile) {
     return (
-      <div className="flex flex-col h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800">
-        {/* シンプルヘッダー */}
-        <div className="flex items-center justify-center p-4 border-b border-border/40 bg-card/50 backdrop-blur-sm">
-          <h1 className="text-lg font-semibold text-foreground">TaskTimeFlow</h1>
-        </div>
-
-        {/* スライドビュー */}
-        <div className="flex-1 relative overflow-hidden">
-          <div className="absolute inset-0 p-4 pb-24 overflow-y-auto">
-            {currentView === 'tasks' && (
-              <div>
-                <div className="flex items-center justify-between mb-6">
-                  <h2 className="text-xl font-semibold text-foreground">タスクプール</h2>
-                  <div className="flex items-center space-x-2">
-                    <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
-                    <span className="text-xs text-muted-foreground">同期済み</span>
-                  </div>
-                </div>
-                <TaskPool />
-              </div>
-            )}
-            
-            {currentView === 'timeline' && (
-              <div>
-                <div className="flex items-center justify-between mb-6">
-                  <h2 className="text-xl font-semibold text-foreground">タイムライン</h2>
-                  <div className="flex items-center space-x-4">
-                    <div className="flex items-center space-x-2">
-                      <div className="w-3 h-3 bg-purple-500 rounded-sm" />
-                      <span className="text-sm text-muted-foreground">イベント</span>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <div className="w-3 h-3 bg-blue-500 rounded-sm" />
-                      <span className="text-sm text-muted-foreground">タスク</span>
-                    </div>
-                  </div>
-                </div>
-                <Timeline />
-              </div>
-            )}
-
-            {currentView === 'focus' && (
-              <div>
-                <div className="flex items-center justify-between mb-6">
-                  <h2 className="text-xl font-semibold text-foreground">フォーカス</h2>
-                  <div className="flex items-center space-x-2">
-                    <div className="w-2 h-2 bg-orange-500 rounded-full" />
-                    <span className="text-xs text-muted-foreground">準備完了</span>
-                  </div>
-                </div>
-                <FocusMode />
-              </div>
-            )}
+      <DndContext
+        collisionDetection={closestCenter}
+        onDragStart={handleDragStart}
+        onDragEnd={handleDragEnd}
+      >
+        <div className="flex flex-col h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800">
+          {/* シンプルヘッダー */}
+          <div className="flex items-center justify-center p-4 border-b border-border/40 bg-card/50 backdrop-blur-sm">
+            <h1 className="text-lg font-semibold text-foreground">TaskTimeFlow</h1>
           </div>
-        </div>
+
+          {/* スライドビュー */}
+          <div className="flex-1 relative overflow-hidden">
+            <div className="absolute inset-0 p-4 pb-24 overflow-y-auto">
+              {currentView === 'tasks' && (
+                <div>
+                  <div className="flex items-center justify-between mb-6">
+                    <h2 className="text-xl font-semibold text-foreground">タスクプール</h2>
+                    <div className="flex items-center space-x-2">
+                      <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
+                      <span className="text-xs text-muted-foreground">同期済み</span>
+                    </div>
+                  </div>
+                  <TaskPool />
+                </div>
+              )}
+              
+              {currentView === 'timeline' && (
+                <div>
+                  <div className="flex items-center justify-between mb-6">
+                    <h2 className="text-xl font-semibold text-foreground">タイムライン</h2>
+                    <div className="flex items-center space-x-4">
+                      <div className="flex items-center space-x-2">
+                        <div className="w-3 h-3 bg-purple-500 rounded-sm" />
+                        <span className="text-sm text-muted-foreground">イベント</span>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <div className="w-3 h-3 bg-blue-500 rounded-sm" />
+                        <span className="text-sm text-muted-foreground">タスク</span>
+                      </div>
+                    </div>
+                  </div>
+                  <Timeline />
+                </div>
+              )}
+
+              {currentView === 'focus' && (
+                <div>
+                  <div className="flex items-center justify-between mb-6">
+                    <h2 className="text-xl font-semibold text-foreground">フォーカス</h2>
+                    <div className="flex items-center space-x-2">
+                      <div className="w-2 h-2 bg-orange-500 rounded-full" />
+                      <span className="text-xs text-muted-foreground">準備完了</span>
+                    </div>
+                  </div>
+                  <FocusMode />
+                </div>
+              )}
+            </div>
+          </div>
 
         {/* 固定フッターナビゲーション */}
         <div className="fixed bottom-0 left-0 right-0 z-50 bg-card/95 backdrop-blur-md border-t border-border/40 px-4 py-2 pb-4">
@@ -156,95 +243,123 @@ export function WorkspaceNew() {
             ))}
           </div>
         </div>
+        
+        {/* ドラッグオーバーレイ */}
+        <DragOverlay>
+          {activeTask && <DragOverlayCard task={activeTask} />}
+        </DragOverlay>
       </div>
+      </DndContext>
     )
   }
 
   // デスクトップ版：フォーカスモード
   if (viewMode === 'desktop-focus') {
     return (
-      <div className="flex h-screen bg-gradient-to-br from-orange-50 to-red-50 dark:from-orange-950/30 dark:to-red-950/30">
-        <motion.div
-          initial={{ opacity: 0, scale: 0.95 }}
-          animate={{ opacity: 1, scale: 1 }}
-          exit={{ opacity: 0, scale: 0.95 }}
-          transition={{ duration: 0.3 }}
-          className="flex-1 p-8"
-        >
-          <div className="flex items-center justify-between mb-8">
-            <h1 className="text-3xl font-bold text-foreground">フォーカスモード</h1>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setCurrentView('timeline')}
-              className="p-2"
-            >
-              <X className="w-5 h-5" />
-            </Button>
-          </div>
-          <FocusMode />
-        </motion.div>
-      </div>
+      <DndContext
+        collisionDetection={closestCenter}
+        onDragStart={handleDragStart}
+        onDragEnd={handleDragEnd}
+      >
+        <div className="flex h-screen bg-gradient-to-br from-orange-50 to-red-50 dark:from-orange-950/30 dark:to-red-950/30">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.95 }}
+            transition={{ duration: 0.3 }}
+            className="flex-1 p-8"
+          >
+            <div className="flex items-center justify-between mb-8">
+              <h1 className="text-3xl font-bold text-foreground">フォーカスモード</h1>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setCurrentView('timeline')}
+                className="p-2"
+              >
+                <X className="w-5 h-5" />
+              </Button>
+            </div>
+            <FocusMode />
+          </motion.div>
+        </div>
+        
+        {/* ドラッグオーバーレイ */}
+        <DragOverlay>
+          {activeTask && <DragOverlayCard task={activeTask} />}
+        </DragOverlay>
+      </DndContext>
     )
   }
 
   // デスクトップ版：デュアルビュー（タスク + タイムライン）
   return (
-    <div className="flex h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800">
-      {/* タスクプール */}
-      <motion.div
-        initial={{ x: -100, opacity: 0 }}
-        animate={{ x: 0, opacity: 1 }}
-        transition={{ duration: 0.5 }}
-        className="w-1/3 min-w-[320px] border-r border-border/40 bg-card/50 backdrop-blur-sm"
-      >
-        <div className="p-6 h-full">
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="text-xl font-semibold text-foreground">タスクプール</h2>
-            <div className="flex items-center space-x-2">
-              <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
-              <span className="text-xs text-muted-foreground">同期済み</span>
-            </div>
-          </div>
-          <TaskPool />
-        </div>
-      </motion.div>
-
-      <Separator orientation="vertical" className="w-px" />
-
-      {/* タイムライン */}
-      <motion.div
-        initial={{ y: 100, opacity: 0 }}
-        animate={{ y: 0, opacity: 1 }}
-        transition={{ duration: 0.5, delay: 0.2 }}
-        className="flex-1 bg-background/50 backdrop-blur-sm"
-      >
-        <div className="p-6 h-full">
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="text-xl font-semibold text-foreground">タイムライン</h2>
-            <div className="flex items-center space-x-4">
+    <DndContext
+      collisionDetection={closestCenter}
+      onDragStart={handleDragStart}
+      onDragEnd={handleDragEnd}
+    >
+      <div className="flex h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800">
+        {/* タスクプール */}
+        <motion.div
+          initial={{ x: -100, opacity: 0 }}
+          animate={{ x: 0, opacity: 1 }}
+          transition={{ duration: 0.5 }}
+          className="w-1/3 min-w-[320px] border-r border-border/40 bg-card/50 backdrop-blur-sm"
+        >
+          <div className="p-6 h-full">
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-xl font-semibold text-foreground">タスクプール</h2>
               <div className="flex items-center space-x-2">
-                <div className="w-3 h-3 bg-purple-500 rounded-sm" />
-                <span className="text-sm text-muted-foreground">イベント</span>
+                <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
+                <span className="text-xs text-muted-foreground">同期済み</span>
               </div>
-              <div className="flex items-center space-x-2">
-                <div className="w-3 h-3 bg-blue-500 rounded-sm" />
-                <span className="text-sm text-muted-foreground">タスク</span>
-              </div>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setCurrentView('focus')}
-                className="ml-4"
-              >
-                <Target className="w-4 h-4 mr-2" />
-                フォーカスモード
-              </Button>
             </div>
+            <TaskPool />
           </div>
-          <Timeline />
-        </div>
-      </motion.div>
-    </div>
+        </motion.div>
+
+        <Separator orientation="vertical" className="w-px" />
+
+        {/* タイムライン */}
+        <motion.div
+          initial={{ y: 100, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          transition={{ duration: 0.5, delay: 0.2 }}
+          className="flex-1 bg-background/50 backdrop-blur-sm"
+        >
+          <div className="p-6 h-full">
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-xl font-semibold text-foreground">タイムライン</h2>
+              <div className="flex items-center space-x-4">
+                <div className="flex items-center space-x-2">
+                  <div className="w-3 h-3 bg-purple-500 rounded-sm" />
+                  <span className="text-sm text-muted-foreground">イベント</span>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <div className="w-3 h-3 bg-blue-500 rounded-sm" />
+                  <span className="text-sm text-muted-foreground">タスク</span>
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCurrentView('focus')}
+                  className="ml-4"
+                >
+                  <Target className="w-4 h-4 mr-2" />
+                  フォーカスモード
+                </Button>
+              </div>
+            </div>
+            <Timeline />
+          </div>
+        </motion.div>
+      </div>
+      
+      {/* ドラッグオーバーレイ */}
+      <DragOverlay>
+        {activeTask && <DragOverlayCard task={activeTask} />}
+      </DragOverlay>
+    </DndContext>
   )
 }

@@ -3,12 +3,43 @@
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
-import { Play, Pause, SkipForward, Settings, TrendingUp, CheckCircle } from 'lucide-react'
-import { useState } from 'react'
+import { Play, Pause, SkipForward, Settings, TrendingUp, CheckCircle, Square } from 'lucide-react'
+import { useEffect } from 'react'
+import { useTimerStore } from '@/lib/store/use-timer-store'
+import { useTaskStore } from '@/lib/store/use-task-store'
 
 export function FocusMode() {
-  const [isRunning, setIsRunning] = useState(false)
-  const [timeRemaining, setTimeRemaining] = useState(25 * 60) // 25 minutes in seconds
+  const {
+    isRunning,
+    isPaused,
+    timeRemaining,
+    totalTime,
+    currentTaskId,
+    completedPomodoros,
+    startTimer,
+    pauseTimer,
+    resumeTimer,
+    stopTimer,
+    tick
+  } = useTimerStore()
+
+  const { tasks, updateTask } = useTaskStore()
+
+  // Timer effect
+  useEffect(() => {
+    if (!isRunning) return
+
+    const interval = setInterval(() => {
+      tick()
+    }, 1000)
+
+    return () => clearInterval(interval)
+  }, [isRunning, tick])
+
+  // Get current and next tasks
+  const currentTask = currentTaskId ? tasks.find(t => t.id === currentTaskId) : null
+  const unscheduledTasks = tasks.filter(t => !t.scheduledDate && t.status === 'todo')
+  const nextTask = unscheduledTasks.find(t => t.id !== currentTaskId)
 
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60)
@@ -16,7 +47,42 @@ export function FocusMode() {
     return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`
   }
 
-  const progress = ((25 * 60 - timeRemaining) / (25 * 60)) * 100
+  const progress = totalTime > 0 ? ((totalTime - timeRemaining) / totalTime) * 100 : 0
+
+  const handleStartPause = () => {
+    if (!isRunning && !isPaused) {
+      // Start new timer
+      if (nextTask) {
+        startTimer(nextTask.id)
+      } else {
+        startTimer()
+      }
+    } else if (isRunning) {
+      // Pause timer
+      pauseTimer()
+    } else if (isPaused) {
+      // Resume timer
+      resumeTimer()
+    }
+  }
+
+  const handleStop = () => {
+    stopTimer()
+  }
+
+  const handleCompleteTask = () => {
+    if (currentTask) {
+      updateTask(currentTask.id, { 
+        status: 'completed',
+        completedAt: new Date()
+      })
+      stopTimer()
+    }
+  }
+
+  // Calculate daily statistics
+  const completedTasks = tasks.filter(t => t.status === 'completed').length
+  const inProgressTasks = tasks.filter(t => t.status === 'in_progress').length
 
   return (
     <div className="space-y-6 h-full flex flex-col">
@@ -61,16 +127,25 @@ export function FocusMode() {
           <Button
             variant={isRunning ? "secondary" : "default"}
             size="sm"
-            onClick={() => setIsRunning(!isRunning)}
+            onClick={handleStartPause}
           >
             {isRunning ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}
           </Button>
-          <Button variant="outline" size="sm">
-            <SkipForward className="w-4 h-4" />
-          </Button>
+          {(isRunning || isPaused) && (
+            <Button variant="outline" size="sm" onClick={handleStop}>
+              <Square className="w-4 h-4" />
+            </Button>
+          )}
           <Button variant="outline" size="sm">
             <Settings className="w-4 h-4" />
           </Button>
+        </div>
+
+        {/* Timer Status */}
+        <div className="text-center text-xs text-muted-foreground">
+          {isRunning && "タイマー実行中"}
+          {isPaused && "一時停止中"}
+          {!isRunning && !isPaused && "開始準備完了"}
         </div>
       </Card>
 
@@ -79,23 +154,39 @@ export function FocusMode() {
       {/* Current Task */}
       <div className="space-y-3">
         <h3 className="text-sm font-medium">現在のタスク</h3>
-        <Card className="p-4 bg-blue-50 dark:bg-blue-950/30 border-blue-200 dark:border-blue-800">
-          <h4 className="font-medium text-sm mb-2">新しいランディングページのデザイン</h4>
-          <div className="text-xs text-muted-foreground">
-            12分前に開始
-          </div>
-        </Card>
+        {currentTask ? (
+          <Card className="p-4 bg-blue-50 dark:bg-blue-950/30 border-blue-200 dark:border-blue-800">
+            <h4 className="font-medium text-sm mb-2">{currentTask.title}</h4>
+            <div className="text-xs text-muted-foreground">
+              予想時間: {currentTask.estimatedTime}分
+            </div>
+          </Card>
+        ) : (
+          <Card className="p-4 border-dashed">
+            <div className="text-center text-muted-foreground text-sm">
+              タスクが選択されていません
+            </div>
+          </Card>
+        )}
       </div>
 
       {/* Next Task */}
       <div className="space-y-3">
         <h3 className="text-sm font-medium">次のタスク</h3>
-        <Card className="p-4 border-dashed">
-          <h4 className="font-medium text-sm mb-2">プルリクエストのレビュー</h4>
-          <div className="text-xs text-muted-foreground">
-            予想時間: 30分
-          </div>
-        </Card>
+        {nextTask ? (
+          <Card className="p-4 border-dashed">
+            <h4 className="font-medium text-sm mb-2">{nextTask.title}</h4>
+            <div className="text-xs text-muted-foreground">
+              予想時間: {nextTask.estimatedTime}分
+            </div>
+          </Card>
+        ) : (
+          <Card className="p-4 border-dashed">
+            <div className="text-center text-muted-foreground text-sm">
+              次のタスクがありません
+            </div>
+          </Card>
+        )}
       </div>
 
       <Separator />
@@ -109,31 +200,38 @@ export function FocusMode() {
         
         <div className="grid grid-cols-2 gap-3">
           <Card className="p-3 text-center">
-            <div className="text-2xl font-bold text-green-600">3</div>
+            <div className="text-2xl font-bold text-green-600">{completedTasks}</div>
             <div className="text-xs text-muted-foreground">完了</div>
           </Card>
           <Card className="p-3 text-center">
-            <div className="text-2xl font-bold text-blue-600">2</div>
+            <div className="text-2xl font-bold text-blue-600">{inProgressTasks}</div>
             <div className="text-xs text-muted-foreground">進行中</div>
           </Card>
         </div>
 
         <div className="space-y-2">
           <div className="flex justify-between text-xs">
-            <span>集中時間</span>
-            <span>2時15分 / 4時間</span>
+            <span>完了ポモドーロ</span>
+            <span>{completedPomodoros}</span>
           </div>
-          <div className="w-full bg-muted rounded-full h-2">
-            <div className="bg-orange-500 h-2 rounded-full" style={{ width: '56%' }} />
+          <div className="flex justify-between text-xs">
+            <span>今日のタスク数</span>
+            <span>{tasks.length}</span>
           </div>
         </div>
       </div>
 
       {/* Quick Actions */}
       <div className="space-y-2">
-        <Button variant="outline" className="w-full" size="sm">
+        <Button 
+          variant="outline" 
+          className="w-full" 
+          size="sm"
+          onClick={handleCompleteTask}
+          disabled={!currentTask}
+        >
           <CheckCircle className="w-4 h-4 mr-2" />
-現在のタスクを完了にする
+          現在のタスクを完了にする
         </Button>
       </div>
     </div>
