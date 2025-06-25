@@ -36,6 +36,29 @@ export function useViewState() {
     return () => window.removeEventListener('resize', checkBreakpoint)
   }, [])
 
+  const setCurrentView = useCallback((view: ViewType) => {
+    setViewState(prev => ({
+      ...prev,
+      currentView: view,
+      viewMode: prev.isMobile ? 'mobile' : 
+               view === 'focus' ? 'desktop-focus' : 'desktop'
+    }))
+  }, [])
+
+  const nextView = useCallback(() => {
+    const views: ViewType[] = ['tasks', 'timeline', 'focus']
+    const currentIndex = views.indexOf(viewState.currentView)
+    const nextIndex = (currentIndex + 1) % views.length
+    setCurrentView(views[nextIndex])
+  }, [viewState.currentView, setCurrentView])
+
+  const prevView = useCallback(() => {
+    const views: ViewType[] = ['tasks', 'timeline', 'focus']
+    const currentIndex = views.indexOf(viewState.currentView)
+    const prevIndex = (currentIndex - 1 + views.length) % views.length
+    setCurrentView(views[prevIndex])
+  }, [viewState.currentView, setCurrentView])
+
   // キーボードショートカット
   useEffect(() => {
     const handleKeyPress = (event: KeyboardEvent) => {
@@ -73,30 +96,7 @@ export function useViewState() {
 
     window.addEventListener('keydown', handleKeyPress)
     return () => window.removeEventListener('keydown', handleKeyPress)
-  }, [viewState.isMobile, viewState.currentView, nextView, prevView])
-
-  const setCurrentView = useCallback((view: ViewType) => {
-    setViewState(prev => ({
-      ...prev,
-      currentView: view,
-      viewMode: prev.isMobile ? 'mobile' : 
-               view === 'focus' ? 'desktop-focus' : 'desktop'
-    }))
-  }, [])
-
-  const nextView = useCallback(() => {
-    const views: ViewType[] = ['tasks', 'timeline', 'focus']
-    const currentIndex = views.indexOf(viewState.currentView)
-    const nextIndex = (currentIndex + 1) % views.length
-    setCurrentView(views[nextIndex])
-  }, [viewState.currentView, setCurrentView])
-
-  const prevView = useCallback(() => {
-    const views: ViewType[] = ['tasks', 'timeline', 'focus']
-    const currentIndex = views.indexOf(viewState.currentView)
-    const prevIndex = (currentIndex - 1 + views.length) % views.length
-    setCurrentView(views[prevIndex])
-  }, [viewState.currentView, setCurrentView])
+  }, [viewState.isMobile, viewState.currentView, nextView, prevView, setCurrentView])
 
   return {
     ...viewState,
