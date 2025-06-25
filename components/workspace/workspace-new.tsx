@@ -9,6 +9,7 @@ import { Timeline } from './timeline'
 import { FocusMode } from './focus-mode'
 import { useViewState } from '@/lib/hooks/use-view-state'
 import { useSwipe } from '@/lib/hooks/use-swipe'
+import { useEdgePull } from '@/lib/hooks/use-edge-pull'
 import { useTaskStore } from '@/lib/store/use-task-store'
 import { Task } from '@/lib/types'
 import { 
@@ -27,7 +28,9 @@ import {
   X,
   Clock,
   AlertCircle,
-  Circle
+  Circle,
+  ArrowLeft,
+  ArrowRight
 } from 'lucide-react'
 
 export function WorkspaceNew() {
@@ -52,6 +55,54 @@ export function WorkspaceNew() {
     threshold: 50
   })
 
+  // エッジプル機能（モバイル専用）
+  const {
+    startDrag: startEdgePull,
+    endDrag: endEdgePull,
+    isNearLeftEdge,
+    isNearRightEdge
+  } = useEdgePull({
+    onEdgeLeft: () => {
+      if (currentView === 'timeline') {
+        setCurrentView('tasks')
+      } else if (currentView === 'focus') {
+        setCurrentView('timeline')
+      }
+    },
+    onEdgeRight: () => {
+      if (currentView === 'tasks') {
+        setCurrentView('timeline')
+      } else if (currentView === 'timeline') {
+        setCurrentView('focus')
+      }
+    },
+    enabled: isMobile && !!activeTask,
+    edgeThreshold: 40,
+    holdDuration: 600
+  })
+
+  // ビュー名取得ヘルパー
+  const getViewName = (view: string) => {
+    switch (view) {
+      case 'tasks': return 'タスク'
+      case 'timeline': return 'タイムライン'
+      case 'focus': return 'フォーカス'
+      default: return ''
+    }
+  }
+
+  const getPrevViewName = () => {
+    if (currentView === 'timeline') return getViewName('tasks')
+    if (currentView === 'focus') return getViewName('timeline')
+    return ''
+  }
+
+  const getNextViewName = () => {
+    if (currentView === 'tasks') return getViewName('timeline')
+    if (currentView === 'timeline') return getViewName('focus')
+    return ''
+  }
+
   // ドラッグハンドラー
   const handleDragStart = (event: DragStartEvent) => {
     const activeId = event.active.id.toString()
@@ -66,19 +117,41 @@ export function WorkspaceNew() {
     }
     
     setActiveTask(task || null)
+    
+    // エッジプル検出を開始（モバイルのみ）
+    if (isMobile) {
+      startEdgePull()
+    }
   }
 
   const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event
     setActiveTask(null)
+    
+    // エッジプル検出を停止（モバイルのみ）
+    if (isMobile) {
+      endEdgePull()
+    }
+
+    const activeId = active.id.toString()
+    const overId = over?.id.toString()
+
+    // クロススクリーンドロップ処理（モバイル）
+    // タスクプールからタイムラインビューへのドロップ（over がない場合）
+    if (isMobile && !over && activeTask && currentView === 'timeline' && !activeId.startsWith('scheduled-')) {
+      // 現在時刻をデフォルトスロットとして使用
+      const currentHour = new Date().getHours()
+      const timeString = `${currentHour.toString().padStart(2, '0')}:00`
+      const today = new Date()
+      
+      moveTaskToTimeline(activeId, today, timeString)
+      return
+    }
 
     if (!over) return
 
-    const activeId = active.id.toString()
-    const overId = over.id.toString()
-
     // 1. タスクプール → タイムライン (既存タスクの新規スケジュール)
-    if (overId.startsWith('timeline-slot-') && !activeId.startsWith('scheduled-')) {
+    if (overId && overId.startsWith('timeline-slot-') && !activeId.startsWith('scheduled-')) {
       const timeString = overId.replace('timeline-slot-', '')
       const today = new Date()
       
@@ -86,7 +159,7 @@ export function WorkspaceNew() {
     }
     
     // 2. タイムライン → 別のタイムスロット (スケジュール済みタスクの移動)
-    else if (overId.startsWith('timeline-slot-') && activeId.startsWith('scheduled-')) {
+    else if (overId && overId.startsWith('timeline-slot-') && activeId.startsWith('scheduled-')) {
       const taskId = activeId.split('-')[1]
       
       // 新しい時間にスケジュール（moveTaskToTimelineが既存スロットを自動削除）
@@ -160,6 +233,25 @@ export function WorkspaceNew() {
 
           {/* スライドビュー */}
           <div className="flex-1 relative overflow-hidden">
+            {/* エッジプルインジケーター */}
+            {activeTask && isNearLeftEdge && getPrevViewName() && (
+              <div className="absolute left-0 top-1/2 transform -translate-y-1/2 z-50 bg-primary/90 text-primary-foreground px-3 py-2 rounded-r-lg shadow-lg animate-pulse">
+                <div className="flex items-center space-x-2">
+                  <ArrowLeft className="w-4 h-4" />
+                  <span className="text-sm font-medium">{getPrevViewName()}</span>
+                </div>
+              </div>
+            )}
+            
+            {activeTask && isNearRightEdge && getNextViewName() && (
+              <div className="absolute right-0 top-1/2 transform -translate-y-1/2 z-50 bg-primary/90 text-primary-foreground px-3 py-2 rounded-l-lg shadow-lg animate-pulse">
+                <div className="flex items-center space-x-2">
+                  <span className="text-sm font-medium">{getNextViewName()}</span>
+                  <ArrowRight className="w-4 h-4" />
+                </div>
+              </div>
+            )}
+
             <div className="absolute inset-0 p-4 pb-24 overflow-y-auto">
               {currentView === 'tasks' && (
                 <div>
