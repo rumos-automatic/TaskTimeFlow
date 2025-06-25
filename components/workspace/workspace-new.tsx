@@ -1,6 +1,6 @@
 'use client'
 
-import { motion, AnimatePresence } from 'framer-motion'
+import { motion } from 'framer-motion'
 import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
 import { TaskPool } from './task-pool'
@@ -15,23 +15,6 @@ import {
   Target,
   X
 } from 'lucide-react'
-
-const slideVariants = {
-  enter: (direction: number) => ({
-    x: direction > 0 ? 300 : -300,
-    opacity: 0.8
-  }),
-  center: {
-    zIndex: 1,
-    x: 0,
-    opacity: 1
-  },
-  exit: (direction: number) => ({
-    zIndex: 0,
-    x: direction < 0 ? 300 : -300,
-    opacity: 0.8
-  })
-}
 
 const swipeConfidenceThreshold = 5000
 const swipePower = (offset: number, velocity: number) => {
@@ -69,74 +52,60 @@ export function WorkspaceNew() {
         </div>
 
         {/* スライドビュー */}
-        <div className="flex-1 relative overflow-hidden">
-          <AnimatePresence mode="wait" custom={0}>
-            <motion.div
-              key={currentView}
-              custom={0}
-              variants={slideVariants}
-              initial="enter"
-              animate="center"
-              exit="exit"
-              transition={{
-                x: { type: "spring", stiffness: 500, damping: 40 },
-                opacity: { duration: 0.1 }
-              }}
-              drag="x"
-              dragConstraints={{ left: 0, right: 0 }}
-              dragElastic={0.5}
-              dragTransition={{ bounceStiffness: 800, bounceDamping: 20 }}
-              onDragEnd={handleDragEnd}
-              className="absolute inset-0 p-4 pb-24 touch-pan-y"
-              style={{ touchAction: 'pan-y' }}
-            >
-              {currentView === 'tasks' && (
-                <div>
-                  <div className="flex items-center justify-between mb-6">
-                    <h2 className="text-xl font-semibold text-foreground">タスクプール</h2>
+        <motion.div 
+          className="flex-1 relative overflow-hidden"
+          drag="x"
+          dragConstraints={{ left: 0, right: 0 }}
+          dragElastic={0.2}
+          onDragEnd={handleDragEnd}
+        >
+          <div className="absolute inset-0 p-4 pb-24 overflow-y-auto">
+            {currentView === 'tasks' && (
+              <div>
+                <div className="flex items-center justify-between mb-6">
+                  <h2 className="text-xl font-semibold text-foreground">タスクプール</h2>
+                  <div className="flex items-center space-x-2">
+                    <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
+                    <span className="text-xs text-muted-foreground">同期済み</span>
+                  </div>
+                </div>
+                <TaskPool />
+              </div>
+            )}
+            
+            {currentView === 'timeline' && (
+              <div>
+                <div className="flex items-center justify-between mb-6">
+                  <h2 className="text-xl font-semibold text-foreground">タイムライン</h2>
+                  <div className="flex items-center space-x-4">
                     <div className="flex items-center space-x-2">
-                      <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
-                      <span className="text-xs text-muted-foreground">同期済み</span>
+                      <div className="w-3 h-3 bg-purple-500 rounded-sm" />
+                      <span className="text-sm text-muted-foreground">イベント</span>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <div className="w-3 h-3 bg-blue-500 rounded-sm" />
+                      <span className="text-sm text-muted-foreground">タスク</span>
                     </div>
                   </div>
-                  <TaskPool />
                 </div>
-              )}
-              
-              {currentView === 'timeline' && (
-                <div>
-                  <div className="flex items-center justify-between mb-6">
-                    <h2 className="text-xl font-semibold text-foreground">タイムライン</h2>
-                    <div className="flex items-center space-x-4">
-                      <div className="flex items-center space-x-2">
-                        <div className="w-3 h-3 bg-purple-500 rounded-sm" />
-                        <span className="text-sm text-muted-foreground">イベント</span>
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <div className="w-3 h-3 bg-blue-500 rounded-sm" />
-                        <span className="text-sm text-muted-foreground">タスク</span>
-                      </div>
-                    </div>
-                  </div>
-                  <Timeline />
-                </div>
-              )}
+                <Timeline />
+              </div>
+            )}
 
-              {currentView === 'focus' && (
-                <div>
-                  <div className="flex items-center justify-between mb-6">
-                    <h2 className="text-xl font-semibold text-foreground">フォーカス</h2>
-                    <div className="flex items-center space-x-2">
-                      <div className="w-2 h-2 bg-orange-500 rounded-full" />
-                      <span className="text-xs text-muted-foreground">準備完了</span>
-                    </div>
+            {currentView === 'focus' && (
+              <div>
+                <div className="flex items-center justify-between mb-6">
+                  <h2 className="text-xl font-semibold text-foreground">フォーカス</h2>
+                  <div className="flex items-center space-x-2">
+                    <div className="w-2 h-2 bg-orange-500 rounded-full" />
+                    <span className="text-xs text-muted-foreground">準備完了</span>
                   </div>
-                  <FocusMode />
                 </div>
-              )}
-            </motion.div>
-          </AnimatePresence>
-        </div>
+                <FocusMode />
+              </div>
+            )}
+          </div>
+        </motion.div>
 
         {/* 固定フッターナビゲーション */}
         <div className="fixed bottom-0 left-0 right-0 z-50 bg-card/95 backdrop-blur-md border-t border-border/40 px-4 py-2 pb-4">
