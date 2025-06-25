@@ -8,51 +8,16 @@ export function usePullToRefreshBlocker({ isActive }: PullToRefreshBlockerOption
   useEffect(() => {
     if (!isActive) return
 
-    let startY = 0
-    let currentY = 0
-
-    const preventDefault = (e: Event) => {
-      e.preventDefault()
-    }
-
-    const handleTouchStart = (e: TouchEvent) => {
-      startY = e.touches[0].clientY
-    }
-
-    const handleTouchMove = (e: TouchEvent) => {
-      currentY = e.touches[0].clientY
-      const deltaY = currentY - startY
-
-      // 下方向にスクロールしようとしている場合（プルトゥリフレッシュ）
-      if (deltaY > 0 && window.scrollY === 0) {
-        e.preventDefault()
-        e.stopPropagation()
-      }
-    }
-
-    // ドキュメント全体でプルトゥリフレッシュを防止
-    document.addEventListener('touchstart', handleTouchStart, { passive: false })
-    document.addEventListener('touchmove', handleTouchMove, { passive: false })
-    document.addEventListener('touchend', preventDefault, { passive: false })
-    document.addEventListener('scroll', preventDefault, { passive: false })
-
-    // bodyのスタイルを設定
+    // CSSによる軽量な防止策
+    const originalOverscroll = document.body.style.overscrollBehavior
+    const originalTouchAction = document.body.style.touchAction
+    
     document.body.style.overscrollBehavior = 'none'
-    document.body.style.position = 'fixed'
-    document.body.style.width = '100%'
-    document.body.style.height = '100%'
+    document.body.style.touchAction = 'pan-x pinch-zoom'
 
     return () => {
-      document.removeEventListener('touchstart', handleTouchStart)
-      document.removeEventListener('touchmove', handleTouchMove)
-      document.removeEventListener('touchend', preventDefault)
-      document.removeEventListener('scroll', preventDefault)
-
-      // bodyのスタイルを復元
-      document.body.style.overscrollBehavior = ''
-      document.body.style.position = ''
-      document.body.style.width = ''
-      document.body.style.height = ''
+      document.body.style.overscrollBehavior = originalOverscroll
+      document.body.style.touchAction = originalTouchAction
     }
   }, [isActive])
 }

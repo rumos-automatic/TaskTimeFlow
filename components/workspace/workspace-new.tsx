@@ -56,6 +56,7 @@ export function WorkspaceNew() {
   // ドラッグ状態管理
   const [activeTask, setActiveTask] = useState<Task | null>(null)
   const [isDragging, setIsDragging] = useState(false)
+  const [dragStartView, setDragStartView] = useState<string | null>(null)
 
   // フッター要素のref
   const footerRef = React.useRef<HTMLDivElement>(null)
@@ -169,6 +170,7 @@ export function WorkspaceNew() {
     
     setActiveTask(task || null)
     setIsDragging(true)
+    setDragStartView(currentView)
     
     // ハプティックフィードバック
     triggerHapticFeedback()
@@ -181,19 +183,38 @@ export function WorkspaceNew() {
 
   const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event
+    
+    const activeId = active.id.toString()
+    const overId = over?.id.toString()
+    
+    // クロスビュードラッグ処理（モバイル）
+    if (isMobile && !over && activeTask && dragStartView !== currentView) {
+      // タスクプールからタイムラインへのクロスビュードラッグ
+      if (dragStartView === 'tasks' && currentView === 'timeline' && !activeId.startsWith('scheduled-')) {
+        const currentHour = new Date().getHours()
+        const timeString = `${currentHour.toString().padStart(2, '0')}:00`
+        const today = new Date()
+        moveTaskToTimeline(activeId, today, timeString)
+      }
+      // タイムラインからタスクプールへのクロスビュードラッグ
+      else if (dragStartView === 'timeline' && currentView === 'tasks' && activeId.startsWith('scheduled-')) {
+        const slotId = activeId.split('-')[2]
+        removeTimeSlot(slotId)
+      }
+    }
+    
+    // 状態をリセット
     setActiveTask(null)
     setIsDragging(false)
+    setDragStartView(null)
     
     // エッジプル機能終了（モバイルのみ）
     if (isMobile) {
       endEdgePull()
     }
 
-    const activeId = active.id.toString()
-    const overId = over?.id.toString()
 
-
-    if (!over) return
+    if (!over && !(isMobile && dragStartView !== currentView)) return
 
     // 1. タスクプール → タイムライン (既存タスクの新規スケジュール)
     if (overId && overId.startsWith('timeline-slot-') && !activeId.startsWith('scheduled-')) {
@@ -279,10 +300,10 @@ export function WorkspaceNew() {
           </div>
 
           {/* スライドビュー */}
-          <div className="flex-1 relative overflow-hidden">
+          <div className={`flex-1 relative overflow-hidden ${isDragging ? 'transition-none' : 'transition-transform duration-300'}`}>
             {/* エッジプルインジケーター */}
-            {activeTask && isNearLeftEdge && getPrevViewName() && (
-              <div className="absolute left-0 top-1/2 transform -translate-y-1/2 z-50 bg-primary/90 text-primary-foreground px-3 py-2 rounded-r-lg shadow-lg animate-pulse">
+            {isDragging && isNearLeftEdge && getPrevViewName() && (
+              <div className="absolute left-0 top-1/2 transform -translate-y-1/2 z-40 bg-primary/90 text-primary-foreground px-3 py-2 rounded-r-lg shadow-lg animate-pulse">
                 <div className="flex items-center space-x-2">
                   <ArrowLeft className="w-4 h-4" />
                   <span className="text-sm font-medium">{getPrevViewName()}</span>
@@ -290,8 +311,8 @@ export function WorkspaceNew() {
               </div>
             )}
             
-            {activeTask && isNearRightEdge && getNextViewName() && (
-              <div className="absolute right-0 top-1/2 transform -translate-y-1/2 z-50 bg-primary/90 text-primary-foreground px-3 py-2 rounded-l-lg shadow-lg animate-pulse">
+            {isDragging && isNearRightEdge && getNextViewName() && (
+              <div className="absolute right-0 top-1/2 transform -translate-y-1/2 z-40 bg-primary/90 text-primary-foreground px-3 py-2 rounded-l-lg shadow-lg animate-pulse">
                 <div className="flex items-center space-x-2">
                   <span className="text-sm font-medium">{getNextViewName()}</span>
                   <ArrowRight className="w-4 h-4" />
@@ -299,7 +320,7 @@ export function WorkspaceNew() {
               </div>
             )}
 
-            <div className="absolute inset-0 p-4 pb-24 overflow-y-auto">
+            <div className={`absolute inset-0 p-4 pb-24 overflow-y-auto ${isDragging ? 'transition-none' : ''}`}>
               {currentView === 'tasks' && (
                 <div>
                   <div className="flex items-center justify-between mb-6">
@@ -326,6 +347,11 @@ export function WorkspaceNew() {
                         <div className="w-3 h-3 bg-blue-500 rounded-sm" />
                         <span className="text-sm text-muted-foreground">タスク</span>
                       </div>
+                      {isDragging && dragStartView !== currentView && (
+                        <div className="text-sm text-primary font-medium animate-pulse">
+                          📍 ドロップで配置
+                        </div>
+                      )}
                     </div>
                   </div>
                   <Timeline />
@@ -415,7 +441,7 @@ export function WorkspaceNew() {
         </div>
         
         {/* ドラッグオーバーレイ */}
-        <DragOverlay>
+        <DragOverlay style={{ zIndex: 10000 }}>
           {activeTask && <DragOverlayCard task={activeTask} />}
         </DragOverlay>
       </div>
@@ -456,7 +482,7 @@ export function WorkspaceNew() {
         </div>
         
         {/* ドラッグオーバーレイ */}
-        <DragOverlay>
+        <DragOverlay style={{ zIndex: 10000 }}>
           {activeTask && <DragOverlayCard task={activeTask} />}
         </DragOverlay>
       </DndContext>
@@ -529,7 +555,7 @@ export function WorkspaceNew() {
       </div>
       
       {/* ドラッグオーバーレイ */}
-      <DragOverlay>
+      <DragOverlay style={{ zIndex: 10000 }}>
         {activeTask && <DragOverlayCard task={activeTask} />}
       </DragOverlay>
     </DndContext>

@@ -15,39 +15,19 @@ export function useScrollLock({
     const container = document.querySelector(containerSelector) as HTMLElement
     if (!container) return
 
-    // タッチイベントのデフォルト動作を防止
-    const preventScroll = (e: TouchEvent) => {
-      // ドラッグ中のタッチムーブイベントをキャンセル
-      e.preventDefault()
-      e.stopPropagation()
-    }
-
-    // スクロールイベントを防止
-    const preventScrollEvent = (e: Event) => {
-      e.preventDefault()
-      e.stopPropagation()
-    }
-
-    // イベントリスナーを追加
-    container.addEventListener('touchmove', preventScroll, { passive: false })
-    container.addEventListener('scroll', preventScrollEvent, { passive: false })
-    container.addEventListener('wheel', preventScrollEvent, { passive: false })
-
-    // CSSでスクロールを無効化
+    // CSSで軽量なスクロールロック
     const originalOverflow = container.style.overflow
     const originalTouchAction = container.style.touchAction
+    const originalOverscrollBehavior = container.style.overscrollBehavior
+    
     container.style.overflow = 'hidden'
     container.style.touchAction = 'none'
+    container.style.overscrollBehavior = 'none'
 
     return () => {
-      // イベントリスナーを削除
-      container.removeEventListener('touchmove', preventScroll)
-      container.removeEventListener('scroll', preventScrollEvent)
-      container.removeEventListener('wheel', preventScrollEvent)
-
-      // CSSを復元
       container.style.overflow = originalOverflow
       container.style.touchAction = originalTouchAction
+      container.style.overscrollBehavior = originalOverscrollBehavior
     }
   }, [isLocked, containerSelector])
 }
