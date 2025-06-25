@@ -18,8 +18,8 @@ import {
 
 const slideVariants = {
   enter: (direction: number) => ({
-    x: direction > 0 ? 1000 : -1000,
-    opacity: 0
+    x: direction > 0 ? 300 : -300,
+    opacity: 0.8
   }),
   center: {
     zIndex: 1,
@@ -28,8 +28,8 @@ const slideVariants = {
   },
   exit: (direction: number) => ({
     zIndex: 0,
-    x: direction < 0 ? 1000 : -1000,
-    opacity: 0
+    x: direction < 0 ? 300 : -300,
+    opacity: 0.8
   })
 }
 
@@ -69,7 +69,7 @@ export function WorkspaceNew() {
         </div>
 
         {/* スライドビュー */}
-        <div className="flex-1 relative overflow-hidden pb-20">
+        <div className="flex-1 relative overflow-hidden">
           <AnimatePresence mode="wait" custom={0}>
             <motion.div
               key={currentView}
@@ -79,15 +79,15 @@ export function WorkspaceNew() {
               animate="center"
               exit="exit"
               transition={{
-                x: { type: "spring", stiffness: 300, damping: 30 },
-                opacity: { duration: 0.2 }
+                x: { type: "spring", stiffness: 500, damping: 40 },
+                opacity: { duration: 0.1 }
               }}
               drag="x"
               dragConstraints={{ left: 0, right: 0 }}
-              dragElastic={0.7}
-              dragTransition={{ bounceStiffness: 600, bounceDamping: 15 }}
+              dragElastic={0.5}
+              dragTransition={{ bounceStiffness: 800, bounceDamping: 20 }}
               onDragEnd={handleDragEnd}
-              className="absolute inset-0 p-4 touch-pan-y"
+              className="absolute inset-0 p-4 pb-24 touch-pan-y"
               style={{ touchAction: 'pan-y' }}
             >
               {currentView === 'tasks' && (
@@ -139,14 +139,17 @@ export function WorkspaceNew() {
         </div>
 
         {/* 固定フッターナビゲーション */}
-        <div className="fixed bottom-0 left-0 right-0 bg-card/95 backdrop-blur-md border-t border-border/40 px-4 py-2 pb-4">
+        <div className="fixed bottom-0 left-0 right-0 z-50 bg-card/95 backdrop-blur-md border-t border-border/40 px-4 py-2 pb-4">
           <div className="flex items-center justify-around max-w-sm mx-auto">
             <button
-              onClick={() => setCurrentView('tasks')}
-              className={`flex flex-col items-center space-y-1 p-2 rounded-lg transition-all duration-200 min-w-[60px] ${
+              onClick={(e) => {
+                e.stopPropagation()
+                setCurrentView('tasks')
+              }}
+              className={`flex flex-col items-center space-y-1 p-3 rounded-lg transition-all duration-200 min-w-[60px] min-h-[60px] ${
                 currentView === 'tasks'
                   ? 'bg-primary/10 text-primary'
-                  : 'text-muted-foreground hover:text-foreground'
+                  : 'text-muted-foreground hover:text-foreground active:bg-muted/50'
               }`}
             >
               <ListTodo className={`w-5 h-5 ${currentView === 'tasks' ? 'scale-110' : ''} transition-transform`} />
@@ -154,11 +157,14 @@ export function WorkspaceNew() {
             </button>
 
             <button
-              onClick={() => setCurrentView('timeline')}
-              className={`flex flex-col items-center space-y-1 p-2 rounded-lg transition-all duration-200 min-w-[60px] ${
+              onClick={(e) => {
+                e.stopPropagation()
+                setCurrentView('timeline')
+              }}
+              className={`flex flex-col items-center space-y-1 p-3 rounded-lg transition-all duration-200 min-w-[60px] min-h-[60px] ${
                 currentView === 'timeline'
                   ? 'bg-primary/10 text-primary'
-                  : 'text-muted-foreground hover:text-foreground'
+                  : 'text-muted-foreground hover:text-foreground active:bg-muted/50'
               }`}
             >
               <Calendar className={`w-5 h-5 ${currentView === 'timeline' ? 'scale-110' : ''} transition-transform`} />
@@ -166,11 +172,14 @@ export function WorkspaceNew() {
             </button>
 
             <button
-              onClick={() => setCurrentView('focus')}
-              className={`flex flex-col items-center space-y-1 p-2 rounded-lg transition-all duration-200 min-w-[60px] ${
+              onClick={(e) => {
+                e.stopPropagation()
+                setCurrentView('focus')
+              }}
+              className={`flex flex-col items-center space-y-1 p-3 rounded-lg transition-all duration-200 min-w-[60px] min-h-[60px] ${
                 currentView === 'focus'
                   ? 'bg-primary/10 text-primary'
-                  : 'text-muted-foreground hover:text-foreground'
+                  : 'text-muted-foreground hover:text-foreground active:bg-muted/50'
               }`}
             >
               <Target className={`w-5 h-5 ${currentView === 'focus' ? 'scale-110' : ''} transition-transform`} />
