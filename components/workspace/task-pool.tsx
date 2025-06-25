@@ -86,13 +86,13 @@ function DraggableTaskCard({ task }: DraggableTaskCardProps) {
         onMouseEnter={() => setShowActions(true)}
         onMouseLeave={() => setShowActions(false)}
       >
-        <div className="flex items-start justify-between relative">
-          {/* ドラッグ可能エリア */}
-          <div 
-            {...listeners}
-            className="flex-1 cursor-move touch-none"
-            style={{ touchAction: 'none' }}
-          >
+        <div 
+          {...listeners}
+          {...attributes}
+          className="flex items-start justify-between relative cursor-move touch-none w-full"
+          style={{ touchAction: 'none' }}
+        >
+          <div className="flex-1">
             <h4 className="font-medium text-sm mb-2">{task.title}</h4>
             <div className="flex items-center space-x-3 text-xs text-muted-foreground">
               <div className="flex items-center space-x-1">

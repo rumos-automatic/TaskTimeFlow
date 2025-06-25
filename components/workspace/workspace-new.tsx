@@ -78,10 +78,10 @@ export function WorkspaceNew() {
   })
 
   const touchSensor = useSensor(TouchSensor, {
-    // 300ms長押しでドラッグ開始
+    // 250ms長押しでドラッグ開始（より反応性向上）
     activationConstraint: {
-      delay: 300,
-      tolerance: 5
+      delay: 250,
+      tolerance: 8
     }
   })
 
@@ -108,18 +108,18 @@ export function WorkspaceNew() {
     isNearRightEdge
   } = useEdgePull({
     onEdgeLeft: () => {
-      if (currentView === 'timeline') {
+      if (currentView === 'timeline' && isDragging) {
         setCurrentView('tasks')
       }
     },
     onEdgeRight: () => {
-      if (currentView === 'tasks') {
+      if (currentView === 'tasks' && isDragging) {
         setCurrentView('timeline')
       }
     },
     enabled: isMobile && isDragging && (currentView === 'tasks' || currentView === 'timeline'),
-    edgeThreshold: 40,
-    holdDuration: 300
+    edgeThreshold: 50,
+    holdDuration: 200
   })
 
   // スクロールロック機能（モバイル専用）
@@ -157,6 +157,7 @@ export function WorkspaceNew() {
 
   // ドラッグハンドラー
   const handleDragStart = (event: DragStartEvent) => {
+    console.log('Drag start:', event.active.id)
     const activeId = event.active.id.toString()
     
     // 通常のタスクの場合
@@ -168,6 +169,7 @@ export function WorkspaceNew() {
       task = tasks.find(t => t.id === taskId)
     }
     
+    console.log('Found task:', task)
     setActiveTask(task || null)
     setIsDragging(true)
     setDragStartView(currentView)
@@ -182,6 +184,7 @@ export function WorkspaceNew() {
   }
 
   const handleDragEnd = (event: DragEndEvent) => {
+    console.log('Drag end:', event.active.id, 'over:', event.over?.id)
     const { active, over } = event
     
     const activeId = active.id.toString()
@@ -189,17 +192,20 @@ export function WorkspaceNew() {
     
     // クロスビュードラッグ処理（モバイル）
     if (isMobile && !over && activeTask && dragStartView !== currentView) {
+      console.log('Cross-view drag detected:', dragStartView, '->', currentView)
       // タスクプールからタイムラインへのクロスビュードラッグ
       if (dragStartView === 'tasks' && currentView === 'timeline' && !activeId.startsWith('scheduled-')) {
         const currentHour = new Date().getHours()
         const timeString = `${currentHour.toString().padStart(2, '0')}:00`
         const today = new Date()
         moveTaskToTimeline(activeId, today, timeString)
+        console.log('Moved task to timeline:', activeId)
       }
       // タイムラインからタスクプールへのクロスビュードラッグ
       else if (dragStartView === 'timeline' && currentView === 'tasks' && activeId.startsWith('scheduled-')) {
         const slotId = activeId.split('-')[2]
         removeTimeSlot(slotId)
+        console.log('Removed task from timeline:', slotId)
       }
     }
     
@@ -258,11 +264,11 @@ export function WorkspaceNew() {
     }
 
     return (
-      <div className={`p-4 rounded-lg border-2 shadow-lg ${priorityColors[task.priority]}`}>
+      <div className={`p-4 rounded-lg border-2 shadow-2xl opacity-90 ${priorityColors[task.priority]} transform rotate-3 scale-105`}>
         <div className="flex items-start justify-between">
           <div className="flex-1">
-            <h4 className="font-medium text-sm mb-2">{task.title}</h4>
-            <div className="flex items-center space-x-3 text-xs text-muted-foreground">
+            <h4 className="font-medium text-sm mb-2 text-black dark:text-white">{task.title}</h4>
+            <div className="flex items-center space-x-3 text-xs text-gray-600 dark:text-gray-300">
               <div className="flex items-center space-x-1">
                 <Clock className="w-3 h-3" />
                 <span>{formatTime(task.estimatedTime)}</span>
@@ -441,8 +447,18 @@ export function WorkspaceNew() {
         </div>
         
         {/* ドラッグオーバーレイ */}
-        <DragOverlay style={{ zIndex: 10000 }}>
-          {activeTask && <DragOverlayCard task={activeTask} />}
+        <DragOverlay 
+          style={{ zIndex: 10000 }}
+          dropAnimation={{
+            duration: 300,
+            easing: 'cubic-bezier(0.18, 0.67, 0.6, 1.22)'
+          }}
+        >
+          {activeTask && (
+            <div className="pointer-events-none">
+              <DragOverlayCard task={activeTask} />
+            </div>
+          )}
         </DragOverlay>
       </div>
       </DndContext>
@@ -482,8 +498,18 @@ export function WorkspaceNew() {
         </div>
         
         {/* ドラッグオーバーレイ */}
-        <DragOverlay style={{ zIndex: 10000 }}>
-          {activeTask && <DragOverlayCard task={activeTask} />}
+        <DragOverlay 
+          style={{ zIndex: 10000 }}
+          dropAnimation={{
+            duration: 300,
+            easing: 'cubic-bezier(0.18, 0.67, 0.6, 1.22)'
+          }}
+        >
+          {activeTask && (
+            <div className="pointer-events-none">
+              <DragOverlayCard task={activeTask} />
+            </div>
+          )}
         </DragOverlay>
       </DndContext>
     )
@@ -555,8 +581,18 @@ export function WorkspaceNew() {
       </div>
       
       {/* ドラッグオーバーレイ */}
-      <DragOverlay style={{ zIndex: 10000 }}>
-        {activeTask && <DragOverlayCard task={activeTask} />}
+      <DragOverlay 
+        style={{ zIndex: 10000 }}
+        dropAnimation={{
+          duration: 300,
+          easing: 'cubic-bezier(0.18, 0.67, 0.6, 1.22)'
+        }}
+      >
+        {activeTask && (
+          <div className="pointer-events-none">
+            <DragOverlayCard task={activeTask} />
+          </div>
+        )}
       </DragOverlay>
     </DndContext>
   )

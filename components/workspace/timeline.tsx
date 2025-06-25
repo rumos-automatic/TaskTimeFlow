@@ -91,16 +91,12 @@ function ScheduledTaskCard({ task, slotId, slotData }: ScheduledTaskCardProps) {
         onMouseEnter={() => setShowActions(true)}
         onMouseLeave={() => setShowActions(false)}
       >
-        <div className="relative h-full">
-          {/* ドラッグ可能エリア */}
-          {!isCompleted && (
-            <div 
-              {...listeners}
-              className="cursor-move h-full w-full absolute inset-0 touch-none"
-              style={{ touchAction: 'none' }}
-            />
-          )}
-          
+        <div 
+          {...(!isCompleted ? listeners : {})}
+          {...(!isCompleted ? attributes : {})}
+          className={`relative h-full ${!isCompleted ? 'cursor-move touch-none' : ''}`}
+          style={!isCompleted ? { touchAction: 'none' } : {}}
+        >
           {/* コンテンツエリア */}
           <div className="relative h-full pointer-events-none">
             <div className={`text-xs font-medium ${isCompleted ? 'line-through text-muted-foreground' : ''}`}>
