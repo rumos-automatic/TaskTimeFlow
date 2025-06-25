@@ -4,7 +4,7 @@ import { useState } from 'react'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
-import { Plus, Circle, Clock, AlertCircle, X, Edit2, Trash2, MoreVertical } from 'lucide-react'
+import { Plus, Circle, Clock, AlertCircle, X, Edit2, Trash2, MoreVertical, Check } from 'lucide-react'
 import { useTaskStore } from '@/lib/store/use-task-store'
 import { useSortable } from '@dnd-kit/sortable'
 import { useDroppable } from '@dnd-kit/core'
@@ -24,7 +24,7 @@ interface DraggableTaskCardProps {
 function DraggableTaskCard({ task }: DraggableTaskCardProps) {
   const [showActions, setShowActions] = useState(false)
   const [isEditing, setIsEditing] = useState(false)
-  const { updateTask, deleteTask } = useTaskStore()
+  const { updateTask, deleteTask, completeTask } = useTaskStore()
   const {
     attributes,
     listeners,
@@ -54,6 +54,11 @@ function DraggableTaskCard({ task }: DraggableTaskCardProps) {
 
   const handleDelete = () => {
     deleteTask(task.id)
+    setShowActions(false)
+  }
+
+  const handleComplete = () => {
+    completeTask(task.id)
     setShowActions(false)
   }
 
@@ -110,6 +115,14 @@ function DraggableTaskCard({ task }: DraggableTaskCardProps) {
               <Button
                 variant="ghost"
                 size="sm"
+                className="h-6 w-6 p-0 hover:bg-green-100 dark:hover:bg-green-900 text-green-600"
+                onClick={handleComplete}
+              >
+                <Check className="w-3 h-3" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
                 className="h-6 w-6 p-0 hover:bg-blue-100 dark:hover:bg-blue-900"
                 onClick={handleEdit}
               >
@@ -128,6 +141,50 @@ function DraggableTaskCard({ task }: DraggableTaskCardProps) {
         </div>
       </Card>
     </div>
+  )
+}
+
+interface CompletedTaskCardProps {
+  task: Task
+}
+
+function CompletedTaskCard({ task }: CompletedTaskCardProps) {
+  const formatTime = (minutes: number) => {
+    if (minutes < 60) return `${minutes}分`
+    const hours = Math.floor(minutes / 60)
+    const mins = minutes % 60
+    return mins > 0 ? `${hours}時間${mins}分` : `${hours}時間`
+  }
+
+  const formatDate = (date: Date) => {
+    return date.toLocaleDateString('ja-JP', {
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    })
+  }
+
+  return (
+    <Card className="p-3 border-border bg-muted/30 opacity-75">
+      <div className="flex items-start justify-between">
+        <div className="flex-1">
+          <div className="flex items-center space-x-2 mb-1">
+            <Check className="w-4 h-4 text-green-600" />
+            <h4 className="font-medium text-sm line-through text-muted-foreground">{task.title}</h4>
+          </div>
+          <div className="flex items-center space-x-3 text-xs text-muted-foreground">
+            <div className="flex items-center space-x-1">
+              <Clock className="w-3 h-3" />
+              <span>{formatTime(task.estimatedTime)}</span>
+            </div>
+            {task.completedAt && (
+              <span>完了: {formatDate(task.completedAt)}</span>
+            )}
+          </div>
+        </div>
+      </div>
+    </Card>
   )
 }
 
@@ -342,7 +399,8 @@ export function TaskPool() {
     selectedCategory, 
     setSelectedCategory, 
     getTasksByCategory,
-    getUnscheduledTasks 
+    getUnscheduledTasks,
+    getCompletedTasks
   } = useTaskStore()
 
   const { setNodeRef, isOver } = useDroppable({
@@ -350,9 +408,13 @@ export function TaskPool() {
   })
 
   const unscheduledTasks = getUnscheduledTasks()
+  const completedTasks = getCompletedTasks()
   const filteredTasks = selectedCategory === 'all' 
     ? unscheduledTasks 
     : unscheduledTasks.filter(task => task.category === selectedCategory)
+  const filteredCompletedTasks = selectedCategory === 'all'
+    ? completedTasks
+    : completedTasks.filter(task => task.category === selectedCategory)
 
   return (
     <div 
@@ -402,6 +464,24 @@ export function TaskPool() {
         {filteredTasks.length === 0 && (
           <div className="text-center text-muted-foreground py-8">
             タスクがありません
+          </div>
+        )}
+
+        {/* Completed Tasks Section */}
+        {filteredCompletedTasks.length > 0 && (
+          <div className="pt-4">
+            <Separator />
+            <div className="flex items-center space-x-2 py-3">
+              <Check className="w-4 h-4 text-green-600" />
+              <h3 className="text-sm font-medium text-muted-foreground">
+                完了済み ({filteredCompletedTasks.length})
+              </h3>
+            </div>
+            <div className="space-y-2">
+              {filteredCompletedTasks.map((task) => (
+                <CompletedTaskCard key={task.id} task={task} />
+              ))}
+            </div>
           </div>
         )}
       </div>

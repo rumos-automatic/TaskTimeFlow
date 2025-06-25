@@ -4,7 +4,7 @@ import { useState } from 'react'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
-import { Calendar, ChevronLeft, ChevronRight, Clock, Edit2, Trash2, X } from 'lucide-react'
+import { Calendar, ChevronLeft, ChevronRight, Clock, Edit2, Trash2, X, Check } from 'lucide-react'
 import { useDroppable } from '@dnd-kit/core'
 import { useSortable } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
@@ -28,7 +28,7 @@ interface ScheduledTaskCardProps {
 function ScheduledTaskCard({ task, slotId, slotData }: ScheduledTaskCardProps) {
   const [showActions, setShowActions] = useState(false)
   const [isEditing, setIsEditing] = useState(false)
-  const { updateTask, removeTimeSlot } = useTaskStore()
+  const { updateTask, removeTimeSlot, completeTask } = useTaskStore()
   const {
     attributes,
     listeners,
@@ -54,6 +54,12 @@ function ScheduledTaskCard({ task, slotId, slotData }: ScheduledTaskCardProps) {
     setShowActions(false)
   }
 
+  const handleComplete = () => {
+    completeTask(task.id)
+    removeTimeSlot(slotId) // スケジュール済みタスクを完了時にタイムラインからも削除
+    setShowActions(false)
+  }
+
   if (isEditing) {
     return (
       <EditScheduledTaskCard 
@@ -68,10 +74,16 @@ function ScheduledTaskCard({ task, slotId, slotData }: ScheduledTaskCardProps) {
     )
   }
 
+  const isCompleted = task.status === 'completed'
+  
   return (
     <div ref={setNodeRef} style={style} {...attributes}>
       <Card
-        className="absolute left-2 right-2 p-2 z-20 bg-blue-100 border-blue-300 dark:bg-blue-950/30 hover:bg-blue-200 dark:hover:bg-blue-900/40 transition-colors group"
+        className={`absolute left-2 right-2 p-2 z-20 transition-colors group ${
+          isCompleted 
+            ? 'bg-muted/50 border-muted opacity-60' 
+            : 'bg-blue-100 border-blue-300 dark:bg-blue-950/30 hover:bg-blue-200 dark:hover:bg-blue-900/40'
+        }`}
         style={{ 
           height: `${slotData.estimatedTime || 60}px`,
           top: '0px'
@@ -81,23 +93,38 @@ function ScheduledTaskCard({ task, slotId, slotData }: ScheduledTaskCardProps) {
       >
         <div className="relative h-full">
           {/* ドラッグ可能エリア */}
-          <div 
-            {...listeners}
-            className="cursor-move h-full w-full absolute inset-0"
-          />
+          {!isCompleted && (
+            <div 
+              {...listeners}
+              className="cursor-move h-full w-full absolute inset-0"
+            />
+          )}
           
           {/* コンテンツエリア */}
           <div className="relative h-full pointer-events-none">
-            <div className="text-xs font-medium">{task.title}</div>
+            <div className={`text-xs font-medium ${isCompleted ? 'line-through text-muted-foreground' : ''}`}>
+              {task.title}
+            </div>
             <div className="text-xs text-muted-foreground flex items-center">
               <Clock className="w-3 h-3 mr-1" />
               {slotData.estimatedTime || 60}分
+              {isCompleted && (
+                <Check className="w-3 h-3 ml-2 text-green-600" />
+              )}
             </div>
           </div>
           
           {/* アクションボタン */}
-          {showActions && (
+          {showActions && !isCompleted && (
             <div className="absolute top-1 right-1 flex space-x-1 pointer-events-auto z-10">
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-5 w-5 p-0 hover:bg-green-200 dark:hover:bg-green-800 text-green-600"
+                onClick={handleComplete}
+              >
+                <Check className="w-2.5 h-2.5" />
+              </Button>
               <Button
                 variant="ghost"
                 size="sm"

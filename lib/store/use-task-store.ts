@@ -8,6 +8,7 @@ interface TaskStore {
   addTask: (task: Omit<Task, 'id' | 'createdAt' | 'updatedAt'>) => void
   updateTask: (id: string, updates: Partial<Task>) => void
   deleteTask: (id: string) => void
+  completeTask: (id: string) => void
   moveTaskToTimeline: (taskId: string, date: Date, time: string) => void
   
   // Timeline slots
@@ -26,6 +27,7 @@ interface TaskStore {
   getTasksByCategory: (category: TaskCategory | 'all') => Task[]
   getTasksForDate: (date: Date) => TimeSlot[]
   getUnscheduledTasks: () => Task[]
+  getCompletedTasks: () => Task[]
 }
 
 export const useTaskStore = create<TaskStore>()(
@@ -93,6 +95,16 @@ export const useTaskStore = create<TaskStore>()(
         set((state) => ({
           tasks: state.tasks.filter((task) => task.id !== id),
           timeSlots: state.timeSlots.filter((slot) => slot.taskId !== id)
+        }))
+      },
+
+      completeTask: (id) => {
+        set((state) => ({
+          tasks: state.tasks.map((task) =>
+            task.id === id
+              ? { ...task, status: 'completed', completedAt: new Date(), updatedAt: new Date() }
+              : task
+          )
         }))
       },
 
@@ -178,7 +190,11 @@ export const useTaskStore = create<TaskStore>()(
       },
 
       getUnscheduledTasks: () => {
-        return get().tasks.filter((task) => !task.scheduledDate)
+        return get().tasks.filter((task) => !task.scheduledDate && task.status !== 'completed')
+      },
+
+      getCompletedTasks: () => {
+        return get().tasks.filter((task) => task.status === 'completed')
       }
     }),
     {
