@@ -6,13 +6,17 @@ interface SwipeHandlers {
   onSwipeLeft?: () => void
   onSwipeRight?: () => void
   threshold?: number
+  targetRef?: React.RefObject<any>
+  enabled?: boolean
 }
 
-export function useSwipe({ onSwipeLeft, onSwipeRight, threshold = 50 }: SwipeHandlers) {
+export function useSwipe({ onSwipeLeft, onSwipeRight, threshold = 50, targetRef, enabled = true }: SwipeHandlers) {
   const touchStart = useRef<{ x: number; y: number } | null>(null)
   const touchEnd = useRef<{ x: number; y: number } | null>(null)
 
   useEffect(() => {
+    if (!enabled) return
+
     const handleTouchStart = (e: TouchEvent) => {
       touchStart.current = {
         x: e.touches[0].clientX,
@@ -49,14 +53,15 @@ export function useSwipe({ onSwipeLeft, onSwipeRight, threshold = 50 }: SwipeHan
       touchEnd.current = null
     }
 
-    document.addEventListener('touchstart', handleTouchStart)
-    document.addEventListener('touchmove', handleTouchMove)
-    document.addEventListener('touchend', handleTouchEnd)
+    const target = targetRef?.current || document
+    target.addEventListener('touchstart', handleTouchStart)
+    target.addEventListener('touchmove', handleTouchMove)
+    target.addEventListener('touchend', handleTouchEnd)
 
     return () => {
-      document.removeEventListener('touchstart', handleTouchStart)
-      document.removeEventListener('touchmove', handleTouchMove)
-      document.removeEventListener('touchend', handleTouchEnd)
+      target.removeEventListener('touchstart', handleTouchStart)
+      target.removeEventListener('touchmove', handleTouchMove)
+      target.removeEventListener('touchend', handleTouchEnd)
     }
-  }, [onSwipeLeft, onSwipeRight, threshold])
+  }, [onSwipeLeft, onSwipeRight, threshold, targetRef, enabled])
 }

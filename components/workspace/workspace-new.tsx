@@ -50,11 +50,16 @@ export function WorkspaceNew() {
   const [isDraggingMobile, setIsDraggingMobile] = useState(false)
   const [dragPosition, setDragPosition] = useState({ x: 0, y: 0 })
 
-  // スワイプジェスチャーの設定
+  // フッター要素のref
+  const footerRef = React.useRef<HTMLDivElement>(null)
+
+  // スワイプジェスチャーの設定（フッターエリアのみ、ドラッグ中は無効）
   useSwipe({
     onSwipeLeft: nextView,
     onSwipeRight: prevView,
-    threshold: 50
+    threshold: 50,
+    targetRef: footerRef,
+    enabled: isMobile && !isDraggingMobile
   })
 
   // エッジプル機能（モバイル専用：タスクプール ⇄ タイムライン）
@@ -82,6 +87,7 @@ export function WorkspaceNew() {
   // モバイル用タッチイベント処理
   const handleTouchMove = React.useCallback((e: TouchEvent) => {
     if (isMobile && isDraggingMobile && e.touches.length > 0) {
+      e.preventDefault() // ブラウザのデフォルト動作を防止
       const touch = e.touches[0]
       setDragPosition({ x: touch.clientX, y: touch.clientY })
     }
@@ -146,6 +152,11 @@ export function WorkspaceNew() {
     if (isMobile) {
       setIsDraggingMobile(true)
       startEdgePull()
+      
+      // タッチイベントの伝播を防止
+      if (event.activatorEvent) {
+        event.activatorEvent.stopPropagation()
+      }
       
       // 初期ドラッグ位置を設定
       if (event.activatorEvent && 'touches' in event.activatorEvent) {
@@ -232,13 +243,14 @@ export function WorkspaceNew() {
 
     return (
       <div 
-        className="fixed pointer-events-none z-[9999] transform -translate-x-1/2 -translate-y-1/2"
+        className="fixed pointer-events-none z-[9999] transform -translate-x-1/2 -translate-y-1/2 touch-none"
         style={{
           left: dragPosition.x,
           top: dragPosition.y,
+          willChange: 'transform'
         }}
       >
-        <div className={`p-4 rounded-lg border-2 shadow-2xl opacity-90 ${priorityColors[task.priority]}`}>
+        <div className={`p-4 rounded-lg border-2 shadow-2xl opacity-90 select-none ${priorityColors[task.priority]}`}>
           <div className="flex items-start justify-between">
             <div className="flex-1">
               <h4 className="font-medium text-sm mb-2">{task.title}</h4>
@@ -342,7 +354,7 @@ export function WorkspaceNew() {
               </div>
             )}
 
-            <div className="absolute inset-0 p-4 pb-24 overflow-y-auto">
+            <div className={`absolute inset-0 p-4 pb-24 overflow-y-auto ${isDraggingMobile ? 'touch-none select-none' : ''}`}>
               {currentView === 'tasks' && (
                 <div>
                   <div className="flex items-center justify-between mb-6">
@@ -391,7 +403,10 @@ export function WorkspaceNew() {
           </div>
 
         {/* 固定フッターナビゲーション */}
-        <div className="fixed bottom-0 left-0 right-0 z-50 bg-card/95 backdrop-blur-md border-t border-border/40 px-4 py-2 pb-4">
+        <div 
+          ref={footerRef}
+          className="fixed bottom-0 left-0 right-0 z-50 bg-card/95 backdrop-blur-md border-t border-border/40 px-4 py-2 pb-4"
+        >
           <div className="flex items-center justify-around max-w-sm mx-auto">
             <button
               onClick={(e) => {
