@@ -17,7 +17,7 @@ const timeSlots = Array.from({ length: 24 }, (_, i) => {
 const mockEvents = [
   {
     id: '1',
-    title: 'Daily Standup',
+    title: 'デイリースタンダップ',
     time: '09:00',
     duration: 30,
     type: 'event',
@@ -25,7 +25,7 @@ const mockEvents = [
   },
   {
     id: '2',
-    title: 'Design Review',
+    title: 'デザインレビュー',
     time: '14:00',
     duration: 60,
     type: 'event',
@@ -33,7 +33,7 @@ const mockEvents = [
   },
   {
     id: '3',
-    title: 'Code Review',
+    title: 'コードレビュー',
     time: '10:00',
     duration: 45,
     type: 'task',
@@ -52,14 +52,14 @@ export function Timeline() {
           <Button variant="outline" size="sm">
             <ChevronLeft className="w-4 h-4" />
           </Button>
-          <h3 className="font-medium">Today, June 23</h3>
+          <h3 className="font-medium">本日, 6月23日</h3>
           <Button variant="outline" size="sm">
             <ChevronRight className="w-4 h-4" />
           </Button>
         </div>
         <div className="flex space-x-2">
           <Button variant="default" size="sm">
-            Timeline
+            タイムライン
           </Button>
           <Button variant="outline" size="sm">
             <Calendar className="w-4 h-4" />
@@ -78,7 +78,7 @@ export function Timeline() {
             style={{ top: `${(currentHour * 60) + new Date().getMinutes()}px` }}
           >
             <div className="bg-red-500 text-white text-xs px-2 py-1 rounded-r-md">
-              Now
+              現在
             </div>
           </div>
 
@@ -116,7 +116,7 @@ export function Timeline() {
                       <div className="text-xs font-medium">{event.title}</div>
                       <div className="text-xs text-muted-foreground flex items-center">
                         <Clock className="w-3 h-3 mr-1" />
-                        {event.duration}min
+                        {event.duration}分
                       </div>
                     </Card>
                   ))}
@@ -125,7 +125,7 @@ export function Timeline() {
                 {!mockEvents.some(event => event.time === slot.time) && (
                   <div className="absolute inset-0 border-2 border-dashed border-transparent hover:border-border/40 transition-colors">
                     <div className="flex items-center justify-center h-full text-xs text-muted-foreground opacity-0 hover:opacity-100 transition-opacity">
-                      Drop task here
+                      タスクをドロップ
                     </div>
                   </div>
                 )}

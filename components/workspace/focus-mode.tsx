@@ -78,22 +78,22 @@ export function FocusMode() {
 
       {/* Current Task */}
       <div className="space-y-3">
-        <h3 className="text-sm font-medium">Current Task</h3>
+        <h3 className="text-sm font-medium">現在のタスク</h3>
         <Card className="p-4 bg-blue-50 dark:bg-blue-950/30 border-blue-200 dark:border-blue-800">
-          <h4 className="font-medium text-sm mb-2">Design new landing page</h4>
+          <h4 className="font-medium text-sm mb-2">新しいランディングページのデザイン</h4>
           <div className="text-xs text-muted-foreground">
-            Started 12 minutes ago
+            12分前に開始
           </div>
         </Card>
       </div>
 
       {/* Next Task */}
       <div className="space-y-3">
-        <h3 className="text-sm font-medium">Up Next</h3>
+        <h3 className="text-sm font-medium">次のタスク</h3>
         <Card className="p-4 border-dashed">
-          <h4 className="font-medium text-sm mb-2">Review pull requests</h4>
+          <h4 className="font-medium text-sm mb-2">プルリクエストのレビュー</h4>
           <div className="text-xs text-muted-foreground">
-            Estimated: 30 minutes
+            予想時間: 30分
           </div>
         </Card>
       </div>
@@ -104,24 +104,24 @@ export function FocusMode() {
       <div className="flex-1 space-y-4">
         <h3 className="text-sm font-medium flex items-center">
           <TrendingUp className="w-4 h-4 mr-2" />
-          Today&apos;s Progress
+今日の進捗
         </h3>
         
         <div className="grid grid-cols-2 gap-3">
           <Card className="p-3 text-center">
             <div className="text-2xl font-bold text-green-600">3</div>
-            <div className="text-xs text-muted-foreground">Completed</div>
+            <div className="text-xs text-muted-foreground">完了</div>
           </Card>
           <Card className="p-3 text-center">
             <div className="text-2xl font-bold text-blue-600">2</div>
-            <div className="text-xs text-muted-foreground">In Progress</div>
+            <div className="text-xs text-muted-foreground">進行中</div>
           </Card>
         </div>
 
         <div className="space-y-2">
           <div className="flex justify-between text-xs">
-            <span>Focus Time</span>
-            <span>2h 15m / 4h</span>
+            <span>集中時間</span>
+            <span>2時15分 / 4時間</span>
           </div>
           <div className="w-full bg-muted rounded-full h-2">
             <div className="bg-orange-500 h-2 rounded-full" style={{ width: '56%' }} />
@@ -133,7 +133,7 @@ export function FocusMode() {
       <div className="space-y-2">
         <Button variant="outline" className="w-full" size="sm">
           <CheckCircle className="w-4 h-4 mr-2" />
-          Mark Current Complete
+現在のタスクを完了にする
         </Button>
       </div>
     </div>

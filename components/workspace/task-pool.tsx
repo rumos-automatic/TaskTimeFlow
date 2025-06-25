@@ -8,26 +8,26 @@ import { Plus, Circle, Clock, AlertCircle } from 'lucide-react'
 const mockTasks = [
   {
     id: '1',
-    title: 'Design new landing page',
+    title: '新しいランディングページのデザイン',
     priority: 'high',
     category: 'work',
-    estimatedTime: '2h',
+    estimatedTime: '2時間',
     status: 'todo'
   },
   {
     id: '2',
-    title: 'Review pull requests',
+    title: 'プルリクエストのレビュー',
     priority: 'medium',
     category: 'work',
-    estimatedTime: '30m',
+    estimatedTime: '30分',
     status: 'todo'
   },
   {
     id: '3',
-    title: 'Grocery shopping',
+    title: '食料品の買い物',
     priority: 'low',
     category: 'personal',
-    estimatedTime: '1h',
+    estimatedTime: '1時間',
     status: 'todo'
   },
 ]
@@ -44,13 +44,13 @@ export function TaskPool() {
       {/* Category Tabs */}
       <div className="flex space-x-2">
         <Button variant="default" size="sm" className="flex-1">
-          Work
+          仕事
         </Button>
         <Button variant="outline" size="sm" className="flex-1">
-          Personal
+          個人
         </Button>
         <Button variant="outline" size="sm" className="flex-1">
-          Custom
+          カスタム
         </Button>
       </div>
 
@@ -59,7 +59,7 @@ export function TaskPool() {
       {/* Add Task Button */}
       <Button className="w-full" variant="outline">
         <Plus className="w-4 h-4 mr-2" />
-        Add New Task
+        新しいタスクを追加
       </Button>
 
       {/* Task List */}
@@ -84,7 +84,11 @@ export function TaskPool() {
                     {task.priority === 'high' && <AlertCircle className="w-3 h-3 text-red-500" />}
                     {task.priority === 'medium' && <Circle className="w-3 h-3 text-yellow-500" />}
                     {task.priority === 'low' && <Circle className="w-3 h-3 text-green-500" />}
-                    <span className="capitalize">{task.priority}</span>
+                    <span className="capitalize">
+                      {task.priority === 'high' && '高'}
+                      {task.priority === 'medium' && '中'}
+                      {task.priority === 'low' && '低'}
+                    </span>
                   </div>
                 </div>
               </div>
@@ -96,7 +100,7 @@ export function TaskPool() {
 
       {/* Sync Status */}
       <div className="text-xs text-muted-foreground text-center">
-        Last synced: 2 minutes ago
+        最終同期: 2分前
       </div>
     </div>
   )
