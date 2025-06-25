@@ -12,6 +12,7 @@ import { useSwipe } from '@/lib/hooks/use-swipe'
 import { useEdgePull } from '@/lib/hooks/use-edge-pull'
 import { useAutoScroll } from '@/lib/hooks/use-auto-scroll'
 import { useScrollLock } from '@/lib/hooks/use-scroll-lock'
+import { usePullToRefreshBlocker } from '@/lib/hooks/use-pull-to-refresh-blocker'
 import { useTaskStore } from '@/lib/store/use-task-store'
 import { Task } from '@/lib/types'
 import { 
@@ -54,6 +55,7 @@ export function WorkspaceNew() {
   
   // ドラッグ状態管理
   const [activeTask, setActiveTask] = useState<Task | null>(null)
+  const [isDragging, setIsDragging] = useState(false)
 
   // フッター要素のref
   const footerRef = React.useRef<HTMLDivElement>(null)
@@ -64,7 +66,7 @@ export function WorkspaceNew() {
     onSwipeRight: prevView,
     threshold: 50,
     targetRef: footerRef,
-    enabled: isMobile && !activeTask
+    enabled: isMobile && !isDragging
   })
 
   // ドラッグセンサーの設定
@@ -114,14 +116,19 @@ export function WorkspaceNew() {
         setCurrentView('timeline')
       }
     },
-    enabled: isMobile && !!activeTask && (currentView === 'tasks' || currentView === 'timeline'),
+    enabled: isMobile && isDragging && (currentView === 'tasks' || currentView === 'timeline'),
     edgeThreshold: 40,
     holdDuration: 300
   })
 
   // スクロールロック機能（モバイル専用）
   useScrollLock({
-    isLocked: isMobile && !!activeTask && currentView === 'timeline'
+    isLocked: isMobile && isDragging
+  })
+
+  // プルトゥリフレッシュ防止（ドラッグ中のみ）
+  usePullToRefreshBlocker({
+    isActive: isMobile && isDragging
   })
 
   // TouchSensorでiOS風のドラッグアンドドロップを実現
@@ -161,6 +168,7 @@ export function WorkspaceNew() {
     }
     
     setActiveTask(task || null)
+    setIsDragging(true)
     
     // ハプティックフィードバック
     triggerHapticFeedback()
@@ -174,6 +182,7 @@ export function WorkspaceNew() {
   const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event
     setActiveTask(null)
+    setIsDragging(false)
     
     // エッジプル機能終了（モバイルのみ）
     if (isMobile) {
@@ -263,7 +272,7 @@ export function WorkspaceNew() {
         onDragStart={handleDragStart}
         onDragEnd={handleDragEnd}
       >
-        <div className="flex flex-col h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800">
+        <div className={`flex flex-col h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800 mobile-drag-container ${isMobile && isDragging ? 'dragging' : ''}`}>
           {/* シンプルヘッダー */}
           <div className="flex items-center justify-center p-4 border-b border-border/40 bg-card/50 backdrop-blur-sm">
             <h1 className="text-lg font-semibold text-foreground">TaskTimeFlow</h1>

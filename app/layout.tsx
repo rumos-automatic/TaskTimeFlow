@@ -7,6 +7,12 @@ export const metadata: Metadata = {
   icons: {
     icon: '/favicon.ico',
   },
+  viewport: {
+    width: 'device-width',
+    initialScale: 1,
+    maximumScale: 1,
+    userScalable: false
+  }
 }
 
 export default function RootLayout({
@@ -15,8 +21,8 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="ja">
-      <body>{children}</body>
+    <html lang="ja" className="overscroll-none">
+      <body className="overscroll-none overflow-hidden">{children}</body>
     </html>
   )
 }

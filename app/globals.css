@@ -56,4 +56,23 @@
   body {
     @apply bg-background text-foreground;
   }
+  
+  /* プルトゥリフレッシュ防止 */
+  html, body {
+    overscroll-behavior: none;
+    -webkit-overflow-scrolling: touch;
+  }
+  
+  /* モバイルでのドラッグ時のブラウザ動作を防止 */
+  .mobile-drag-container {
+    touch-action: pan-y;
+    overscroll-behavior: none;
+  }
+  
+  .mobile-drag-container.dragging {
+    touch-action: none;
+    overscroll-behavior: none;
+    user-select: none;
+    -webkit-user-select: none;
+  }
 }
