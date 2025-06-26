@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
@@ -384,6 +384,7 @@ export function Timeline() {
   const currentHour = now.getHours()
   const currentMinute = now.getMinutes()
   const { timeSlots: scheduledSlots, tasks } = useTaskStore()
+  const timelineContainerRef = useRef<HTMLDivElement>(null)
   
   // Get today's date for filtering
   const today = new Date()
@@ -414,6 +415,45 @@ export function Timeline() {
     .filter(item => item.task) // TypeScript安全性のため
     .map(item => `scheduled-${item.task!.id}-${item.slotId}`)
 
+  // Function to calculate current time position and scroll to it
+  const scrollToCurrentTime = () => {
+    if (!timelineContainerRef.current) return
+
+    // Calculate current time position (same logic as Current Time Indicator)
+    const currentSlotIndex = currentHour * 4 + Math.floor(currentMinute / 15)
+    let totalHeight = 0
+    
+    for (let i = 0; i < currentSlotIndex; i++) {
+      const slotMinute = (i % 4) * 15
+      totalHeight += slotMinute === 0 ? 64 : 40 // h-16 or h-10
+    }
+    
+    // Add offset within current slot
+    const currentSlotMinute = (currentSlotIndex % 4) * 15
+    const slotHeight = currentSlotMinute === 0 ? 64 : 40
+    const offsetInSlot = ((currentMinute % 15) / 15) * slotHeight
+    const currentTimePosition = totalHeight + offsetInSlot
+
+    // Calculate scroll position to center current time
+    const containerHeight = timelineContainerRef.current.clientHeight
+    const scrollTop = Math.max(0, currentTimePosition - containerHeight / 2)
+
+    // Smooth scroll to position
+    timelineContainerRef.current.scrollTo({
+      top: scrollTop,
+      behavior: 'smooth'
+    })
+  }
+
+  // Scroll to current time on component mount
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      scrollToCurrentTime()
+    }, 100) // Small delay to ensure DOM is ready
+
+    return () => clearTimeout(timer)
+  }, [currentHour, currentMinute]) // Dependencies to recalculate if time changes
+
   return (
     <div className="space-y-4 h-full flex flex-col">
       {/* View Controls */}
@@ -434,13 +474,22 @@ export function Timeline() {
           <Button variant="outline" size="sm">
             <Calendar className="w-4 h-4" />
           </Button>
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={scrollToCurrentTime}
+            className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+          >
+            <Clock className="w-4 h-4 mr-1" />
+            現在時刻
+          </Button>
         </div>
       </div>
 
       <Separator />
 
       {/* Timeline Grid */}
-      <div className="flex-1 overflow-y-auto" data-timeline="true">
+      <div ref={timelineContainerRef} className="flex-1 overflow-y-auto" data-timeline="true">
         <SortableContext items={sortableIds} strategy={verticalListSortingStrategy}>
           <div className="relative">
             {/* Current Time Indicator */}
