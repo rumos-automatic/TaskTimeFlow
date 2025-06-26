@@ -384,9 +384,9 @@ export function Timeline() {
               }}
             >
               {/* 時間軸列内の現在時刻表示 */}
-              <div className="absolute left-1 -top-3 w-14 flex flex-col items-center">
-                <div className="bg-blue-500/90 text-white text-xs px-1.5 py-0.5 rounded shadow-sm backdrop-blur-sm">
-                  <div className="flex items-center space-x-1">
+              <div className="absolute left-6 -top-3 w-10 flex flex-col items-center">
+                <div className="bg-blue-500/90 text-white text-xs px-1 py-0.5 rounded shadow-sm backdrop-blur-sm">
+                  <div className="flex items-center space-x-0.5">
                     <div className="w-1 h-1 bg-white rounded-full animate-pulse" />
                     <span className="font-mono text-xs leading-none">
                       {currentHour.toString().padStart(2, '0')}:{currentMinute.toString().padStart(2, '0')}
