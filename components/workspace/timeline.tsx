@@ -313,7 +313,9 @@ function DroppableTimeSlot({ time, hour, isBusinessHour, currentHour, scheduledT
 }
 
 export function Timeline() {
-  const currentHour = new Date().getHours()
+  const now = new Date()
+  const currentHour = now.getHours()
+  const currentMinute = now.getMinutes()
   const { timeSlots: scheduledSlots, tasks } = useTaskStore()
   
   // Get today's date for filtering
@@ -376,11 +378,22 @@ export function Timeline() {
           <div className="relative">
             {/* Current Time Indicator */}
             <div 
-              className="absolute left-0 right-0 border-t-2 border-red-500 z-10"
-              style={{ top: `${(currentHour * 60) + new Date().getMinutes()}px` }}
+              className="absolute left-0 right-0 z-10 pointer-events-none"
+              style={{ 
+                top: `${(currentHour * 64) + (currentMinute * 64 / 60)}px`
+              }}
             >
-              <div className="bg-red-500 text-white text-xs px-2 py-1 rounded-r-md">
-                現在
+              {/* 精密な時刻ライン */}
+              <div className="w-full h-px bg-gradient-to-r from-transparent via-blue-400 to-transparent opacity-80" />
+              
+              {/* 現在時刻表示 */}
+              <div className="absolute left-16 -top-4 bg-blue-500/90 text-white text-xs px-2 py-1 rounded-md shadow-sm backdrop-blur-sm">
+                <div className="flex items-center space-x-1">
+                  <div className="w-1.5 h-1.5 bg-white rounded-full animate-pulse" />
+                  <span className="font-mono">
+                    {currentHour.toString().padStart(2, '0')}:{currentMinute.toString().padStart(2, '0')}
+                  </span>
+                </div>
               </div>
             </div>
 
