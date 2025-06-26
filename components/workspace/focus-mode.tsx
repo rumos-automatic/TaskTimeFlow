@@ -275,9 +275,11 @@ export function FocusMode() {
             <div className="flex items-center justify-between mb-2">
               <h4 className="font-medium text-sm">{nextTask.title}</h4>
               <div className="flex items-center space-x-1">
-                <div className="text-xs bg-orange-100 text-orange-700 px-2 py-1 rounded-full">
-                  📅 {timelineNextTask.scheduledTime}
-                </div>
+                {timelineNextTask && (
+                  <div className="text-xs bg-orange-100 text-orange-700 px-2 py-1 rounded-full">
+                    📅 {timelineNextTask.scheduledTime}
+                  </div>
+                )}
               </div>
             </div>
             <div className="space-y-1 text-xs text-muted-foreground">
