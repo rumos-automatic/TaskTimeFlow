@@ -419,6 +419,11 @@ export function Timeline() {
   const scrollToCurrentTime = () => {
     if (!timelineContainerRef.current) return
 
+    // Get fresh current time for accurate calculation
+    const now = new Date()
+    const currentHour = now.getHours()
+    const currentMinute = now.getMinutes()
+
     // Calculate current time position (same logic as Current Time Indicator)
     const currentSlotIndex = currentHour * 4 + Math.floor(currentMinute / 15)
     let totalHeight = 0
@@ -449,10 +454,10 @@ export function Timeline() {
   useEffect(() => {
     const timer = setTimeout(() => {
       scrollToCurrentTime()
-    }, 100) // Small delay to ensure DOM is ready
+    }, 300) // Longer delay to ensure DOM is ready on mobile
 
     return () => clearTimeout(timer)
-  }, [currentHour, currentMinute]) // Dependencies to recalculate if time changes
+  }, []) // Empty dependency array - only run on mount
 
   return (
     <div className="space-y-4 h-full flex flex-col">
@@ -473,15 +478,6 @@ export function Timeline() {
           </Button>
           <Button variant="outline" size="sm">
             <Calendar className="w-4 h-4" />
-          </Button>
-          <Button 
-            variant="outline" 
-            size="sm" 
-            onClick={scrollToCurrentTime}
-            className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
-          >
-            <Clock className="w-4 h-4 mr-1" />
-            現在時刻
           </Button>
         </div>
       </div>
