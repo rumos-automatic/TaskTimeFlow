@@ -419,6 +419,8 @@ export function Timeline() {
   const scrollToCurrentTime = () => {
     if (!timelineContainerRef.current) return
 
+    const container = timelineContainerRef.current
+    
     // Get fresh current time for accurate calculation
     const now = new Date()
     const currentHour = now.getHours()
@@ -440,21 +442,42 @@ export function Timeline() {
     const currentTimePosition = totalHeight + offsetInSlot
 
     // Calculate scroll position to center current time
-    const containerHeight = timelineContainerRef.current.clientHeight
+    const containerHeight = container.clientHeight
     const scrollTop = Math.max(0, currentTimePosition - containerHeight / 2)
 
-    // Smooth scroll to position
-    timelineContainerRef.current.scrollTo({
-      top: scrollTop,
-      behavior: 'smooth'
+    // Use requestAnimationFrame for better mobile compatibility
+    requestAnimationFrame(() => {
+      // Try multiple scroll methods for mobile compatibility
+      try {
+        container.scrollTo({
+          top: scrollTop,
+          behavior: 'smooth'
+        })
+      } catch (e) {
+        // Fallback for older browsers
+        container.scrollTop = scrollTop
+      }
     })
   }
 
   // Scroll to current time on component mount
   useEffect(() => {
+    // Multiple attempts for mobile reliability
+    const attemptScroll = (attempt = 1) => {
+      if (attempt > 5) return // Max 5 attempts
+      
+      if (timelineContainerRef.current && timelineContainerRef.current.scrollHeight > 0) {
+        scrollToCurrentTime()
+      } else {
+        // Try again with increasing delay
+        setTimeout(() => attemptScroll(attempt + 1), attempt * 200)
+      }
+    }
+
+    // Start first attempt after initial delay
     const timer = setTimeout(() => {
-      scrollToCurrentTime()
-    }, 300) // Longer delay to ensure DOM is ready on mobile
+      attemptScroll()
+    }, 100)
 
     return () => clearTimeout(timer)
   }, []) // Empty dependency array - only run on mount
