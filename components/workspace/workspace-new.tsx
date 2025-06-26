@@ -63,7 +63,29 @@ export function WorkspaceNew() {
 
   // フッター要素のref
   const footerRef = React.useRef<HTMLDivElement>(null)
+  
+  // 各ビューのスクロールコンテナのref
+  const taskPoolRef = React.useRef<HTMLDivElement>(null)
+  const timelineRef = React.useRef<HTMLDivElement>(null)
+  const focusRef = React.useRef<HTMLDivElement>(null)
 
+  // ビュー切り替え時のスクロール位置リセット
+  const resetScrollOnViewChange = React.useCallback(() => {
+    // タスクプールビューまたはフォーカスビューの場合は一番上にスクロール
+    if (currentView === 'tasks' && taskPoolRef.current) {
+      taskPoolRef.current.scrollTop = 0
+    }
+    if (currentView === 'focus' && focusRef.current) {
+      focusRef.current.scrollTop = 0
+    }
+    // タイムラインビューの場合は何もしない（現在時刻スクロール機能を維持）
+  }, [currentView])
+  
+  // ビューが変更された時にスクロール位置をリセット
+  React.useEffect(() => {
+    resetScrollOnViewChange()
+  }, [currentView, resetScrollOnViewChange])
+  
   // スワイプジェスチャーの設定（フッターエリアのみ、ドラッグ中は無効）
   useSwipe({
     onSwipeLeft: nextView,
@@ -373,57 +395,55 @@ export function WorkspaceNew() {
               </div>
             )}
 
-            <div className="absolute inset-0 p-4 pb-24 overflow-y-auto">
-              {currentView === 'tasks' && (
-                <div>
-                  <div className="flex items-center justify-between mb-6">
-                    <h2 className="text-xl font-semibold text-foreground">タスクプール</h2>
+            {currentView === 'tasks' && (
+              <div ref={taskPoolRef} className="absolute inset-0 p-4 pb-24 overflow-y-auto">
+                <div className="flex items-center justify-between mb-6">
+                  <h2 className="text-xl font-semibold text-foreground">タスクプール</h2>
+                  <div className="flex items-center space-x-2">
+                    <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
+                    <span className="text-xs text-muted-foreground">同期済み</span>
+                  </div>
+                </div>
+                <TaskPool />
+              </div>
+            )}
+            
+            {currentView === 'timeline' && (
+              <div ref={timelineRef} className="absolute inset-0 p-4 pb-24 overflow-y-auto">
+                <div className="flex items-center justify-between mb-6">
+                  <h2 className="text-xl font-semibold text-foreground">タイムライン</h2>
+                  <div className="flex items-center space-x-4">
                     <div className="flex items-center space-x-2">
-                      <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
-                      <span className="text-xs text-muted-foreground">同期済み</span>
+                      <div className="w-3 h-3 bg-purple-500 rounded-sm" />
+                      <span className="text-sm text-muted-foreground">イベント</span>
                     </div>
-                  </div>
-                  <TaskPool />
-                </div>
-              )}
-              
-              {currentView === 'timeline' && (
-                <div>
-                  <div className="flex items-center justify-between mb-6">
-                    <h2 className="text-xl font-semibold text-foreground">タイムライン</h2>
-                    <div className="flex items-center space-x-4">
-                      <div className="flex items-center space-x-2">
-                        <div className="w-3 h-3 bg-purple-500 rounded-sm" />
-                        <span className="text-sm text-muted-foreground">イベント</span>
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <div className="w-3 h-3 bg-blue-500 rounded-sm" />
-                        <span className="text-sm text-muted-foreground">タスク</span>
-                      </div>
-                      {isDragging && dragStartView && dragStartView !== currentView && (
-                        <div className="text-sm text-primary font-medium animate-pulse bg-primary/10 px-2 py-1 rounded">
-                          📍 ドロップで{dragStartView === 'tasks' ? 'タイムラインに' : 'プールに'}配置
-                        </div>
-                      )}
+                    <div className="flex items-center space-x-2">
+                      <div className="w-3 h-3 bg-blue-500 rounded-sm" />
+                      <span className="text-sm text-muted-foreground">タスク</span>
                     </div>
+                    {isDragging && dragStartView && dragStartView !== currentView && (
+                      <div className="text-sm text-primary font-medium animate-pulse bg-primary/10 px-2 py-1 rounded">
+                        📍 ドロップで{dragStartView === 'tasks' ? 'タイムラインに' : 'プールに'}配置
+                      </div>
+                    )}
                   </div>
-                  <Timeline />
                 </div>
-              )}
+                <Timeline />
+              </div>
+            )}
 
-              {currentView === 'focus' && (
-                <div>
-                  <div className="flex items-center justify-between mb-6">
-                    <h2 className="text-xl font-semibold text-foreground">フォーカス</h2>
-                    <div className="flex items-center space-x-2">
-                      <div className="w-2 h-2 bg-orange-500 rounded-full" />
-                      <span className="text-xs text-muted-foreground">準備完了</span>
-                    </div>
+            {currentView === 'focus' && (
+              <div ref={focusRef} className="absolute inset-0 p-4 pb-24 overflow-y-auto">
+                <div className="flex items-center justify-between mb-6">
+                  <h2 className="text-xl font-semibold text-foreground">フォーカス</h2>
+                  <div className="flex items-center space-x-2">
+                    <div className="w-2 h-2 bg-orange-500 rounded-full" />
+                    <span className="text-xs text-muted-foreground">準備完了</span>
                   </div>
-                  <FocusMode />
                 </div>
-              )}
-            </div>
+                <FocusMode />
+              </div>
+            )}
           </div>
 
         {/* 固定フッターナビゲーション */}
@@ -436,6 +456,12 @@ export function WorkspaceNew() {
               onClick={(e) => {
                 e.stopPropagation()
                 setCurrentView('tasks')
+                // タスクプールビューに切り替え時にスクロール位置をリセット
+                setTimeout(() => {
+                  if (taskPoolRef.current) {
+                    taskPoolRef.current.scrollTop = 0
+                  }
+                }, 50)
               }}
               className={`flex flex-col items-center space-y-1 p-3 rounded-lg transition-all duration-200 min-w-[60px] min-h-[60px] ${
                 currentView === 'tasks'
@@ -451,6 +477,7 @@ export function WorkspaceNew() {
               onClick={(e) => {
                 e.stopPropagation()
                 setCurrentView('timeline')
+                // タイムラインビューは現在時刻スクロール機能を維持するためリセットしない
               }}
               className={`flex flex-col items-center space-y-1 p-3 rounded-lg transition-all duration-200 min-w-[60px] min-h-[60px] ${
                 currentView === 'timeline'
@@ -466,6 +493,12 @@ export function WorkspaceNew() {
               onClick={(e) => {
                 e.stopPropagation()
                 setCurrentView('focus')
+                // フォーカスビューに切り替え時にスクロール位置をリセット
+                setTimeout(() => {
+                  if (focusRef.current) {
+                    focusRef.current.scrollTop = 0
+                  }
+                }, 50)
               }}
               className={`flex flex-col items-center space-y-1 p-3 rounded-lg transition-all duration-200 min-w-[60px] min-h-[60px] ${
                 currentView === 'focus'
@@ -534,7 +567,10 @@ export function WorkspaceNew() {
               <Button
                 variant="ghost"
                 size="sm"
-                onClick={() => setCurrentView('timeline')}
+                onClick={() => {
+                  setCurrentView('timeline')
+                  // フォーカスモードからタイムラインに戻る時は現在時刻スクロール機能を維持
+                }}
                 className="p-2"
               >
                 <X className="w-5 h-5" />
@@ -614,7 +650,10 @@ export function WorkspaceNew() {
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => setCurrentView('focus')}
+                  onClick={() => {
+                    setCurrentView('focus')
+                    // フォーカスモードに切り替え時はスクロール位置をリセットしない（独立したコンテナのため）
+                  }}
                   className="ml-4"
                 >
                   <Target className="w-4 h-4 mr-2" />
