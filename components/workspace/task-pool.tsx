@@ -5,7 +5,7 @@ import type { ReactElement } from 'react'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
-import { Plus, Circle, Clock, AlertCircle, X, Edit2, Trash2, MoreVertical, Check } from 'lucide-react'
+import { Plus, Circle, Clock, AlertCircle, X, Edit2, Trash2, MoreVertical, Check, RotateCcw } from 'lucide-react'
 import { useTaskStore } from '@/lib/store/use-task-store'
 import { useSortable } from '@dnd-kit/sortable'
 import { useDroppable } from '@dnd-kit/core'
@@ -166,6 +166,9 @@ interface CompletedTaskCardProps {
 }
 
 function CompletedTaskCard({ task }: CompletedTaskCardProps) {
+  const [showActions, setShowActions] = useState(false)
+  const { uncompleteTask } = useTaskStore()
+  
   const formatTime = (minutes: number) => {
     if (minutes < 60) return `${minutes}分`
     const hours = Math.floor(minutes / 60)
@@ -182,8 +185,17 @@ function CompletedTaskCard({ task }: CompletedTaskCardProps) {
     })
   }
 
+  const handleUncomplete = () => {
+    uncompleteTask(task.id)
+    setShowActions(false)
+  }
+
   return (
-    <Card className="p-3 border-border bg-muted/30 opacity-75">
+    <Card 
+      className="p-3 border-border bg-muted/30 opacity-75 group hover:opacity-90 transition-opacity"
+      onMouseEnter={() => setShowActions(true)}
+      onMouseLeave={() => setShowActions(false)}
+    >
       <div className="flex items-start justify-between">
         <div className="flex-1">
           <div className="flex items-center space-x-2 mb-1">
@@ -215,6 +227,21 @@ function CompletedTaskCard({ task }: CompletedTaskCardProps) {
             )}
           </div>
         </div>
+        
+        {/* アクションボタン */}
+        {showActions && (
+          <div className="flex space-x-1 ml-2">
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-6 w-6 p-0 hover:bg-blue-100 dark:hover:bg-blue-900 text-blue-600"
+              onClick={handleUncomplete}
+              title="未完了に戻す"
+            >
+              <RotateCcw className="w-3 h-3" />
+            </Button>
+          </div>
+        )}
       </div>
     </Card>
   )

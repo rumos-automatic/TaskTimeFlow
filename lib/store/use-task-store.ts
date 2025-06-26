@@ -9,6 +9,7 @@ interface TaskStore {
   updateTask: (id: string, updates: Partial<Task>) => void
   deleteTask: (id: string) => void
   completeTask: (id: string) => void
+  uncompleteTask: (id: string) => void
   moveTaskToTimeline: (taskId: string, date: Date, time: string) => void
   
   // Timeline slots
@@ -106,6 +107,16 @@ export const useTaskStore = create<TaskStore>()(
           tasks: state.tasks.map((task) =>
             task.id === id
               ? { ...task, status: 'completed', completedAt: new Date(), updatedAt: new Date() }
+              : task
+          )
+        }))
+      },
+
+      uncompleteTask: (id) => {
+        set((state) => ({
+          tasks: state.tasks.map((task) =>
+            task.id === id
+              ? { ...task, status: 'todo', completedAt: undefined, updatedAt: new Date() }
               : task
           )
         }))

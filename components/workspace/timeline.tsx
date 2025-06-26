@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from 'react'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
-import { Calendar, ChevronLeft, ChevronRight, Clock, Edit2, Trash2, X, Check } from 'lucide-react'
+import { Calendar, ChevronLeft, ChevronRight, Clock, Edit2, Trash2, X, Check, RotateCcw } from 'lucide-react'
 import { useDroppable } from '@dnd-kit/core'
 import { useSortable, SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
@@ -34,7 +34,7 @@ interface ScheduledTaskCardProps {
 function ScheduledTaskCard({ task, slotId, slotData }: ScheduledTaskCardProps) {
   const [showActions, setShowActions] = useState(false)
   const [isEditing, setIsEditing] = useState(false)
-  const { updateTask, removeTimeSlot, completeTask } = useTaskStore()
+  const { updateTask, removeTimeSlot, completeTask, uncompleteTask } = useTaskStore()
   const {
     attributes,
     listeners,
@@ -63,6 +63,11 @@ function ScheduledTaskCard({ task, slotId, slotData }: ScheduledTaskCardProps) {
   const handleComplete = () => {
     completeTask(task.id)
     // 完了タスクはタイムライン上にグレーアウトして残す（削除しない）
+    setShowActions(false)
+  }
+
+  const handleUncomplete = () => {
+    uncompleteTask(task.id)
     setShowActions(false)
   }
 
@@ -150,32 +155,46 @@ function ScheduledTaskCard({ task, slotId, slotData }: ScheduledTaskCardProps) {
           </div>
           
           {/* アクションボタン */}
-          {showActions && !isCompleted && (
+          {showActions && (
             <div className="absolute top-1 right-1 flex space-x-1 pointer-events-auto z-10">
-              <Button
-                variant="ghost"
-                size="sm"
-                className="h-5 w-5 p-0 hover:bg-green-200 dark:hover:bg-green-800 text-green-600"
-                onClick={handleComplete}
-              >
-                <Check className="w-2.5 h-2.5" />
-              </Button>
-              <Button
-                variant="ghost"
-                size="sm"
-                className="h-5 w-5 p-0 hover:bg-blue-200 dark:hover:bg-blue-800"
-                onClick={handleEdit}
-              >
-                <Edit2 className="w-2.5 h-2.5" />
-              </Button>
-              <Button
-                variant="ghost"
-                size="sm"
-                className="h-5 w-5 p-0 hover:bg-red-200 dark:hover:bg-red-800 text-red-600"
-                onClick={handleDelete}
-              >
-                <Trash2 className="w-2.5 h-2.5" />
-              </Button>
+              {!isCompleted ? (
+                <>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-5 w-5 p-0 hover:bg-green-200 dark:hover:bg-green-800 text-green-600"
+                    onClick={handleComplete}
+                  >
+                    <Check className="w-2.5 h-2.5" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-5 w-5 p-0 hover:bg-blue-200 dark:hover:bg-blue-800"
+                    onClick={handleEdit}
+                  >
+                    <Edit2 className="w-2.5 h-2.5" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-5 w-5 p-0 hover:bg-red-200 dark:hover:bg-red-800 text-red-600"
+                    onClick={handleDelete}
+                  >
+                    <Trash2 className="w-2.5 h-2.5" />
+                  </Button>
+                </>
+              ) : (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-5 w-5 p-0 hover:bg-blue-200 dark:hover:bg-blue-800 text-blue-600"
+                  onClick={handleUncomplete}
+                  title="未完了に戻す"
+                >
+                  <RotateCcw className="w-2.5 h-2.5" />
+                </Button>
+              )}
             </div>
           )}
         </div>
