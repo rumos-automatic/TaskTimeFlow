@@ -13,7 +13,7 @@ interface ViewState {
 
 export function useViewState() {
   const [viewState, setViewState] = useState<ViewState>({
-    currentView: 'tasks',
+    currentView: 'timeline',
     viewMode: 'mobile',
     isMobile: false
   })
