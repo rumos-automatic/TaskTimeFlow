@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from 'react'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
-import { Calendar, ChevronLeft, ChevronRight, Clock, Edit2, Trash2, X, Check, RotateCcw } from 'lucide-react'
+import { Calendar, ChevronLeft, ChevronRight, Clock, Edit2, Trash2, X, Check, RotateCcw, CalendarDays } from 'lucide-react'
 import { useDroppable } from '@dnd-kit/core'
 import { useSortable, SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
@@ -399,6 +399,8 @@ function DroppableTimeSlot({ time, hour, minute, slotIndex, isBusinessHour, isHo
 }
 
 export function Timeline() {
+  const [viewMode, setViewMode] = useState<'timeline' | 'calendar'>('timeline')
+  const [selectedDate, setSelectedDate] = useState(new Date())
   const now = new Date()
   const currentHour = now.getHours()
   const currentMinute = now.getMinutes()
@@ -406,16 +408,15 @@ export function Timeline() {
   const timelineContainerRef = useRef<HTMLDivElement>(null)
   const currentTimeIndicatorRef = useRef<HTMLDivElement>(null)
   
-  // Get today's date for filtering
-  const today = new Date()
-  const todaySlots = scheduledSlots.filter(slot => {
+  // Get selected date for filtering
+  const selectedDateSlots = scheduledSlots.filter(slot => {
     // Ensure slot.date is a Date object (handle deserialization)
     const slotDate = slot.date instanceof Date ? slot.date : new Date(slot.date)
-    return slotDate.toDateString() === today.toDateString()
+    return slotDate.toDateString() === selectedDate.toDateString()
   })
 
   // Combine scheduled tasks with their task details
-  const scheduledTasks = todaySlots.map(slot => {
+  const scheduledTasks = selectedDateSlots.map(slot => {
     const task = tasks.find(t => t.id === slot.taskId)
     return { 
       task: task,
@@ -470,29 +471,75 @@ export function Timeline() {
       {/* View Controls */}
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-2">
-          <Button variant="outline" size="sm">
+          <Button 
+            variant="outline" 
+            size="sm"
+            onClick={() => {
+              const newDate = new Date(selectedDate)
+              newDate.setDate(newDate.getDate() - 1)
+              setSelectedDate(newDate)
+            }}
+          >
             <ChevronLeft className="w-4 h-4" />
           </Button>
-          <h3 className="font-medium">本日, 6月23日</h3>
-          <Button variant="outline" size="sm">
+          <h3 className="font-medium">
+            {selectedDate.toDateString() === new Date().toDateString() 
+              ? '本日' 
+              : ''}
+            {selectedDate.toLocaleDateString('ja-JP', { 
+              month: 'long', 
+              day: 'numeric', 
+              weekday: 'short' 
+            })}
+          </h3>
+          <Button 
+            variant="outline" 
+            size="sm"
+            onClick={() => {
+              const newDate = new Date(selectedDate)
+              newDate.setDate(newDate.getDate() + 1)
+              setSelectedDate(newDate)
+            }}
+          >
             <ChevronRight className="w-4 h-4" />
           </Button>
+          {selectedDate.toDateString() !== new Date().toDateString() && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setSelectedDate(new Date())}
+              className="ml-2"
+            >
+              今日
+            </Button>
+          )}
         </div>
         <div className="flex space-x-2">
-          <Button variant="default" size="sm">
+          <Button 
+            variant={viewMode === 'timeline' ? 'default' : 'outline'} 
+            size="sm"
+            onClick={() => setViewMode('timeline')}
+          >
+            <Clock className="w-4 h-4 mr-1" />
             タイムライン
           </Button>
-          <Button variant="outline" size="sm">
-            <Calendar className="w-4 h-4" />
+          <Button 
+            variant={viewMode === 'calendar' ? 'default' : 'outline'} 
+            size="sm"
+            onClick={() => setViewMode('calendar')}
+          >
+            <CalendarDays className="w-4 h-4 mr-1" />
+            カレンダー
           </Button>
         </div>
       </div>
 
       <Separator />
 
-      {/* Timeline Grid */}
-      <div ref={timelineContainerRef} className="flex-1 overflow-y-auto" data-timeline="true">
-        <SortableContext items={sortableIds} strategy={verticalListSortingStrategy}>
+      {/* Timeline or Calendar View */}
+      {viewMode === 'timeline' ? (
+        <div ref={timelineContainerRef} className="flex-1 overflow-y-auto" data-timeline="true">
+          <SortableContext items={sortableIds} strategy={verticalListSortingStrategy}>
           <div className="relative">
             {/* Current Time Indicator */}
             <div 
@@ -550,6 +597,138 @@ export function Timeline() {
             ))}
           </div>
         </SortableContext>
+      </div>
+      ) : (
+        <CalendarView 
+          selectedDate={selectedDate}
+          setSelectedDate={setSelectedDate}
+          scheduledSlots={scheduledSlots}
+          tasks={tasks}
+        />
+      )}
+    </div>
+  )
+}
+
+// Calendar View Component
+interface CalendarViewProps {
+  selectedDate: Date
+  setSelectedDate: (date: Date) => void
+  scheduledSlots: any[]
+  tasks: any[]
+}
+
+function CalendarView({ selectedDate, setSelectedDate, scheduledSlots, tasks }: CalendarViewProps) {
+  const { completeTask, uncompleteTask, removeTimeSlot } = useTaskStore()
+  
+  // Get calendar data for the current month
+  const currentMonth = selectedDate.getMonth()
+  const currentYear = selectedDate.getFullYear()
+  const firstDayOfMonth = new Date(currentYear, currentMonth, 1)
+  const lastDayOfMonth = new Date(currentYear, currentMonth + 1, 0)
+  const startDate = new Date(firstDayOfMonth)
+  const startDay = startDate.getDay()
+  startDate.setDate(startDate.getDate() - startDay)
+  
+  const days = []
+  const currentDate = new Date(startDate)
+  
+  while (currentDate <= lastDayOfMonth || currentDate.getDay() !== 0) {
+    days.push(new Date(currentDate))
+    currentDate.setDate(currentDate.getDate() + 1)
+  }
+  
+  // Group tasks by date
+  const tasksByDate: { [key: string]: any[] } = {}
+  scheduledSlots.forEach(slot => {
+    const slotDate = slot.date instanceof Date ? slot.date : new Date(slot.date)
+    const dateKey = slotDate.toDateString()
+    const task = tasks.find(t => t.id === slot.taskId)
+    if (task) {
+      if (!tasksByDate[dateKey]) {
+        tasksByDate[dateKey] = []
+      }
+      tasksByDate[dateKey].push({ task, slot })
+    }
+  })
+  
+  return (
+    <div className="flex-1 overflow-y-auto p-4">
+      <div className="grid grid-cols-7 gap-1">
+        {/* Weekday headers */}
+        {['日', '月', '火', '水', '木', '金', '土'].map((day, index) => (
+          <div 
+            key={day} 
+            className={`text-center font-semibold text-sm p-2 ${
+              index === 0 ? 'text-red-500' : index === 6 ? 'text-blue-500' : ''
+            }`}
+          >
+            {day}
+          </div>
+        ))}
+        
+        {/* Calendar days */}
+        {days.map((day, index) => {
+          const isCurrentMonth = day.getMonth() === currentMonth
+          const isToday = day.toDateString() === new Date().toDateString()
+          const isSelected = day.toDateString() === selectedDate.toDateString()
+          const dateKey = day.toDateString()
+          const dayTasks = tasksByDate[dateKey] || []
+          const dayOfWeek = day.getDay()
+          
+          return (
+            <Card
+              key={index}
+              className={`min-h-[100px] p-2 cursor-pointer transition-colors ${
+                !isCurrentMonth ? 'opacity-50' : ''
+              } ${
+                isToday ? 'ring-2 ring-blue-500' : ''
+              } ${
+                isSelected ? 'bg-blue-50 dark:bg-blue-950/30' : ''
+              } hover:bg-gray-50 dark:hover:bg-gray-800`}
+              onClick={() => setSelectedDate(new Date(day))}
+            >
+              <div className="flex flex-col h-full">
+                <div className={`text-sm font-medium mb-1 ${
+                  dayOfWeek === 0 ? 'text-red-500' : dayOfWeek === 6 ? 'text-blue-500' : ''
+                }`}>
+                  {day.getDate()}
+                </div>
+                <div className="flex-1 space-y-1 overflow-y-auto">
+                  {dayTasks.slice(0, 3).map(({ task, slot }, taskIndex) => (
+                    <div
+                      key={taskIndex}
+                      className={`text-xs p-1 rounded truncate ${
+                        task.status === 'completed'
+                          ? 'bg-gray-100 dark:bg-gray-700 line-through opacity-60'
+                          : task.priority === 'high' && task.urgency === 'high'
+                          ? 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300'
+                          : task.priority === 'high' && task.urgency === 'low'
+                          ? 'bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-300'
+                          : task.priority === 'low' && task.urgency === 'high'
+                          ? 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-300'
+                          : 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300'
+                      }`}
+                      title={task.title}
+                    >
+                      <span className="flex items-center justify-between">
+                        <span className="truncate">{task.title}</span>
+                        {task.status === 'completed' && (
+                          <Check className="w-3 h-3 flex-shrink-0 ml-1" />
+                        )}
+                      </span>
+                    </div>
+                  ))}
+                  {dayTasks.length > 3 && (
+                    <div className="text-xs text-muted-foreground text-center">
+                      +{dayTasks.length - 3} more
+                    </div>
+                  )}
+                </div>
+              </div>
+            </Card>
+          )
+        })}
       </div>
     </div>
   )
