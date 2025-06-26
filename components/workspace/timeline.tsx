@@ -97,15 +97,32 @@ function ScheduledTaskCard({ task, slotId, slotData }: ScheduledTaskCardProps) {
         <div className="relative h-full">
           {/* コンテンツエリア */}
           <div className="relative h-full pointer-events-none">
-            <div className={`text-xs font-medium ${isCompleted ? 'line-through text-muted-foreground' : ''}`}>
+            <div className={`text-xs font-medium mb-1 ${isCompleted ? 'line-through text-muted-foreground' : ''}`}>
               {task.title}
             </div>
-            <div className="text-xs text-muted-foreground flex items-center">
-              <Clock className="w-3 h-3 mr-1" />
-              {slotData.estimatedTime || 60}分
-              {isCompleted && (
-                <Check className="w-3 h-3 ml-2 text-green-600" />
-              )}
+            <div className="flex items-center space-x-1 text-xs">
+              {/* 優先度バッジ */}
+              <div className={`px-1 py-0.5 rounded text-xs ${
+                task.priority === 'high' ? 'bg-red-100 text-red-700' :
+                'bg-green-100 text-green-700'
+              }`}>
+                優先度：{task.priority === 'high' ? '高' : '低'}
+              </div>
+              {/* 緊急度バッジ */}
+              <div className={`px-1 py-0.5 rounded text-xs ${
+                task.urgency === 'high' ? 'bg-red-100 text-red-700' :
+                'bg-blue-100 text-blue-700'
+              }`}>
+                緊急度：{task.urgency === 'high' ? '高' : '低'}
+              </div>
+              {/* 時間表示 */}
+              <div className="flex items-center space-x-1 text-muted-foreground">
+                <Clock className="w-3 h-3" />
+                <span>{slotData.estimatedTime || 60}分</span>
+                {isCompleted && (
+                  <Check className="w-3 h-3 ml-1 text-green-600" />
+                )}
+              </div>
             </div>
           </div>
           
@@ -172,9 +189,9 @@ function EditScheduledTaskCard({ task, slot, onSave, onCancel }: EditScheduledTa
   }
 
   return (
-    <div className="absolute left-2 right-2 z-20" style={{ top: '0px' }}>
-      <Card className="p-3 border-primary bg-white dark:bg-gray-800">
-        <form onSubmit={handleSubmit} className="space-y-2">
+    <div className="absolute left-2 right-2 z-50" style={{ top: '0px' }}>
+      <Card className="p-3 border-primary bg-white dark:bg-gray-800 shadow-lg">
+        <form onSubmit={handleSubmit} className="space-y-2 pointer-events-auto">
           <input
             type="text"
             value={formData.title}
@@ -239,15 +256,15 @@ function EditScheduledTaskCard({ task, slot, onSave, onCancel }: EditScheduledTa
             />
           </div>
 
-          <div className="flex space-x-1">
-            <Button type="submit" size="sm" className="flex-1 h-6 text-xs">
+          <div className="flex space-x-1 pointer-events-auto">
+            <Button type="submit" size="sm" className="flex-1 h-6 text-xs pointer-events-auto">
               保存
             </Button>
             <Button 
               type="button" 
               variant="outline" 
               size="sm" 
-              className="h-6 w-6 p-0"
+              className="h-6 w-6 p-0 pointer-events-auto"
               onClick={onCancel}
             >
               <X className="w-3 h-3" />

@@ -102,27 +102,24 @@ function DraggableTaskCard({ task }: DraggableTaskCardProps) {
           className="flex items-start justify-between relative cursor-move w-full"
         >
           <div className="flex-1">
-            <div className="flex items-center justify-between mb-2">
-              <h4 className="font-medium text-sm">{task.title}</h4>
-              <div className="flex items-center space-x-2">
-                {/* 優先度バッジ */}
-                <div className={`px-2 py-1 rounded-full text-xs font-medium ${
-                  task.priority === 'high' ? 'bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300' :
-                  'bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300'
-                }`}>
-                  優先度：{task.priority === 'high' ? '高' : '低'}
-                </div>
-                {/* 緊急度バッジ */}
-                <div className={`px-2 py-1 rounded-full text-xs font-medium ${
-                  task.urgency === 'high' ? 'bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300' :
-                  'bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300'
-                }`}>
-                  緊急度：{task.urgency === 'high' ? '高' : '低'}
-                </div>
+            <h4 className="font-medium text-sm mb-2">{task.title}</h4>
+            <div className="flex items-center space-x-2 text-xs">
+              {/* 優先度バッジ */}
+              <div className={`px-2 py-1 rounded-full font-medium ${
+                task.priority === 'high' ? 'bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300' :
+                'bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300'
+              }`}>
+                優先度：{task.priority === 'high' ? '高' : '低'}
               </div>
-            </div>
-            <div className="flex items-center space-x-3 text-xs text-muted-foreground">
-              <div className="flex items-center space-x-1">
+              {/* 緊急度バッジ */}
+              <div className={`px-2 py-1 rounded-full font-medium ${
+                task.urgency === 'high' ? 'bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300' :
+                'bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300'
+              }`}>
+                緊急度：{task.urgency === 'high' ? '高' : '低'}
+              </div>
+              {/* 時間表示 */}
+              <div className="flex items-center space-x-1 text-muted-foreground">
                 <Clock className="w-3 h-3" />
                 <span>{formatTime(task.estimatedTime)}</span>
               </div>
@@ -189,30 +186,27 @@ function CompletedTaskCard({ task }: CompletedTaskCardProps) {
     <Card className="p-3 border-border bg-muted/30 opacity-75">
       <div className="flex items-start justify-between">
         <div className="flex-1">
-          <div className="flex items-center justify-between mb-1">
-            <div className="flex items-center space-x-2">
-              <Check className="w-4 h-4 text-green-600" />
-              <h4 className="font-medium text-sm line-through text-muted-foreground">{task.title}</h4>
-            </div>
-            <div className="flex items-center space-x-1 opacity-60">
-              {/* 優先度バッジ（完了済み） */}
-              <div className={`px-1.5 py-0.5 rounded text-xs ${
-                task.priority === 'high' ? 'bg-red-100 text-red-600' :
-                'bg-green-100 text-green-600'
-              }`}>
-                優先度：{task.priority === 'high' ? '高' : '低'}
-              </div>
-              {/* 緊急度バッジ（完了済み） */}
-              <div className={`px-1.5 py-0.5 rounded text-xs ${
-                task.urgency === 'high' ? 'bg-red-100 text-red-600' :
-                'bg-blue-100 text-blue-600'
-              }`}>
-                緊急度：{task.urgency === 'high' ? '高' : '低'}
-              </div>
-            </div>
+          <div className="flex items-center space-x-2 mb-1">
+            <Check className="w-4 h-4 text-green-600" />
+            <h4 className="font-medium text-sm line-through text-muted-foreground">{task.title}</h4>
           </div>
-          <div className="flex items-center space-x-3 text-xs text-muted-foreground">
-            <div className="flex items-center space-x-1">
+          <div className="flex items-center space-x-2 text-xs opacity-60">
+            {/* 優先度バッジ（完了済み） */}
+            <div className={`px-1.5 py-0.5 rounded text-xs ${
+              task.priority === 'high' ? 'bg-red-100 text-red-600' :
+              'bg-green-100 text-green-600'
+            }`}>
+              優先度：{task.priority === 'high' ? '高' : '低'}
+            </div>
+            {/* 緊急度バッジ（完了済み） */}
+            <div className={`px-1.5 py-0.5 rounded text-xs ${
+              task.urgency === 'high' ? 'bg-red-100 text-red-600' :
+              'bg-blue-100 text-blue-600'
+            }`}>
+              緊急度：{task.urgency === 'high' ? '高' : '低'}
+            </div>
+            {/* 時間表示 */}
+            <div className="flex items-center space-x-1 text-muted-foreground">
               <Clock className="w-3 h-3" />
               <span>{formatTime(task.estimatedTime)}</span>
             </div>
