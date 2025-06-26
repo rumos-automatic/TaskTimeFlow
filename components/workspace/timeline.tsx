@@ -482,7 +482,7 @@ export function Timeline() {
           >
             <ChevronLeft className="w-4 h-4" />
           </Button>
-          <h3 className="font-medium">
+          <h3 className="font-medium text-sm md:text-base">
             {selectedDate.toDateString() === new Date().toDateString() 
               ? '本日' 
               : ''}
@@ -508,7 +508,7 @@ export function Timeline() {
               variant="outline"
               size="sm"
               onClick={() => setSelectedDate(new Date())}
-              className="ml-2"
+              className="ml-1 md:ml-2 text-xs md:text-sm px-2 md:px-3"
             >
               今日
             </Button>
@@ -519,17 +519,19 @@ export function Timeline() {
             variant={viewMode === 'timeline' ? 'default' : 'outline'} 
             size="sm"
             onClick={() => setViewMode('timeline')}
+            title="タイムラインビュー"
           >
-            <Clock className="w-4 h-4 mr-1" />
-            タイムライン
+            <Clock className="w-4 h-4 md:mr-1" />
+            <span className="hidden md:inline">タイムライン</span>
           </Button>
           <Button 
             variant={viewMode === 'calendar' ? 'default' : 'outline'} 
             size="sm"
             onClick={() => setViewMode('calendar')}
+            title="カレンダービュー"
           >
-            <CalendarDays className="w-4 h-4 mr-1" />
-            カレンダー
+            <CalendarDays className="w-4 h-4 md:mr-1" />
+            <span className="hidden md:inline">カレンダー</span>
           </Button>
         </div>
       </div>
@@ -653,13 +655,13 @@ function CalendarView({ selectedDate, setSelectedDate, scheduledSlots, tasks }: 
   })
   
   return (
-    <div className="flex-1 overflow-y-auto p-4">
-      <div className="grid grid-cols-7 gap-1">
+    <div className="flex-1 overflow-y-auto p-2 md:p-4">
+      <div className="grid grid-cols-7 gap-0.5 md:gap-1">
         {/* Weekday headers */}
         {['日', '月', '火', '水', '木', '金', '土'].map((day, index) => (
           <div 
             key={day} 
-            className={`text-center font-semibold text-sm p-2 ${
+            className={`text-center font-medium md:font-semibold text-xs md:text-sm p-1 md:p-2 ${
               index === 0 ? 'text-red-500' : index === 6 ? 'text-blue-500' : ''
             }`}
           >
@@ -679,51 +681,75 @@ function CalendarView({ selectedDate, setSelectedDate, scheduledSlots, tasks }: 
           return (
             <Card
               key={index}
-              className={`min-h-[100px] p-2 cursor-pointer transition-colors ${
+              className={`min-h-[60px] md:min-h-[100px] p-1 md:p-2 cursor-pointer transition-colors ${
                 !isCurrentMonth ? 'opacity-50' : ''
               } ${
-                isToday ? 'ring-2 ring-blue-500' : ''
+                isToday ? 'ring-1 md:ring-2 ring-blue-500' : ''
               } ${
                 isSelected ? 'bg-blue-50 dark:bg-blue-950/30' : ''
               } hover:bg-gray-50 dark:hover:bg-gray-800`}
               onClick={() => setSelectedDate(new Date(day))}
             >
               <div className="flex flex-col h-full">
-                <div className={`text-sm font-medium mb-1 ${
+                <div className={`text-xs md:text-sm font-medium mb-0.5 md:mb-1 ${
                   dayOfWeek === 0 ? 'text-red-500' : dayOfWeek === 6 ? 'text-blue-500' : ''
                 }`}>
                   {day.getDate()}
                 </div>
                 <div className="flex-1 space-y-1 overflow-y-auto">
-                  {dayTasks.slice(0, 3).map(({ task, slot }, taskIndex) => (
-                    <div
-                      key={taskIndex}
-                      className={`text-xs p-1 rounded truncate ${
-                        task.status === 'completed'
-                          ? 'bg-gray-100 dark:bg-gray-700 line-through opacity-60'
-                          : task.priority === 'high' && task.urgency === 'high'
-                          ? 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300'
-                          : task.priority === 'high' && task.urgency === 'low'
-                          ? 'bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-300'
-                          : task.priority === 'low' && task.urgency === 'high'
-                          ? 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-300'
-                          : 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300'
-                      }`}
-                      title={task.title}
-                    >
-                      <span className="flex items-center justify-between">
-                        <span className="truncate">{task.title}</span>
-                        {task.status === 'completed' && (
-                          <Check className="w-3 h-3 flex-shrink-0 ml-1" />
-                        )}
-                      </span>
-                    </div>
-                  ))}
-                  {dayTasks.length > 3 && (
-                    <div className="text-xs text-muted-foreground text-center">
-                      +{dayTasks.length - 3} more
-                    </div>
-                  )}
+                  {/* Desktop view - show task names */}
+                  <div className="hidden md:block space-y-1">
+                    {dayTasks.slice(0, 3).map(({ task, slot }, taskIndex) => (
+                      <div
+                        key={taskIndex}
+                        className={`text-xs p-1 rounded truncate ${
+                          task.status === 'completed'
+                            ? 'bg-gray-100 dark:bg-gray-700 line-through opacity-60'
+                            : task.priority === 'high' && task.urgency === 'high'
+                            ? 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300'
+                            : task.priority === 'high' && task.urgency === 'low'
+                            ? 'bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-300'
+                            : task.priority === 'low' && task.urgency === 'high'
+                            ? 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-300'
+                            : 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300'
+                        }`}
+                        title={task.title}
+                      >
+                        <span className="flex items-center justify-between">
+                          <span className="truncate">{task.title}</span>
+                          {task.status === 'completed' && (
+                            <Check className="w-3 h-3 flex-shrink-0 ml-1" />
+                          )}
+                        </span>
+                      </div>
+                    ))}
+                    {dayTasks.length > 3 && (
+                      <div className="text-xs text-muted-foreground text-center">
+                        +{dayTasks.length - 3} more
+                      </div>
+                    )}
+                  </div>
+                  
+                  {/* Mobile view - show only colored dots */}
+                  <div className="md:hidden flex flex-wrap gap-0.5">
+                    {dayTasks.map(({ task, slot }, taskIndex) => (
+                      <div
+                        key={taskIndex}
+                        className={`w-2 h-2 rounded-full ${
+                          task.status === 'completed'
+                            ? 'bg-gray-400 opacity-60'
+                            : task.priority === 'high' && task.urgency === 'high'
+                            ? 'bg-red-500'
+                            : task.priority === 'high' && task.urgency === 'low'
+                            ? 'bg-orange-500'
+                            : task.priority === 'low' && task.urgency === 'high'
+                            ? 'bg-yellow-500'
+                            : 'bg-green-500'
+                        }`}
+                        title={task.title}
+                      />
+                    ))}
+                  </div>
                 </div>
               </div>
             </Card>
