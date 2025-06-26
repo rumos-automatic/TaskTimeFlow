@@ -40,7 +40,8 @@ import {
   AlertCircle,
   Circle,
   ArrowLeft,
-  ArrowRight
+  ArrowRight,
+  RotateCcw
 } from 'lucide-react'
 
 export function WorkspaceNew() {
@@ -337,8 +338,17 @@ export function WorkspaceNew() {
       >
         <div className={`flex flex-col h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800 mobile-drag-container ${isMobile && isDragging ? 'dragging' : ''}`}>
           {/* シンプルヘッダー */}
-          <div className="flex items-center justify-center p-4 border-b border-border/40 bg-card/50 backdrop-blur-sm">
+          <div className="flex items-center justify-between p-4 border-b border-border/40 bg-card/50 backdrop-blur-sm">
+            <div className="w-8" /> {/* スペーサー */}
             <h1 className="text-lg font-semibold text-foreground">TaskTimeFlow</h1>
+            {/* 再読み込みボタン */}
+            <button
+              onClick={() => window.location.reload()}
+              className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-muted/50 active:bg-muted transition-colors text-muted-foreground hover:text-foreground"
+              title="ページを再読み込み"
+            >
+              <RotateCcw className="w-4 h-4" />
+            </button>
           </div>
 
           {/* スライドビュー */}
