@@ -398,7 +398,12 @@ function DroppableTimeSlot({ time, hour, minute, slotIndex, isBusinessHour, isHo
   )
 }
 
-export function Timeline() {
+interface TimelineProps {
+  hasInitialScroll?: boolean
+  setHasInitialScroll?: (value: boolean) => void
+}
+
+export function Timeline({ hasInitialScroll = false, setHasInitialScroll }: TimelineProps = {}) {
   const [viewMode, setViewMode] = useState<'timeline' | 'calendar'>('timeline')
   const [selectedDate, setSelectedDate] = useState(new Date())
   const now = new Date()
@@ -447,24 +452,32 @@ export function Timeline() {
     })
   }
 
-  // Scroll to current time on component mount
+  // Scroll to current time on component mount (only once per session)
   useEffect(() => {
-    // Simple retry mechanism for current time indicator
-    const attemptScroll = (attempt = 1) => {
-      if (attempt > 3) return // Max 3 attempts
-      
-      if (currentTimeIndicatorRef.current) {
-        scrollToCurrentTime()
-      } else {
-        // Try again after short delay
-        setTimeout(() => attemptScroll(attempt + 1), 500)
+    // Only scroll to current time if it hasn't been done yet
+    if (!hasInitialScroll && setHasInitialScroll) {
+      // Simple retry mechanism for current time indicator
+      const attemptScroll = (attempt = 1) => {
+        if (attempt > 3) {
+          // Mark as scrolled even if failed to prevent infinite retries
+          setHasInitialScroll(true)
+          return
+        }
+        
+        if (currentTimeIndicatorRef.current) {
+          scrollToCurrentTime()
+          setHasInitialScroll(true)
+        } else {
+          // Try again after short delay
+          setTimeout(() => attemptScroll(attempt + 1), 500)
+        }
       }
-    }
 
-    // Start after DOM is ready
-    const timer = setTimeout(attemptScroll, 200)
-    return () => clearTimeout(timer)
-  }, []) // Empty dependency array - only run on mount
+      // Start after DOM is ready
+      const timer = setTimeout(attemptScroll, 200)
+      return () => clearTimeout(timer)
+    }
+  }, [hasInitialScroll, setHasInitialScroll]) // Only run when hasInitialScroll changes
 
   return (
     <div className="space-y-4 h-full flex flex-col">

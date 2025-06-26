@@ -68,22 +68,70 @@ export function WorkspaceNew() {
   const taskPoolRef = React.useRef<HTMLDivElement>(null)
   const timelineRef = React.useRef<HTMLDivElement>(null)
   const focusRef = React.useRef<HTMLDivElement>(null)
-
-  // ビュー切り替え時のスクロール位置リセット
-  const resetScrollOnViewChange = React.useCallback(() => {
-    // タスクプールビューまたはフォーカスビューの場合は一番上にスクロール
-    if (currentView === 'tasks' && taskPoolRef.current) {
-      taskPoolRef.current.scrollTop = 0
-    }
-    if (currentView === 'focus' && focusRef.current) {
-      focusRef.current.scrollTop = 0
-    }
-    // タイムラインビューの場合は何もしない（現在時刻スクロール機能を維持）
-  }, [currentView])
   
-  // ビューが変更された時にスクロール位置をリセット
+  // モバイル用の各ビューのref
+  const mobileTaskPoolRef = React.useRef<HTMLDivElement>(null)
+  const mobileTimelineRef = React.useRef<HTMLDivElement>(null)
+  const mobileFocusRef = React.useRef<HTMLDivElement>(null)
+  
+  // タイムラインのスクロール位置を保存
+  const [timelineScrollPosition, setTimelineScrollPosition] = React.useState(0)
+  const [hasInitialTimelineScroll, setHasInitialTimelineScroll] = React.useState(false)
+
+  // タイムラインから他のビューに移動時にスクロール位置を保存
+  const saveTimelineScrollPosition = React.useCallback(() => {
+    const timelineContainer = isMobile ? mobileTimelineRef.current : timelineRef.current
+    if (timelineContainer) {
+      setTimelineScrollPosition(timelineContainer.scrollTop)
+    }
+  }, [isMobile])
+  
+  // タイムラインに戻る時にスクロール位置を復元
+  const restoreTimelineScrollPosition = React.useCallback(() => {
+    const timelineContainer = isMobile ? mobileTimelineRef.current : timelineRef.current
+    if (timelineContainer && hasInitialTimelineScroll) {
+      setTimeout(() => {
+        timelineContainer.scrollTop = timelineScrollPosition
+      }, 100)
+    }
+  }, [isMobile, timelineScrollPosition, hasInitialTimelineScroll])
+  
+  // ビュー切り替え時のスクロール位置リセット
+  const resetScrollOnViewChange = React.useCallback((prevView: string) => {
+    // タイムラインから他のビューに移動する時はスクロール位置を保存
+    if (prevView === 'timeline') {
+      saveTimelineScrollPosition()
+    }
+    
+    // タスクプールビューまたはフォーカスビューの場合は一番上にスクロール
+    if (currentView === 'tasks') {
+      const taskContainer = isMobile ? mobileTaskPoolRef.current : taskPoolRef.current
+      if (taskContainer) {
+        taskContainer.scrollTop = 0
+      }
+    }
+    if (currentView === 'focus') {
+      const focusContainer = isMobile ? mobileFocusRef.current : focusRef.current
+      if (focusContainer) {
+        focusContainer.scrollTop = 0
+      }
+    }
+    
+    // タイムラインビューに戻る時はスクロール位置を復元
+    if (currentView === 'timeline') {
+      restoreTimelineScrollPosition()
+    }
+  }, [currentView, isMobile, saveTimelineScrollPosition, restoreTimelineScrollPosition])
+  
+  // ビューが変更された時にスクロール位置を処理
+  const prevViewRef = React.useRef(currentView)
   React.useEffect(() => {
-    resetScrollOnViewChange()
+    const prevView = prevViewRef.current
+    prevViewRef.current = currentView
+    
+    if (prevView !== currentView) {
+      resetScrollOnViewChange(prevView)
+    }
   }, [currentView, resetScrollOnViewChange])
   
   // スワイプジェスチャーの設定（フッターエリアのみ、ドラッグ中は無効）
@@ -396,7 +444,7 @@ export function WorkspaceNew() {
             )}
 
             {currentView === 'tasks' && (
-              <div ref={taskPoolRef} className="absolute inset-0 p-4 pb-24 overflow-y-auto">
+              <div ref={mobileTaskPoolRef} className="absolute inset-0 p-4 pb-24 overflow-y-auto">
                 <div className="flex items-center justify-between mb-6">
                   <h2 className="text-xl font-semibold text-foreground">タスクプール</h2>
                   <div className="flex items-center space-x-2">
@@ -409,7 +457,7 @@ export function WorkspaceNew() {
             )}
             
             {currentView === 'timeline' && (
-              <div ref={timelineRef} className="absolute inset-0 p-4 pb-24 overflow-y-auto">
+              <div ref={mobileTimelineRef} className="absolute inset-0 p-4 pb-24 overflow-y-auto">
                 <div className="flex items-center justify-between mb-6">
                   <h2 className="text-xl font-semibold text-foreground">タイムライン</h2>
                   <div className="flex items-center space-x-4">
@@ -428,12 +476,12 @@ export function WorkspaceNew() {
                     )}
                   </div>
                 </div>
-                <Timeline />
+                <Timeline hasInitialScroll={hasInitialTimelineScroll} setHasInitialScroll={setHasInitialTimelineScroll} />
               </div>
             )}
 
             {currentView === 'focus' && (
-              <div ref={focusRef} className="absolute inset-0 p-4 pb-24 overflow-y-auto">
+              <div ref={mobileFocusRef} className="absolute inset-0 p-4 pb-24 overflow-y-auto">
                 <div className="flex items-center justify-between mb-6">
                   <h2 className="text-xl font-semibold text-foreground">フォーカス</h2>
                   <div className="flex items-center space-x-2">
@@ -456,12 +504,6 @@ export function WorkspaceNew() {
               onClick={(e) => {
                 e.stopPropagation()
                 setCurrentView('tasks')
-                // タスクプールビューに切り替え時にスクロール位置をリセット
-                setTimeout(() => {
-                  if (taskPoolRef.current) {
-                    taskPoolRef.current.scrollTop = 0
-                  }
-                }, 50)
               }}
               className={`flex flex-col items-center space-y-1 p-3 rounded-lg transition-all duration-200 min-w-[60px] min-h-[60px] ${
                 currentView === 'tasks'
@@ -477,7 +519,6 @@ export function WorkspaceNew() {
               onClick={(e) => {
                 e.stopPropagation()
                 setCurrentView('timeline')
-                // タイムラインビューは現在時刻スクロール機能を維持するためリセットしない
               }}
               className={`flex flex-col items-center space-y-1 p-3 rounded-lg transition-all duration-200 min-w-[60px] min-h-[60px] ${
                 currentView === 'timeline'
@@ -493,12 +534,6 @@ export function WorkspaceNew() {
               onClick={(e) => {
                 e.stopPropagation()
                 setCurrentView('focus')
-                // フォーカスビューに切り替え時にスクロール位置をリセット
-                setTimeout(() => {
-                  if (focusRef.current) {
-                    focusRef.current.scrollTop = 0
-                  }
-                }, 50)
               }}
               className={`flex flex-col items-center space-y-1 p-3 rounded-lg transition-all duration-200 min-w-[60px] min-h-[60px] ${
                 currentView === 'focus'
@@ -661,7 +696,7 @@ export function WorkspaceNew() {
                 </Button>
               </div>
             </div>
-            <Timeline />
+            <Timeline hasInitialScroll={hasInitialTimelineScroll} setHasInitialScroll={setHasInitialTimelineScroll} />
           </div>
         </motion.div>
       </div>
