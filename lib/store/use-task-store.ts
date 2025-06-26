@@ -49,8 +49,8 @@ export const useTaskStore = create<TaskStore>()(
         {
           id: '2',
           title: 'プルリクエストのレビュー',
-          priority: 'medium',
-          urgency: 'urgent',
+          priority: 'low',
+          urgency: 'high',
           category: 'work',
           estimatedTime: 30,
           status: 'todo',
@@ -215,8 +215,11 @@ export const useTaskStore = create<TaskStore>()(
           if (parsed.state?.tasks) {
             parsed.state.tasks = parsed.state.tasks.map((task: any) => ({
               ...task,
-              // Ensure urgency exists for old tasks
-              urgency: task.urgency || 'medium',
+              // Convert old priority/urgency values to new 2-level system
+              priority: task.priority === 'medium' ? 'low' : (task.priority || 'low'),
+              urgency: task.urgency === 'urgent' || task.urgency === 'medium' ? 
+                      (task.urgency === 'urgent' ? 'high' : 'low') : 
+                      (task.urgency || 'low'),
               createdAt: task.createdAt ? new Date(task.createdAt) : undefined,
               updatedAt: task.updatedAt ? new Date(task.updatedAt) : undefined,
               completedAt: task.completedAt ? new Date(task.completedAt) : undefined,

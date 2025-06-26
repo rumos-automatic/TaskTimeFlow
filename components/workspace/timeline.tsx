@@ -155,6 +155,7 @@ function EditScheduledTaskCard({ task, slot, onSave, onCancel }: EditScheduledTa
   const [formData, setFormData] = useState({
     title: task.title,
     priority: task.priority,
+    urgency: task.urgency,
     category: task.category,
     estimatedTime: task.estimatedTime as number | ''
   })
@@ -183,17 +184,34 @@ function EditScheduledTaskCard({ task, slot, onSave, onCancel }: EditScheduledTa
             required
           />
 
-          <div className="grid grid-cols-3 gap-1">
-            <select
-              value={formData.priority}
-              onChange={(e) => setFormData(prev => ({ ...prev, priority: e.target.value }))}
-              className="px-1 py-1 border border-border rounded text-xs bg-background"
-            >
-              <option value="high">高</option>
-              <option value="medium">中</option>
-              <option value="low">低</option>
-            </select>
+          {/* 優先度と緊急度 */}
+          <div className="grid grid-cols-2 gap-1 mb-2">
+            <div>
+              <label className="text-xs text-muted-foreground mb-1 block">優先度</label>
+              <select
+                value={formData.priority}
+                onChange={(e) => setFormData(prev => ({ ...prev, priority: e.target.value }))}
+                className="w-full px-1 py-1 border border-border rounded text-xs bg-background"
+              >
+                <option value="high">高</option>
+                <option value="low">低</option>
+              </select>
+            </div>
+            <div>
+              <label className="text-xs text-muted-foreground mb-1 block">緊急度</label>
+              <select
+                value={formData.urgency}
+                onChange={(e) => setFormData(prev => ({ ...prev, urgency: e.target.value }))}
+                className="w-full px-1 py-1 border border-border rounded text-xs bg-background"
+              >
+                <option value="high">高</option>
+                <option value="low">低</option>
+              </select>
+            </div>
+          </div>
 
+          {/* カテゴリと時間 */}
+          <div className="grid grid-cols-2 gap-1">
             <select
               value={formData.category}
               onChange={(e) => setFormData(prev => ({ ...prev, category: e.target.value }))}

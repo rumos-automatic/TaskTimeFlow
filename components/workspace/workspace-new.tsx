@@ -312,12 +312,9 @@ export function WorkspaceNew() {
               </div>
               <div className="flex items-center space-x-1">
                 {task.priority === 'high' && <AlertCircle className="w-3 h-3 text-red-500" />}
-                {task.priority === 'medium' && <Circle className="w-3 h-3 text-yellow-500" />}
                 {task.priority === 'low' && <Circle className="w-3 h-3 text-green-500" />}
                 <span className="capitalize">
-                  {task.priority === 'high' && '高'}
-                  {task.priority === 'medium' && '中'}
-                  {task.priority === 'low' && '低'}
+                  優先度：{task.priority === 'high' ? '高' : '低'}
                 </span>
               </div>
             </div>

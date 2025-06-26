@@ -1,5 +1,5 @@
-export type Priority = 'high' | 'medium' | 'low'
-export type Urgency = 'urgent' | 'high' | 'medium' | 'low'
+export type Priority = 'high' | 'low'
+export type Urgency = 'high' | 'low'
 export type TaskStatus = 'todo' | 'in_progress' | 'completed'
 export type TaskCategory = 'work' | 'personal' | 'custom'
 

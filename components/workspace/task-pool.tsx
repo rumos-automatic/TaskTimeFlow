@@ -15,21 +15,16 @@ import { useViewState } from '@/lib/hooks/use-view-state'
 
 const priorityColors: Record<Priority, string> = {
   high: 'border-red-500 bg-red-50 dark:bg-red-950/20',
-  medium: 'border-yellow-500 bg-yellow-50 dark:bg-yellow-950/20',
   low: 'border-green-500 bg-green-50 dark:bg-green-950/20'
 }
 
 const urgencyColors: Record<Urgency, string> = {
-  urgent: 'border-r-purple-600 border-r-4',
   high: 'border-r-red-500 border-r-4',
-  medium: 'border-r-orange-500 border-r-4',
   low: 'border-r-blue-500 border-r-4'
 }
 
 const urgencyBadges: Record<Urgency, { icon: ReactElement; color: string; label: string }> = {
-  urgent: { icon: <AlertCircle className="w-3 h-3" />, color: 'text-purple-600', label: '緊急' },
   high: { icon: <AlertCircle className="w-3 h-3" />, color: 'text-red-500', label: '高' },
-  medium: { icon: <Circle className="w-3 h-3" />, color: 'text-orange-500', label: '中' },
   low: { icon: <Circle className="w-3 h-3" />, color: 'text-blue-500', label: '低' }
 }
 
@@ -113,19 +108,16 @@ function DraggableTaskCard({ task }: DraggableTaskCardProps) {
                 {/* 優先度バッジ */}
                 <div className={`px-2 py-1 rounded-full text-xs font-medium ${
                   task.priority === 'high' ? 'bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300' :
-                  task.priority === 'medium' ? 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900 dark:text-yellow-300' :
                   'bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300'
                 }`}>
-                  優先{task.priority === 'high' ? '高' : task.priority === 'medium' ? '中' : '低'}
+                  優先度：{task.priority === 'high' ? '高' : '低'}
                 </div>
                 {/* 緊急度バッジ */}
                 <div className={`px-2 py-1 rounded-full text-xs font-medium ${
-                  task.urgency === 'urgent' ? 'bg-purple-100 text-purple-700 dark:bg-purple-900 dark:text-purple-300' :
                   task.urgency === 'high' ? 'bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300' :
-                  task.urgency === 'medium' ? 'bg-orange-100 text-orange-700 dark:bg-orange-900 dark:text-orange-300' :
                   'bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300'
                 }`}>
-                  緊急{urgencyBadges[task.urgency].label}
+                  緊急度：{task.urgency === 'high' ? '高' : '低'}
                 </div>
               </div>
             </div>
@@ -206,19 +198,16 @@ function CompletedTaskCard({ task }: CompletedTaskCardProps) {
               {/* 優先度バッジ（完了済み） */}
               <div className={`px-1.5 py-0.5 rounded text-xs ${
                 task.priority === 'high' ? 'bg-red-100 text-red-600' :
-                task.priority === 'medium' ? 'bg-yellow-100 text-yellow-600' :
                 'bg-green-100 text-green-600'
               }`}>
-                優先{task.priority === 'high' ? '高' : task.priority === 'medium' ? '中' : '低'}
+                優先度：{task.priority === 'high' ? '高' : '低'}
               </div>
               {/* 緊急度バッジ（完了済み） */}
               <div className={`px-1.5 py-0.5 rounded text-xs ${
-                task.urgency === 'urgent' ? 'bg-purple-100 text-purple-600' :
                 task.urgency === 'high' ? 'bg-red-100 text-red-600' :
-                task.urgency === 'medium' ? 'bg-orange-100 text-orange-600' :
                 'bg-blue-100 text-blue-600'
               }`}>
-                緊急{urgencyBadges[task.urgency]?.label || '中'}
+                緊急度：{task.urgency === 'high' ? '高' : '低'}
               </div>
             </div>
           </div>
@@ -289,7 +278,6 @@ function EditTaskCard({ task, onSave, onCancel }: EditTaskCardProps) {
                 className="w-full px-2 py-1 border border-border rounded text-xs bg-background focus:outline-none focus:ring-1 focus:ring-red-500"
               >
                 <option value="high">高 - 重要</option>
-                <option value="medium">中 - 普通</option>
                 <option value="low">低 - 軽微</option>
               </select>
             </div>
@@ -304,9 +292,7 @@ function EditTaskCard({ task, onSave, onCancel }: EditTaskCardProps) {
                 onChange={(e) => setFormData(prev => ({ ...prev, urgency: e.target.value as Urgency }))}
                 className="w-full px-2 py-1 border border-border rounded text-xs bg-background focus:outline-none focus:ring-1 focus:ring-purple-500"
               >
-                <option value="urgent">緊急 - 今すぐ</option>
                 <option value="high">高 - 早急</option>
-                <option value="medium">中 - 普通</option>
                 <option value="low">低 - 余裕</option>
               </select>
             </div>
@@ -316,18 +302,15 @@ function EditTaskCard({ task, onSave, onCancel }: EditTaskCardProps) {
           <div className="flex items-center justify-center space-x-1 py-1 bg-muted/20 rounded">
             <div className={`px-1.5 py-0.5 rounded text-xs font-medium ${
               formData.priority === 'high' ? 'bg-red-100 text-red-700' :
-              formData.priority === 'medium' ? 'bg-yellow-100 text-yellow-700' :
               'bg-green-100 text-green-700'
             }`}>
-              優先{formData.priority === 'high' ? '高' : formData.priority === 'medium' ? '中' : '低'}
+              優先度：{formData.priority === 'high' ? '高' : '低'}
             </div>
             <div className={`px-1.5 py-0.5 rounded text-xs font-medium ${
-              formData.urgency === 'urgent' ? 'bg-purple-100 text-purple-700' :
               formData.urgency === 'high' ? 'bg-red-100 text-red-700' :
-              formData.urgency === 'medium' ? 'bg-orange-100 text-orange-700' :
               'bg-blue-100 text-blue-700'
             }`}>
-              緊急{formData.urgency === 'urgent' ? '緊急' : formData.urgency === 'high' ? '高' : formData.urgency === 'medium' ? '中' : '低'}
+              緊急度：{formData.urgency === 'high' ? '高' : '低'}
             </div>
           </div>
         </div>
@@ -383,8 +366,8 @@ function AddTaskForm() {
   const [showForm, setShowForm] = useState(false)
   const [formData, setFormData] = useState({
     title: '',
-    priority: 'medium' as Priority,
-    urgency: 'medium' as Urgency,
+    priority: 'low' as Priority,
+    urgency: 'low' as Urgency,
     category: 'work' as TaskCategory,
     estimatedTime: 30 as number | ''
   })
@@ -405,8 +388,8 @@ function AddTaskForm() {
     // Reset form
     setFormData({
       title: '',
-      priority: 'medium',
-      urgency: 'medium',
+      priority: 'low',
+      urgency: 'low',
       category: 'work',
       estimatedTime: 30
     })
@@ -444,7 +427,6 @@ function AddTaskForm() {
                   className="w-full px-3 py-2 border border-border rounded text-sm bg-background focus:outline-none focus:ring-2 focus:ring-red-500"
                 >
                   <option value="high">高 - 非常に重要</option>
-                  <option value="medium">中 - 普通の重要度</option>
                   <option value="low">低 - あまり重要でない</option>
                 </select>
               </div>
@@ -460,9 +442,7 @@ function AddTaskForm() {
                   onChange={(e) => setFormData(prev => ({ ...prev, urgency: e.target.value as Urgency }))}
                   className="w-full px-3 py-2 border border-border rounded text-sm bg-background focus:outline-none focus:ring-2 focus:ring-purple-500"
                 >
-                  <option value="urgent">緊急 - 今すぐ必要</option>
                   <option value="high">高 - 早めに対応</option>
-                  <option value="medium">中 - 普通のペース</option>
                   <option value="low">低 - 時間に余裕あり</option>
                 </select>
               </div>
@@ -473,18 +453,15 @@ function AddTaskForm() {
               <span className="text-xs text-muted-foreground">プレビュー:</span>
               <div className={`px-2 py-1 rounded-full text-xs font-medium ${
                 formData.priority === 'high' ? 'bg-red-100 text-red-700' :
-                formData.priority === 'medium' ? 'bg-yellow-100 text-yellow-700' :
                 'bg-green-100 text-green-700'
               }`}>
-                優先{formData.priority === 'high' ? '高' : formData.priority === 'medium' ? '中' : '低'}
+                優先度：{formData.priority === 'high' ? '高' : '低'}
               </div>
               <div className={`px-2 py-1 rounded-full text-xs font-medium ${
-                formData.urgency === 'urgent' ? 'bg-purple-100 text-purple-700' :
                 formData.urgency === 'high' ? 'bg-red-100 text-red-700' :
-                formData.urgency === 'medium' ? 'bg-orange-100 text-orange-700' :
                 'bg-blue-100 text-blue-700'
               }`}>
-                緊急{formData.urgency === 'urgent' ? '緊急' : formData.urgency === 'high' ? '高' : formData.urgency === 'medium' ? '中' : '低'}
+                緊急度：{formData.urgency === 'high' ? '高' : '低'}
               </div>
             </div>
           </div>
