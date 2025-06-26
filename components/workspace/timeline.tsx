@@ -341,7 +341,9 @@ export function Timeline() {
   }).filter(item => item.task?.title) // Filter out items without task details
   
   // Create sortable IDs for scheduled tasks
-  const sortableIds = scheduledTasks.map(item => `scheduled-${item.task.id}-${item.slotId}`)
+  const sortableIds = scheduledTasks
+    .filter(item => item.task) // TypeScript安全性のため
+    .map(item => `scheduled-${item.task!.id}-${item.slotId}`)
 
   return (
     <div className="space-y-4 h-full flex flex-col">
