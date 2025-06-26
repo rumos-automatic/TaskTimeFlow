@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
-import { Task, TimeSlot, Priority, TaskStatus, TaskCategory } from '@/lib/types'
+import { Task, TimeSlot, Priority, Urgency, TaskStatus, TaskCategory } from '@/lib/types'
 
 interface TaskStore {
   // Tasks
@@ -39,6 +39,7 @@ export const useTaskStore = create<TaskStore>()(
           id: '1',
           title: '新しいランディングページのデザイン',
           priority: 'high',
+          urgency: 'high',
           category: 'work',
           estimatedTime: 120,
           status: 'todo',
@@ -49,6 +50,7 @@ export const useTaskStore = create<TaskStore>()(
           id: '2',
           title: 'プルリクエストのレビュー',
           priority: 'medium',
+          urgency: 'urgent',
           category: 'work',
           estimatedTime: 30,
           status: 'todo',
@@ -59,6 +61,7 @@ export const useTaskStore = create<TaskStore>()(
           id: '3',
           title: '食料品の買い物',
           priority: 'low',
+          urgency: 'low',
           category: 'personal',
           estimatedTime: 60,
           status: 'todo',
@@ -212,6 +215,8 @@ export const useTaskStore = create<TaskStore>()(
           if (parsed.state?.tasks) {
             parsed.state.tasks = parsed.state.tasks.map((task: any) => ({
               ...task,
+              // Ensure urgency exists for old tasks
+              urgency: task.urgency || 'medium',
               createdAt: task.createdAt ? new Date(task.createdAt) : undefined,
               updatedAt: task.updatedAt ? new Date(task.updatedAt) : undefined,
               completedAt: task.completedAt ? new Date(task.completedAt) : undefined,

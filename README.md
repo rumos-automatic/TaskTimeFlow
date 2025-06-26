@@ -4,13 +4,13 @@
 
 TaskTimeFlowは、従来のプロジェクト管理ツールの枠を超えた次世代生産性向上アプリケーションです。かんばんボードと24時間連続タイムラインの革新的な統合により、タスク管理と時間管理を一元化し、個人・チームの生産性を最大化します。
 
-![TaskTimeFlow](https://img.shields.io/badge/TaskTimeFlow-v0.3.0-brightgreen)
+![TaskTimeFlow](https://img.shields.io/badge/TaskTimeFlow-v0.4.0-brightgreen)
 ![Next.js](https://img.shields.io/badge/Next.js-15.3.4-black)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.8-blue)
-![Progress](https://img.shields.io/badge/Progress-60%25-orange)
+![Progress](https://img.shields.io/badge/Progress-75%25-orange)
 ![Vercel](https://img.shields.io/badge/Vercel-Deployed-black)
 
-## 🚀 現在の開発状況 (v0.3.0)
+## 🚀 現在の開発状況 (v0.4.0)
 
 > **🔴 ライブデモ**: [https://task-time-flow.vercel.app/](https://task-time-flow.vercel.app/)
 
@@ -23,9 +23,13 @@ TaskTimeFlowは、従来のプロジェクト管理ツールの枠を超えた�
 - ✅ **日本語完全対応** - UI・用語の日本語ローカライゼーション
 
 #### ⚡ **機能実装**
-- ✅ **ドラッグ&ドロップ** - タスクプール→タイムライン移動
+- ✅ **ドラッグ&ドロップ** - タスクプール⇄タイムライン双方向移動
+- ✅ **モバイルドラッグ** - iOS風150ms長押し+ハプティック
+- ✅ **クロスビュードラッグ** - ビュー間をまたぐドラッグ&ドロップ
+- ✅ **エッジプル機能** - 画面端でのスムーズなビュー切り替え
 - ✅ **Pomodoroタイマー** - 25分集中 + 休憩サイクル
 - ✅ **タスクCRUD** - 作成・更新・削除・完了管理
+- ✅ **現在時刻表示** - 分単位精密表示
 - ✅ **リアルタイム統計** - 本日の進捗・ポモドーロ回数
 - ✅ **カテゴリ管理** - 仕事・個人・カスタム分類
 - ✅ **優先度設定** - 高・中・低の3段階
@@ -50,14 +54,16 @@ TaskTimeFlowは、従来のプロジェクト管理ツールの枠を超えた�
 TypeScript: 100% Coverage
 コンポーネント: 8個 (完全型安全)
 Lighthouse Performance: 95+
-モバイル対応: 100%
+モバイル対応: 100% (iOS風ドラッグ対応)
+ドラッグ精度: pointerWithin collision detection
+タッチ応答性: 150ms長押し + ハプティック
 ```
 
-### 📋 **次回リリース予定 (v0.4.0)**
-1. **Google API統合** - Calendar/Tasks同期
-2. **データ永続化** - Supabase移行
-3. **認証システム** - Google OAuth
-4. **プッシュ通知** - ブラウザ通知拡張
+### 📋 **次回リリース予定 (v0.5.0)**
+1. **Google API統合** - Calendar/Tasks双方向同期
+2. **Supabase BaaS統合** - リアルタイムデータベース
+3. **認証システム** - Google OAuth + RLS
+4. **マルチAI統合** - GPT-4・Claude・Gemini
 
 ## ✨ 主要機能
 
@@ -380,7 +386,7 @@ chore: ビルド・設定変更
 | 👥 **チーム機能** | 0% | 📋 計画中 |
 | 🔒 **認証・セキュリティ** | 20% | 🚧 開発中 |
 
-**現在のバージョン**: `v0.3.0` | **全体進捗**: `60%` | **次回リリース**: `v0.4.0 (Google統合)`
+**現在のバージョン**: `v0.4.0` | **全体進捗**: `75%` | **次回リリース**: `v0.5.0 (Google統合)`
 
 ---
 

@@ -1,4 +1,5 @@
 export type Priority = 'high' | 'medium' | 'low'
+export type Urgency = 'urgent' | 'high' | 'medium' | 'low'
 export type TaskStatus = 'todo' | 'in_progress' | 'completed'
 export type TaskCategory = 'work' | 'personal' | 'custom'
 
@@ -7,6 +8,7 @@ export interface Task {
   title: string
   description?: string
   priority: Priority
+  urgency: Urgency
   category: TaskCategory
   estimatedTime: number // in minutes
   actualTime?: number // in minutes
