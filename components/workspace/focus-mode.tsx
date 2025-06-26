@@ -23,7 +23,7 @@ export function FocusMode() {
     tick
   } = useTimerStore()
 
-  const { tasks, updateTask } = useTaskStore()
+  const { tasks, updateTask, timeSlots } = useTaskStore()
 
   // Timer effect
   useEffect(() => {
@@ -36,10 +36,70 @@ export function FocusMode() {
     return () => clearInterval(interval)
   }, [isRunning, tick])
 
-  // Get current and next tasks
-  const currentTask = currentTaskId ? tasks.find(t => t.id === currentTaskId) : null
-  const unscheduledTasks = tasks.filter(t => !t.scheduledDate && t.status === 'todo')
-  const nextTask = unscheduledTasks.find(t => t.id !== currentTaskId)
+  // Helper function to get tasks for current time and next task
+  const getTimelineBasedTasks = () => {
+    const now = new Date()
+    const currentHour = now.getHours()
+    const currentMinute = now.getMinutes()
+    const today = new Date().toDateString()
+    
+    // Get today's scheduled slots
+    const todaySlots = timeSlots.filter(slot => {
+      const slotDate = slot.date instanceof Date ? slot.date : new Date(slot.date)
+      return slotDate.toDateString() === today
+    })
+    
+    // Sort slots by start time
+    const sortedSlots = todaySlots.sort((a, b) => {
+      const [aHour, aMinute] = a.startTime.split(':').map(Number)
+      const [bHour, bMinute] = b.startTime.split(':').map(Number)
+      return (aHour * 60 + aMinute) - (bHour * 60 + bMinute)
+    })
+    
+    // Find current task (task running right now)
+    let currentTask = null
+    const currentTime = currentHour * 60 + currentMinute
+    
+    for (const slot of sortedSlots) {
+      const [startHour, startMinute] = slot.startTime.split(':').map(Number)
+      const [endHour, endMinute] = slot.endTime.split(':').map(Number)
+      
+      const startTime = startHour * 60 + startMinute
+      const endTime = endHour * 60 + endMinute
+      
+      if (currentTime >= startTime && currentTime < endTime) {
+        const task = tasks.find(t => t.id === slot.taskId)
+        if (task && task.status !== 'completed') {
+          currentTask = task
+          break
+        }
+      }
+    }
+    
+    // Find next task (next scheduled task after current time)
+    let nextTask = null
+    for (const slot of sortedSlots) {
+      const [startHour, startMinute] = slot.startTime.split(':').map(Number)
+      const startTime = startHour * 60 + startMinute
+      
+      if (startTime > currentTime) {
+        const task = tasks.find(t => t.id === slot.taskId)
+        if (task && task.status !== 'completed') {
+          nextTask = { task, scheduledTime: slot.startTime }
+          break
+        }
+      }
+    }
+    
+    return { currentTask, nextTask }
+  }
+
+  // Get current and next tasks from timeline
+  const { currentTask: timelineCurrentTask, nextTask: timelineNextTask } = getTimelineBasedTasks()
+  
+  // Focus view is purely timeline-based - no fallback to timer-based tasks
+  const currentTask = timelineCurrentTask
+  const nextTask = timelineNextTask?.task || null
 
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60)
@@ -51,12 +111,11 @@ export function FocusMode() {
 
   const handleStartPause = () => {
     if (!isRunning && !isPaused) {
-      // Start new timer
-      if (nextTask) {
-        startTimer(nextTask.id)
-      } else {
-        startTimer()
+      // Start timer for current timeline task only
+      if (currentTask) {
+        startTimer(currentTask.id)
       }
+      // If no current task is scheduled, timer cannot be started
     } else if (isRunning) {
       // Pause timer
       pauseTimer()
@@ -128,6 +187,7 @@ export function FocusMode() {
             variant={isRunning ? "secondary" : "default"}
             size="sm"
             onClick={handleStartPause}
+            disabled={!currentTask && !isRunning && !isPaused}
           >
             {isRunning ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}
           </Button>
@@ -145,7 +205,8 @@ export function FocusMode() {
         <div className="text-center text-xs text-muted-foreground">
           {isRunning && "タイマー実行中"}
           {isPaused && "一時停止中"}
-          {!isRunning && !isPaused && "開始準備完了"}
+          {!isRunning && !isPaused && currentTask && "開始準備完了"}
+          {!isRunning && !isPaused && !currentTask && "タイムラインにタスクをスケジュールしてください"}
         </div>
       </Card>
 
@@ -153,18 +214,49 @@ export function FocusMode() {
 
       {/* Current Task */}
       <div className="space-y-3">
-        <h3 className="text-sm font-medium">現在のタスク</h3>
+        <div className="flex items-center justify-between">
+          <h3 className="text-sm font-medium">現在のタスク</h3>
+          <div className="text-xs text-muted-foreground">
+            {timeSlots.length > 0 ? `${timeSlots.length}個のスロット` : 'スロットなし'}
+          </div>
+        </div>
         {currentTask ? (
           <Card className="p-4 bg-blue-50 dark:bg-blue-950/30 border-blue-200 dark:border-blue-800">
-            <h4 className="font-medium text-sm mb-2">{currentTask.title}</h4>
-            <div className="text-xs text-muted-foreground">
-              予想時間: {currentTask.estimatedTime}分
+            <div className="flex items-center justify-between mb-2">
+              <h4 className="font-medium text-sm">{currentTask.title}</h4>
+              <div className="flex items-center space-x-1">
+                <div className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded-full">
+                  📅 現在実行中
+                </div>
+              </div>
+            </div>
+            <div className="space-y-1 text-xs text-muted-foreground">
+              <div>予想時間: {currentTask.estimatedTime}分</div>
+              <div className="flex items-center space-x-2">
+                <div className="flex items-center space-x-1">
+                  <div className={`px-1 py-0.5 rounded text-xs ${
+                    currentTask.priority === 'high' ? 'bg-red-100 text-red-700' :
+                    'bg-green-100 text-green-700'
+                  }`}>
+                    優先度：{currentTask.priority === 'high' ? '高' : '低'}
+                  </div>
+                  <div className={`px-1 py-0.5 rounded text-xs ${
+                    currentTask.urgency === 'high' ? 'bg-red-100 text-red-700' :
+                    'bg-blue-100 text-blue-700'
+                  }`}>
+                    緊急度：{currentTask.urgency === 'high' ? '高' : '低'}
+                  </div>
+                </div>
+              </div>
             </div>
           </Card>
         ) : (
           <Card className="p-4 border-dashed">
             <div className="text-center text-muted-foreground text-sm">
-              タスクが選択されていません
+              現在時刻にスケジュールされたタスクがありません
+              <div className="text-xs mt-1 opacity-75">
+                タイムラインでタスクをスケジュールしてください
+              </div>
             </div>
           </Card>
         )}
@@ -172,18 +264,49 @@ export function FocusMode() {
 
       {/* Next Task */}
       <div className="space-y-3">
-        <h3 className="text-sm font-medium">次のタスク</h3>
+        <div className="flex items-center justify-between">
+          <h3 className="text-sm font-medium">次のタスク</h3>
+          <div className="text-xs text-muted-foreground">
+            {new Date().toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit' })}
+          </div>
+        </div>
         {nextTask ? (
           <Card className="p-4 border-dashed">
-            <h4 className="font-medium text-sm mb-2">{nextTask.title}</h4>
-            <div className="text-xs text-muted-foreground">
-              予想時間: {nextTask.estimatedTime}分
+            <div className="flex items-center justify-between mb-2">
+              <h4 className="font-medium text-sm">{nextTask.title}</h4>
+              <div className="flex items-center space-x-1">
+                <div className="text-xs bg-orange-100 text-orange-700 px-2 py-1 rounded-full">
+                  📅 {timelineNextTask.scheduledTime}
+                </div>
+              </div>
+            </div>
+            <div className="space-y-1 text-xs text-muted-foreground">
+              <div>予想時間: {nextTask.estimatedTime}分</div>
+              <div className="flex items-center space-x-2">
+                <div className="flex items-center space-x-1">
+                  <div className={`px-1 py-0.5 rounded text-xs ${
+                    nextTask.priority === 'high' ? 'bg-red-100 text-red-700' :
+                    'bg-green-100 text-green-700'
+                  }`}>
+                    優先度：{nextTask.priority === 'high' ? '高' : '低'}
+                  </div>
+                  <div className={`px-1 py-0.5 rounded text-xs ${
+                    nextTask.urgency === 'high' ? 'bg-red-100 text-red-700' :
+                    'bg-blue-100 text-blue-700'
+                  }`}>
+                    緊急度：{nextTask.urgency === 'high' ? '高' : '低'}
+                  </div>
+                </div>
+              </div>
             </div>
           </Card>
         ) : (
           <Card className="p-4 border-dashed">
             <div className="text-center text-muted-foreground text-sm">
-              次のタスクがありません
+              スケジュールされた次のタスクがありません
+              <div className="text-xs mt-1 opacity-75">
+                タイムラインで後の時間にタスクをスケジュールしてください
+              </div>
             </div>
           </Card>
         )}
@@ -231,7 +354,7 @@ export function FocusMode() {
           disabled={!currentTask}
         >
           <CheckCircle className="w-4 h-4 mr-2" />
-          現在のタスクを完了にする
+          {currentTask ? "現在のタスクを完了にする" : "完了できるタスクがありません"}
         </Button>
       </div>
     </div>
