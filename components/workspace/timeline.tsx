@@ -385,6 +385,7 @@ export function Timeline() {
   const currentMinute = now.getMinutes()
   const { timeSlots: scheduledSlots, tasks } = useTaskStore()
   const timelineContainerRef = useRef<HTMLDivElement>(null)
+  const currentTimeIndicatorRef = useRef<HTMLDivElement>(null)
   
   // Get today's date for filtering
   const today = new Date()
@@ -415,70 +416,33 @@ export function Timeline() {
     .filter(item => item.task) // TypeScript安全性のため
     .map(item => `scheduled-${item.task!.id}-${item.slotId}`)
 
-  // Function to calculate current time position and scroll to it
+  // Function to scroll to current time indicator
   const scrollToCurrentTime = () => {
-    if (!timelineContainerRef.current) return
+    if (!currentTimeIndicatorRef.current) return
 
-    const container = timelineContainerRef.current
-    
-    // Get fresh current time for accurate calculation
-    const now = new Date()
-    const currentHour = now.getHours()
-    const currentMinute = now.getMinutes()
-
-    // Calculate current time position (same logic as Current Time Indicator)
-    const currentSlotIndex = currentHour * 4 + Math.floor(currentMinute / 15)
-    let totalHeight = 0
-    
-    for (let i = 0; i < currentSlotIndex; i++) {
-      const slotMinute = (i % 4) * 15
-      totalHeight += slotMinute === 0 ? 64 : 40 // h-16 or h-10
-    }
-    
-    // Add offset within current slot
-    const currentSlotMinute = (currentSlotIndex % 4) * 15
-    const slotHeight = currentSlotMinute === 0 ? 64 : 40
-    const offsetInSlot = ((currentMinute % 15) / 15) * slotHeight
-    const currentTimePosition = totalHeight + offsetInSlot
-
-    // Calculate scroll position to center current time
-    const containerHeight = container.clientHeight
-    const scrollTop = Math.max(0, currentTimePosition - containerHeight / 2)
-
-    // Use requestAnimationFrame for better mobile compatibility
-    requestAnimationFrame(() => {
-      // Try multiple scroll methods for mobile compatibility
-      try {
-        container.scrollTo({
-          top: scrollTop,
-          behavior: 'smooth'
-        })
-      } catch (e) {
-        // Fallback for older browsers
-        container.scrollTop = scrollTop
-      }
+    // Use scrollIntoView for reliable cross-platform scrolling
+    currentTimeIndicatorRef.current.scrollIntoView({
+      behavior: 'smooth',
+      block: 'center'
     })
   }
 
   // Scroll to current time on component mount
   useEffect(() => {
-    // Multiple attempts for mobile reliability
+    // Simple retry mechanism for current time indicator
     const attemptScroll = (attempt = 1) => {
-      if (attempt > 5) return // Max 5 attempts
+      if (attempt > 3) return // Max 3 attempts
       
-      if (timelineContainerRef.current && timelineContainerRef.current.scrollHeight > 0) {
+      if (currentTimeIndicatorRef.current) {
         scrollToCurrentTime()
       } else {
-        // Try again with increasing delay
-        setTimeout(() => attemptScroll(attempt + 1), attempt * 200)
+        // Try again after short delay
+        setTimeout(() => attemptScroll(attempt + 1), 500)
       }
     }
 
-    // Start first attempt after initial delay
-    const timer = setTimeout(() => {
-      attemptScroll()
-    }, 100)
-
+    // Start after DOM is ready
+    const timer = setTimeout(attemptScroll, 200)
     return () => clearTimeout(timer)
   }, []) // Empty dependency array - only run on mount
 
@@ -513,6 +477,7 @@ export function Timeline() {
           <div className="relative">
             {/* Current Time Indicator */}
             <div 
+              ref={currentTimeIndicatorRef}
               className="absolute left-0 right-0 z-10 pointer-events-none"
               style={{ 
                 top: `${(() => {
