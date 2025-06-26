@@ -22,7 +22,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="ja" className="overscroll-none">
-      <body className="overscroll-none overflow-hidden">{children}</body>
+      <body className="overscroll-none">{children}</body>
     </html>
   )
 }

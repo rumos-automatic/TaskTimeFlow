@@ -21,6 +21,8 @@ import {
   DragStartEvent,
   DragOverlay,
   closestCenter,
+  pointerWithin,
+  rectIntersection,
   MouseSensor,
   TouchSensor,
   KeyboardSensor,
@@ -78,10 +80,11 @@ export function WorkspaceNew() {
   })
 
   const touchSensor = useSensor(TouchSensor, {
-    // 200ms長押しでドラッグ開始
+    // モバイルでのスムーズなドラッグ
     activationConstraint: {
-      delay: 200,
-      tolerance: 5
+      delay: 150,
+      tolerance: 5,
+      distance: 8
     }
   })
 
@@ -125,8 +128,9 @@ export function WorkspaceNew() {
   })
 
   // スクロールロック機能（モバイル専用）
+  // タイムラインでのドラッグ中のみ有効
   useScrollLock({
-    isLocked: isMobile && isDragging
+    isLocked: isMobile && isDragging && currentView === 'timeline'
   })
 
   // プルトゥリフレッシュ防止（ドラッグ中のみ）
@@ -289,7 +293,7 @@ export function WorkspaceNew() {
     }
 
     return (
-      <div className={`p-4 rounded-lg border-2 shadow-2xl opacity-90 ${priorityColors[task.priority]} transform rotate-3 scale-105`}>
+      <div className={`p-4 rounded-lg border-2 shadow-2xl ${priorityColors[task.priority]} transform scale-110`}>
         <div className="flex items-start justify-between">
           <div className="flex-1">
             <h4 className="font-medium text-sm mb-2 text-black dark:text-white">{task.title}</h4>
@@ -320,7 +324,7 @@ export function WorkspaceNew() {
     return (
       <DndContext
         sensors={sensors}
-        collisionDetection={closestCenter}
+        collisionDetection={pointerWithin}
         onDragStart={handleDragStart}
         onDragEnd={handleDragEnd}
       >

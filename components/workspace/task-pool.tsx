@@ -89,8 +89,7 @@ function DraggableTaskCard({ task }: DraggableTaskCardProps) {
         <div 
           {...listeners}
           {...attributes}
-          className="flex items-start justify-between relative cursor-move touch-none w-full"
-          style={{ touchAction: 'none' }}
+          className="flex items-start justify-between relative cursor-move w-full"
         >
           <div className="flex-1">
             <h4 className="font-medium text-sm mb-2">{task.title}</h4>

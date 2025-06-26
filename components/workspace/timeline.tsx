@@ -80,15 +80,16 @@ function ScheduledTaskCard({ task, slotId, slotData }: ScheduledTaskCardProps) {
     <div ref={setNodeRef} style={style}>
       <Card
         {...(!isCompleted ? { ...listeners, ...attributes } : {})}
-        className={`absolute left-2 right-2 p-2 z-20 transition-colors group ${!isCompleted ? 'cursor-move touch-none' : ''} ${
+        className={`absolute left-2 right-2 p-2 transition-colors group ${!isCompleted ? 'cursor-move' : ''} ${
+          isDragging ? 'z-50 shadow-2xl scale-105' : 'z-20'
+        } ${
           isCompleted 
             ? 'bg-muted/50 border-muted opacity-60' 
             : 'bg-blue-100 border-blue-300 dark:bg-blue-950/30 hover:bg-blue-200 dark:hover:bg-blue-900/40'
         }`}
         style={{ 
           height: `${slotData.estimatedTime || 60}px`,
-          top: '0px',
-          touchAction: !isCompleted ? 'none' : 'auto'
+          top: '0px'
         }}
         onMouseEnter={() => setShowActions(true)}
         onMouseLeave={() => setShowActions(false)}

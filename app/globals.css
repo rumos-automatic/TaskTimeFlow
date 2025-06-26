@@ -63,16 +63,20 @@
     -webkit-overflow-scrolling: touch;
   }
   
-  /* モバイルでのドラッグ時のブラウザ動作を防止 */
+  /* モバイルドラッグ最適化 */
   .mobile-drag-container {
-    touch-action: pan-y;
     overscroll-behavior: none;
   }
   
   .mobile-drag-container.dragging {
-    touch-action: none;
     overscroll-behavior: none;
     user-select: none;
     -webkit-user-select: none;
+  }
+  
+  /* ドラッグ中のアイテム */
+  [data-dnd-dragging="true"] {
+    opacity: 0.5;
+    cursor: grabbing;
   }
 }

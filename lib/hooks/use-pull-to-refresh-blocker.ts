@@ -8,16 +8,12 @@ export function usePullToRefreshBlocker({ isActive }: PullToRefreshBlockerOption
   useEffect(() => {
     if (!isActive) return
 
-    // CSSによる軽量な防止策
+    // プルトゥリフレッシュのみを防止
     const originalOverscroll = document.body.style.overscrollBehavior
-    const originalTouchAction = document.body.style.touchAction
-    
     document.body.style.overscrollBehavior = 'none'
-    document.body.style.touchAction = 'pan-x pinch-zoom'
 
     return () => {
       document.body.style.overscrollBehavior = originalOverscroll
-      document.body.style.touchAction = originalTouchAction
     }
   }, [isActive])
 }

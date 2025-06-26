@@ -15,19 +15,20 @@ export function useScrollLock({
     const container = document.querySelector(containerSelector) as HTMLElement
     if (!container) return
 
-    // CSSで軽量なスクロールロック
-    const originalOverflow = container.style.overflow
-    const originalTouchAction = container.style.touchAction
+    // スクロールのみをロック、ドラッグは許可
     const originalOverscrollBehavior = container.style.overscrollBehavior
-    
-    container.style.overflow = 'hidden'
-    container.style.touchAction = 'none'
     container.style.overscrollBehavior = 'none'
 
+    // スクロールイベントをキャンセル
+    const preventScroll = (e: Event) => {
+      e.preventDefault()
+    }
+    
+    container.addEventListener('scroll', preventScroll, { passive: false })
+
     return () => {
-      container.style.overflow = originalOverflow
-      container.style.touchAction = originalTouchAction
       container.style.overscrollBehavior = originalOverscrollBehavior
+      container.removeEventListener('scroll', preventScroll)
     }
   }, [isLocked, containerSelector])
 }
