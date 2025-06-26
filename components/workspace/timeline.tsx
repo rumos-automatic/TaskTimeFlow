@@ -654,8 +654,13 @@ function CalendarView({ selectedDate, setSelectedDate, scheduledSlots, tasks }: 
     }
   })
   
+  // Get tasks for selected date
+  const selectedDateKey = selectedDate.toDateString()
+  const selectedDateTasks = tasksByDate[selectedDateKey] || []
+  
   return (
-    <div className="flex-1 overflow-y-auto p-2 md:p-4">
+    <div className="flex-1 overflow-y-auto p-2 md:p-4 space-y-4">
+      {/* Calendar Grid */}
       <div className="grid grid-cols-7 gap-0.5 md:gap-1">
         {/* Weekday headers */}
         {['日', '月', '火', '水', '木', '金', '土'].map((day, index) => (
@@ -756,6 +761,161 @@ function CalendarView({ selectedDate, setSelectedDate, scheduledSlots, tasks }: 
           )
         })}
       </div>
+      
+      {/* Selected Date Tasks */}
+      <div className="mt-4">
+        <div className="mb-3">
+          <h3 className="text-sm md:text-base font-semibold text-foreground">
+            {selectedDate.toLocaleDateString('ja-JP', { 
+              month: 'long', 
+              day: 'numeric', 
+              weekday: 'long' 
+            })}のタスク
+          </h3>
+          <Separator className="mt-2" />
+        </div>
+        
+        {selectedDateTasks.length === 0 ? (
+          <div className="text-center py-8 text-muted-foreground">
+            <Calendar className="w-12 h-12 mx-auto mb-2 opacity-50" />
+            <p className="text-sm">この日にスケジュールされたタスクはありません</p>
+          </div>
+        ) : (
+          <div className="space-y-2">
+            {selectedDateTasks
+              .sort((a, b) => {
+                // Sort by start time
+                const timeA = a.slot.startTime || '00:00'
+                const timeB = b.slot.startTime || '00:00'
+                return timeA.localeCompare(timeB)
+              })
+              .map(({ task, slot }, index) => (
+                <SelectedDateTaskCard 
+                  key={`${task.id}-${slot.id}`}
+                  task={task}
+                  slot={slot}
+                  onComplete={() => completeTask(task.id)}
+                  onUncomplete={() => uncompleteTask(task.id)}
+                  onRemove={() => removeTimeSlot(slot.id)}
+                />
+              ))
+            }
+          </div>
+        )}
+      </div>
     </div>
+  )
+}
+
+// Selected Date Task Card Component
+interface SelectedDateTaskCardProps {
+  task: any
+  slot: any
+  onComplete: () => void
+  onUncomplete: () => void
+  onRemove: () => void
+}
+
+function SelectedDateTaskCard({ task, slot, onComplete, onUncomplete, onRemove }: SelectedDateTaskCardProps) {
+  const [showActions, setShowActions] = useState(false)
+  const isCompleted = task.status === 'completed'
+  
+  return (
+    <Card 
+      className={`p-3 md:p-4 transition-colors hover:bg-muted/50 ${
+        isCompleted ? 'opacity-60 bg-muted/30' : ''
+      }`}
+      onMouseEnter={() => setShowActions(true)}
+      onMouseLeave={() => setShowActions(false)}
+    >
+      <div className="flex items-start justify-between">
+        <div className="flex-1 min-w-0">
+          {/* Task Title and Time */}
+          <div className="flex items-center space-x-2 mb-2">
+            <h4 className={`font-medium text-sm md:text-base truncate ${
+              isCompleted ? 'line-through text-muted-foreground' : 'text-foreground'
+            }`}>
+              {task.title}
+            </h4>
+            {isCompleted && (
+              <Check className="w-4 h-4 text-green-600 flex-shrink-0" />
+            )}
+          </div>
+          
+          {/* Time and Duration */}
+          <div className="flex items-center space-x-4 mb-2 text-xs md:text-sm text-muted-foreground">
+            <div className="flex items-center space-x-1">
+              <Clock className="w-3 h-3" />
+              <span>{slot.startTime || '時間未設定'}</span>
+              {slot.endTime && (
+                <span>- {slot.endTime}</span>
+              )}
+            </div>
+            <div className="flex items-center space-x-1">
+              <span>予想時間: {task.estimatedTime || 60}分</span>
+            </div>
+          </div>
+          
+          {/* Priority and Urgency Badges */}
+          <div className="flex items-center space-x-2">
+            <div className={`px-2 py-1 rounded text-xs ${
+              task.priority === 'high' 
+                ? 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300' 
+                : 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300'
+            }`}>
+              優先度：{task.priority === 'high' ? '高' : '低'}
+            </div>
+            <div className={`px-2 py-1 rounded text-xs ${
+              task.urgency === 'high' 
+                ? 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300' 
+                : 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300'
+            }`}>
+              緊急度：{task.urgency === 'high' ? '高' : '低'}
+            </div>
+            <div className="px-2 py-1 rounded text-xs bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300">
+              {task.category === 'work' ? '仕事' : task.category === 'personal' ? '個人' : 'カスタム'}
+            </div>
+          </div>
+        </div>
+        
+        {/* Action Buttons */}
+        {showActions && (
+          <div className="flex space-x-1 ml-2">
+            {!isCompleted ? (
+              <>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-6 w-6 p-0 hover:bg-green-200 dark:hover:bg-green-800 text-green-600"
+                  onClick={onComplete}
+                  title="完了"
+                >
+                  <Check className="w-3 h-3" />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-6 w-6 p-0 hover:bg-red-200 dark:hover:bg-red-800 text-red-600"
+                  onClick={onRemove}
+                  title="削除"
+                >
+                  <Trash2 className="w-3 h-3" />
+                </Button>
+              </>
+            ) : (
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-6 w-6 p-0 hover:bg-blue-200 dark:hover:bg-blue-800 text-blue-600"
+                onClick={onUncomplete}
+                title="未完了に戻す"
+              >
+                <RotateCcw className="w-3 h-3" />
+              </Button>
+            )}
+          </div>
+        )}
+      </div>
+    </Card>
   )
 }
