@@ -196,28 +196,45 @@ export function WorkspaceNew() {
     const activeId = active.id.toString()
     const overId = over?.id.toString()
     
-    // クロスビュードラッグ処理（モバイル）
-    if (isMobile && activeTask && dragStartView && dragStartView !== currentView) {
-      console.log('Cross-view drag detected:', dragStartView, '->', currentView, 'activeId:', activeId)
+    // 通常のドラッグ&ドロップ処理（overが存在する場合）
+    if (over) {
+      console.log('Normal drag & drop with over:', overId)
+      
+      // 1. タスクプール → タイムライン (既存タスクの新規スケジュール)
+      if (overId && overId.startsWith('timeline-slot-') && !activeId.startsWith('scheduled-')) {
+        const timeString = overId.replace('timeline-slot-', '')
+        const today = new Date()
+        moveTaskToTimeline(activeId, today, timeString)
+        console.log('Normal: Moved task to timeline slot:', activeId, 'at', timeString)
+      }
+      
+      // 2. タイムライン → 別のタイムスロット (スケジュール済みタスクの移動)
+      else if (overId && overId.startsWith('timeline-slot-') && activeId.startsWith('scheduled-')) {
+        const taskId = activeId.split('-')[1]
+        const timeString = overId.replace('timeline-slot-', '')
+        const today = new Date()
+        moveTaskToTimeline(taskId, today, timeString)
+        console.log('Normal: Moved scheduled task to new slot:', taskId, 'at', timeString)
+      }
+      
+      // 3. タイムライン → タスクプール (スケジュール削除)
+      else if (overId === 'task-pool' && activeId.startsWith('scheduled-')) {
+        const slotId = activeId.split('-')[2]
+        removeTimeSlot(slotId)
+        console.log('Normal: Removed task from timeline:', slotId)
+      }
+    }
+    // クロスビュードラッグ処理（overが存在せず、ビューが変わった場合）
+    else if (isMobile && !over && activeTask && dragStartView && dragStartView !== currentView) {
+      console.log('Cross-view drag without drop target:', dragStartView, '->', currentView, 'activeId:', activeId)
       
       // タスクプールからタイムラインへのクロスビュードラッグ
       if (dragStartView === 'tasks' && currentView === 'timeline' && !activeId.startsWith('scheduled-')) {
-        // ドロップ位置の時間を計算
         const currentHour = new Date().getHours()
         const timeString = `${currentHour.toString().padStart(2, '0')}:00`
         const today = new Date()
         moveTaskToTimeline(activeId, today, timeString)
-        console.log('Cross-view: Moved task to timeline:', activeId, 'at', timeString)
-        
-        // 状態をリセット
-        setActiveTask(null)
-        setIsDragging(false)
-        setDragStartView(null)
-        
-        if (isMobile) {
-          endEdgePull()
-        }
-        return
+        console.log('Cross-view: Moved task to current time:', activeId, 'at', timeString)
       }
       
       // タイムラインからタスクプールへのクロスビュードラッグ
@@ -225,16 +242,6 @@ export function WorkspaceNew() {
         const slotId = activeId.split('-')[2]
         removeTimeSlot(slotId)
         console.log('Cross-view: Removed task from timeline:', slotId)
-        
-        // 状態をリセット
-        setActiveTask(null)
-        setIsDragging(false)
-        setDragStartView(null)
-        
-        if (isMobile) {
-          endEdgePull()
-        }
-        return
       }
     }
     
