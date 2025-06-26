@@ -231,8 +231,12 @@ export function WorkspaceNew() {
       
       // タスクプールからタイムラインへのクロスビュードラッグ
       if (dragStartView === 'tasks' && currentView === 'timeline' && !activeId.startsWith('scheduled-')) {
-        const currentHour = new Date().getHours()
-        const timeString = `${currentHour.toString().padStart(2, '0')}:00`
+        const now = new Date()
+        const currentHour = now.getHours()
+        const currentMinute = now.getMinutes()
+        // 15分単位に丸める
+        const roundedMinute = Math.floor(currentMinute / 15) * 15
+        const timeString = `${currentHour.toString().padStart(2, '0')}:${roundedMinute.toString().padStart(2, '0')}`
         const today = new Date()
         moveTaskToTimeline(activeId, today, timeString)
         console.log('Cross-view: Moved task to current time:', activeId, 'at', timeString)

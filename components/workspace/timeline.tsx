@@ -94,7 +94,24 @@ function ScheduledTaskCard({ task, slotId, slotData }: ScheduledTaskCardProps) {
             : 'bg-blue-100 border-blue-300 dark:bg-blue-950/30 hover:bg-blue-200 dark:hover:bg-blue-900/40'
         }`}
         style={{ 
-          height: `${slotData.estimatedTime || 60}px`,
+          height: `${(() => {
+            const minutes = slotData.estimatedTime || 60
+            const slots = Math.ceil(minutes / 15)
+            let totalHeight = 0
+            
+            // タスクの開始時刻から必要なスロット数分の高さを計算
+            const [startHour, startMinute] = slotData.startTime.split(':').map(Number)
+            const startSlotIndex = startHour * 4 + Math.floor(startMinute / 15)
+            
+            for (let i = 0; i < slots; i++) {
+              const currentSlotIndex = startSlotIndex + i
+              const currentMinute = (currentSlotIndex % 4) * 15
+              totalHeight += currentMinute === 0 ? 64 : 40 // h-16 or h-10
+            }
+            
+            // パディング分を考慮して少し減らす
+            return totalHeight - 4
+          })()}px`,
           top: '0px'
         }}
         onMouseEnter={() => setShowActions(true)}
