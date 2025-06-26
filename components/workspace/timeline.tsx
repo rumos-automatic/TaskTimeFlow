@@ -10,12 +10,18 @@ import { useSortable, SortableContext, verticalListSortingStrategy } from '@dnd-
 import { CSS } from '@dnd-kit/utilities'
 import { useTaskStore } from '@/lib/store/use-task-store'
 
-const timeSlots = Array.from({ length: 24 }, (_, i) => {
-  const hour = i
+const timeSlots = Array.from({ length: 96 }, (_, i) => {
+  const hour = Math.floor(i / 4)
+  const minute = (i % 4) * 15
+  const timeString = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`
   return {
-    time: `${hour.toString().padStart(2, '0')}:00`,
+    time: timeString,
     hour: hour,
-    isBusinessHour: hour >= 9 && hour <= 17
+    minute: minute,
+    slotIndex: i,
+    isBusinessHour: hour >= 9 && hour <= 17,
+    isHourStart: minute === 0,
+    isHalfHour: minute === 30
   }
 })
 
@@ -279,32 +285,41 @@ function EditScheduledTaskCard({ task, slot, onSave, onCancel }: EditScheduledTa
 interface DroppableTimeSlotProps {
   time: string
   hour: number
+  minute: number
+  slotIndex: number
   isBusinessHour: boolean
+  isHourStart: boolean
+  isHalfHour: boolean
   currentHour: number
+  currentMinute: number
   scheduledTasks: any[]
 }
 
-function DroppableTimeSlot({ time, hour, isBusinessHour, currentHour, scheduledTasks }: DroppableTimeSlotProps) {
+function DroppableTimeSlot({ time, hour, minute, slotIndex, isBusinessHour, isHourStart, isHalfHour, currentHour, currentMinute, scheduledTasks }: DroppableTimeSlotProps) {
   const { setNodeRef, isOver } = useDroppable({
     id: `timeline-slot-${time}`
   })
 
   const tasksAtThisTime = scheduledTasks.filter(item => {
     if (!item.slotData.startTime) return false
-    const slotHour = parseInt(item.slotData.startTime.split(':')[0])
-    return slotHour === hour
+    const [slotHour, slotMinute] = item.slotData.startTime.split(':').map(Number)
+    return slotHour === hour && slotMinute === minute
   })
+
+  const isCurrentSlot = hour === currentHour && minute <= currentMinute && currentMinute < minute + 15
 
   return (
     <div
       key={time}
-      className={`relative border-b border-border/20 h-16 flex items-start ${
+      className={`relative flex items-start ${
         isBusinessHour ? 'bg-muted/10' : ''
-      } ${hour === currentHour ? 'bg-blue-50 dark:bg-blue-950/20' : ''}`}
+      } ${isCurrentSlot ? 'bg-blue-50 dark:bg-blue-950/20' : ''} ${
+        isHourStart ? 'border-t border-border/40 h-16' : 'border-t border-border/10 h-10'
+      }`}
     >
-      {/* Time Label */}
+      {/* Time Label - 1時間ごとまたは30分ごとに表示 */}
       <div className="w-16 text-xs text-muted-foreground p-2 font-mono">
-        {time}
+        {(isHourStart || isHalfHour) ? time : ''}
       </div>
 
       {/* Drop Zone */}
@@ -415,7 +430,21 @@ export function Timeline() {
             <div 
               className="absolute left-0 right-0 z-10 pointer-events-none"
               style={{ 
-                top: `${(currentHour * 64) + (currentMinute * 64 / 60)}px`
+                top: `${(() => {
+                  // 15分単位のスロットインデックス
+                  const currentSlotIndex = currentHour * 4 + Math.floor(currentMinute / 15)
+                  // 各スロットの高さを累積計算
+                  let totalHeight = 0
+                  for (let i = 0; i < currentSlotIndex; i++) {
+                    const slotMinute = (i % 4) * 15
+                    totalHeight += slotMinute === 0 ? 64 : 40 // h-16 or h-10
+                  }
+                  // 現在のスロット内でのオフセット
+                  const currentSlotMinute = (currentSlotIndex % 4) * 15
+                  const slotHeight = currentSlotMinute === 0 ? 64 : 40
+                  const offsetInSlot = ((currentMinute % 15) / 15) * slotHeight
+                  return totalHeight + offsetInSlot
+                })()}px`
               }}
             >
               {/* 時間軸列内の現在時刻表示 */}
@@ -440,8 +469,13 @@ export function Timeline() {
                 key={slot.time}
                 time={slot.time}
                 hour={slot.hour}
+                minute={slot.minute}
+                slotIndex={slot.slotIndex}
                 isBusinessHour={slot.isBusinessHour}
+                isHourStart={slot.isHourStart}
+                isHalfHour={slot.isHalfHour}
                 currentHour={currentHour}
+                currentMinute={currentMinute}
                 scheduledTasks={scheduledTasks}
               />
             ))}
