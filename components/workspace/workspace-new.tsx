@@ -78,10 +78,10 @@ export function WorkspaceNew() {
   })
 
   const touchSensor = useSensor(TouchSensor, {
-    // 250ms長押しでドラッグ開始（より反応性向上）
+    // 200ms長押しでドラッグ開始
     activationConstraint: {
-      delay: 250,
-      tolerance: 8
+      delay: 200,
+      tolerance: 5
     }
   })
 
@@ -109,17 +109,19 @@ export function WorkspaceNew() {
   } = useEdgePull({
     onEdgeLeft: () => {
       if (currentView === 'timeline' && isDragging) {
+        console.log('Edge pull: timeline -> tasks')
         setCurrentView('tasks')
       }
     },
     onEdgeRight: () => {
       if (currentView === 'tasks' && isDragging) {
+        console.log('Edge pull: tasks -> timeline')
         setCurrentView('timeline')
       }
     },
     enabled: isMobile && isDragging && (currentView === 'tasks' || currentView === 'timeline'),
-    edgeThreshold: 50,
-    holdDuration: 200
+    edgeThreshold: 60,
+    holdDuration: 100
   })
 
   // スクロールロック機能（モバイル専用）
@@ -184,28 +186,51 @@ export function WorkspaceNew() {
   }
 
   const handleDragEnd = (event: DragEndEvent) => {
-    console.log('Drag end:', event.active.id, 'over:', event.over?.id)
+    console.log('Drag end:', event.active.id, 'over:', event.over?.id, 'view change:', dragStartView, '->', currentView)
     const { active, over } = event
     
     const activeId = active.id.toString()
     const overId = over?.id.toString()
     
     // クロスビュードラッグ処理（モバイル）
-    if (isMobile && !over && activeTask && dragStartView !== currentView) {
-      console.log('Cross-view drag detected:', dragStartView, '->', currentView)
+    if (isMobile && activeTask && dragStartView && dragStartView !== currentView) {
+      console.log('Cross-view drag detected:', dragStartView, '->', currentView, 'activeId:', activeId)
+      
       // タスクプールからタイムラインへのクロスビュードラッグ
       if (dragStartView === 'tasks' && currentView === 'timeline' && !activeId.startsWith('scheduled-')) {
+        // ドロップ位置の時間を計算
         const currentHour = new Date().getHours()
         const timeString = `${currentHour.toString().padStart(2, '0')}:00`
         const today = new Date()
         moveTaskToTimeline(activeId, today, timeString)
-        console.log('Moved task to timeline:', activeId)
+        console.log('Cross-view: Moved task to timeline:', activeId, 'at', timeString)
+        
+        // 状態をリセット
+        setActiveTask(null)
+        setIsDragging(false)
+        setDragStartView(null)
+        
+        if (isMobile) {
+          endEdgePull()
+        }
+        return
       }
+      
       // タイムラインからタスクプールへのクロスビュードラッグ
       else if (dragStartView === 'timeline' && currentView === 'tasks' && activeId.startsWith('scheduled-')) {
         const slotId = activeId.split('-')[2]
         removeTimeSlot(slotId)
-        console.log('Removed task from timeline:', slotId)
+        console.log('Cross-view: Removed task from timeline:', slotId)
+        
+        // 状態をリセット
+        setActiveTask(null)
+        setIsDragging(false)
+        setDragStartView(null)
+        
+        if (isMobile) {
+          endEdgePull()
+        }
+        return
       }
     }
     
@@ -306,7 +331,7 @@ export function WorkspaceNew() {
           </div>
 
           {/* スライドビュー */}
-          <div className={`flex-1 relative overflow-hidden ${isDragging ? 'transition-none' : 'transition-transform duration-300'}`}>
+          <div className="flex-1 relative overflow-hidden">
             {/* エッジプルインジケーター */}
             {isDragging && isNearLeftEdge && getPrevViewName() && (
               <div className="absolute left-0 top-1/2 transform -translate-y-1/2 z-40 bg-primary/90 text-primary-foreground px-3 py-2 rounded-r-lg shadow-lg animate-pulse">
@@ -326,7 +351,7 @@ export function WorkspaceNew() {
               </div>
             )}
 
-            <div className={`absolute inset-0 p-4 pb-24 overflow-y-auto ${isDragging ? 'transition-none' : ''}`}>
+            <div className="absolute inset-0 p-4 pb-24 overflow-y-auto">
               {currentView === 'tasks' && (
                 <div>
                   <div className="flex items-center justify-between mb-6">
@@ -353,9 +378,9 @@ export function WorkspaceNew() {
                         <div className="w-3 h-3 bg-blue-500 rounded-sm" />
                         <span className="text-sm text-muted-foreground">タスク</span>
                       </div>
-                      {isDragging && dragStartView !== currentView && (
-                        <div className="text-sm text-primary font-medium animate-pulse">
-                          📍 ドロップで配置
+                      {isDragging && dragStartView && dragStartView !== currentView && (
+                        <div className="text-sm text-primary font-medium animate-pulse bg-primary/10 px-2 py-1 rounded">
+                          📍 ドロップで{dragStartView === 'tasks' ? 'タイムラインに' : 'プールに'}配置
                         </div>
                       )}
                     </div>

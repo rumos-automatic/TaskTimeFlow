@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
 import { Calendar, ChevronLeft, ChevronRight, Clock, Edit2, Trash2, X, Check } from 'lucide-react'
 import { useDroppable } from '@dnd-kit/core'
-import { useSortable } from '@dnd-kit/sortable'
+import { useSortable, SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
 import { useTaskStore } from '@/lib/store/use-task-store'
 
@@ -77,26 +77,23 @@ function ScheduledTaskCard({ task, slotId, slotData }: ScheduledTaskCardProps) {
   const isCompleted = task.status === 'completed'
   
   return (
-    <div ref={setNodeRef} style={style} {...attributes}>
+    <div ref={setNodeRef} style={style}>
       <Card
-        className={`absolute left-2 right-2 p-2 z-20 transition-colors group ${
+        {...(!isCompleted ? { ...listeners, ...attributes } : {})}
+        className={`absolute left-2 right-2 p-2 z-20 transition-colors group ${!isCompleted ? 'cursor-move touch-none' : ''} ${
           isCompleted 
             ? 'bg-muted/50 border-muted opacity-60' 
             : 'bg-blue-100 border-blue-300 dark:bg-blue-950/30 hover:bg-blue-200 dark:hover:bg-blue-900/40'
         }`}
         style={{ 
           height: `${slotData.estimatedTime || 60}px`,
-          top: '0px'
+          top: '0px',
+          touchAction: !isCompleted ? 'none' : 'auto'
         }}
         onMouseEnter={() => setShowActions(true)}
         onMouseLeave={() => setShowActions(false)}
       >
-        <div 
-          {...(!isCompleted ? listeners : {})}
-          {...(!isCompleted ? attributes : {})}
-          className={`relative h-full ${!isCompleted ? 'cursor-move touch-none' : ''}`}
-          style={!isCompleted ? { touchAction: 'none' } : {}}
-        >
+        <div className="relative h-full">
           {/* コンテンツエリア */}
           <div className="relative h-full pointer-events-none">
             <div className={`text-xs font-medium ${isCompleted ? 'line-through text-muted-foreground' : ''}`}>
@@ -341,6 +338,9 @@ export function Timeline() {
       }
     }
   }).filter(item => item.task?.title) // Filter out items without task details
+  
+  // Create sortable IDs for scheduled tasks
+  const sortableIds = scheduledTasks.map(item => `scheduled-${item.task.id}-${item.slotId}`)
 
   return (
     <div className="space-y-4 h-full flex flex-col">
@@ -369,29 +369,31 @@ export function Timeline() {
 
       {/* Timeline Grid */}
       <div className="flex-1 overflow-y-auto" data-timeline="true">
-        <div className="relative">
-          {/* Current Time Indicator */}
-          <div 
-            className="absolute left-0 right-0 border-t-2 border-red-500 z-10"
-            style={{ top: `${(currentHour * 60) + new Date().getMinutes()}px` }}
-          >
-            <div className="bg-red-500 text-white text-xs px-2 py-1 rounded-r-md">
-              現在
+        <SortableContext items={sortableIds} strategy={verticalListSortingStrategy}>
+          <div className="relative">
+            {/* Current Time Indicator */}
+            <div 
+              className="absolute left-0 right-0 border-t-2 border-red-500 z-10"
+              style={{ top: `${(currentHour * 60) + new Date().getMinutes()}px` }}
+            >
+              <div className="bg-red-500 text-white text-xs px-2 py-1 rounded-r-md">
+                現在
+              </div>
             </div>
-          </div>
 
-          {/* Time Slots */}
-          {timeSlots.map((slot) => (
-            <DroppableTimeSlot
-              key={slot.time}
-              time={slot.time}
-              hour={slot.hour}
-              isBusinessHour={slot.isBusinessHour}
-              currentHour={currentHour}
-              scheduledTasks={scheduledTasks}
-            />
-          ))}
-        </div>
+            {/* Time Slots */}
+            {timeSlots.map((slot) => (
+              <DroppableTimeSlot
+                key={slot.time}
+                time={slot.time}
+                hour={slot.hour}
+                isBusinessHour={slot.isBusinessHour}
+                currentHour={currentHour}
+                scheduledTasks={scheduledTasks}
+              />
+            ))}
+          </div>
+        </SortableContext>
       </div>
     </div>
   )
