@@ -383,18 +383,20 @@ export function Timeline() {
                 top: `${(currentHour * 64) + (currentMinute * 64 / 60)}px`
               }}
             >
-              {/* 精密な時刻ライン */}
-              <div className="w-full h-px bg-gradient-to-r from-transparent via-blue-400 to-transparent opacity-80" />
-              
-              {/* 現在時刻表示 */}
-              <div className="absolute left-16 -top-4 bg-blue-500/90 text-white text-xs px-2 py-1 rounded-md shadow-sm backdrop-blur-sm">
-                <div className="flex items-center space-x-1">
-                  <div className="w-1.5 h-1.5 bg-white rounded-full animate-pulse" />
-                  <span className="font-mono">
-                    {currentHour.toString().padStart(2, '0')}:{currentMinute.toString().padStart(2, '0')}
-                  </span>
+              {/* 時間軸列内の現在時刻表示 */}
+              <div className="absolute left-1 -top-3 w-14 flex flex-col items-center">
+                <div className="bg-blue-500/90 text-white text-xs px-1.5 py-0.5 rounded shadow-sm backdrop-blur-sm">
+                  <div className="flex items-center space-x-1">
+                    <div className="w-1 h-1 bg-white rounded-full animate-pulse" />
+                    <span className="font-mono text-xs leading-none">
+                      {currentHour.toString().padStart(2, '0')}:{currentMinute.toString().padStart(2, '0')}
+                    </span>
+                  </div>
                 </div>
               </div>
+              
+              {/* 精密な時刻ライン（時間軸より右側のみ） */}
+              <div className="ml-16 h-px bg-gradient-to-r from-blue-400 to-transparent opacity-80" />
             </div>
 
             {/* Time Slots */}
