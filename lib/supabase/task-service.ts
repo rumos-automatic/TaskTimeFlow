@@ -207,8 +207,14 @@ export class TaskService {
 
   // Subscribe to real-time changes
   static subscribeToTasks(userId: string, callback: (tasks: Task[]) => void) {
+    const channelName = `tasks_channel_${userId}_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
+    console.log('Creating tasks channel:', channelName)
+    
+    // デバウンス用のタイマー
+    let debounceTimer: NodeJS.Timeout | null = null
+    
     const channel = supabase
-      .channel('tasks_channel')
+      .channel(channelName)
       .on(
         'postgres_changes',
         {
@@ -218,27 +224,40 @@ export class TaskService {
           filter: `user_id=eq.${userId}`
         },
         async (payload) => {
-          // Refetch all tasks when any change occurs
           console.log('Tasks real-time update triggered:', payload.eventType, (payload.new as any)?.id)
-          try {
-            const tasks = await TaskService.getTasks(userId)
-            console.log('Refetched tasks count:', tasks.length)
-            callback(tasks)
-          } catch (error) {
-            console.error('Error refetching tasks:', error)
+          
+          // デバウンス処理：短時間内の複数更新をまとめる
+          if (debounceTimer) {
+            clearTimeout(debounceTimer)
           }
+          
+          debounceTimer = setTimeout(async () => {
+            try {
+              const tasks = await TaskService.getTasks(userId)
+              console.log('Refetched tasks count:', tasks.length)
+              callback(tasks)
+            } catch (error) {
+              console.error('Error refetching tasks:', error)
+            }
+          }, 100) // 100ms デバウンス
         }
       )
       .subscribe()
 
     return () => {
+      if (debounceTimer) {
+        clearTimeout(debounceTimer)
+      }
       supabase.removeChannel(channel)
     }
   }
 
   static subscribeToTimeSlots(userId: string, callback: (timeSlots: TimeSlot[]) => void) {
+    const channelName = `time_slots_channel_${userId}_${Date.now()}`
+    console.log('Creating time slots channel:', channelName)
+    
     const channel = supabase
-      .channel('time_slots_channel')
+      .channel(channelName)
       .on(
         'postgres_changes',
         {

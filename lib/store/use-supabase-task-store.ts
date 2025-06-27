@@ -52,6 +52,7 @@ export const useSupabaseTaskStore = create<SupabaseTaskStore>()((set, get) => {
   // Real-time subscription cleanup functions
   let unsubscribeTasks: (() => void) | null = null
   let unsubscribeTimeSlots: (() => void) | null = null
+  let isInitialized = false
 
   return {
     // Initial state
@@ -70,6 +71,14 @@ export const useSupabaseTaskStore = create<SupabaseTaskStore>()((set, get) => {
     // Initialization
     initialize: async (userId: string) => {
       try {
+        // Prevent duplicate initialization
+        if (isInitialized) {
+          console.log('Supabase store already initialized, skipping')
+          return
+        }
+        
+        console.log('Starting Supabase store initialization for user:', userId)
+        isInitialized = true
         set({ loading: true, error: null })
         
         // Fetch initial data
@@ -78,30 +87,69 @@ export const useSupabaseTaskStore = create<SupabaseTaskStore>()((set, get) => {
           TaskService.getTimeSlots(userId)
         ])
         
+        console.log('Fetched initial data:', tasks.length, 'tasks,', timeSlots.length, 'time slots')
         set({ tasks, timeSlots, loading: false })
         
-        // Set up real-time subscriptions
-        unsubscribeTasks = TaskService.subscribeToTasks(userId, (tasks) => {
-          console.log('Real-time tasks update received:', tasks.length, 'tasks')
-          console.log('Current tasks in store:', get().tasks.length)
-          set({ tasks })
-        })
+        // Set up real-time subscriptions only if not already set up
+        if (!unsubscribeTasks) {
+          unsubscribeTasks = TaskService.subscribeToTasks(userId, (tasks) => {
+            console.log('Real-time tasks update received:', tasks.length, 'tasks')
+            console.log('Current tasks in store:', get().tasks.length)
+            
+            // 重複チェック：タスクIDでユニーク化
+            const uniqueTasks = tasks.filter((task, index, self) => 
+              index === self.findIndex(t => t.id === task.id)
+            )
+            
+            if (uniqueTasks.length !== tasks.length) {
+              console.warn('Duplicate tasks detected and removed:', tasks.length - uniqueTasks.length)
+            }
+            
+            set({ tasks: uniqueTasks })
+          })
+        }
         
-        unsubscribeTimeSlots = TaskService.subscribeToTimeSlots(userId, (timeSlots) => {
-          console.log('Real-time time slots update:', timeSlots.length)
-          set({ timeSlots })
-        })
+        if (!unsubscribeTimeSlots) {
+          unsubscribeTimeSlots = TaskService.subscribeToTimeSlots(userId, (timeSlots) => {
+            console.log('Real-time time slots update:', timeSlots.length)
+            
+            // 重複チェック：TimeSlot IDでユニーク化
+            const uniqueTimeSlots = timeSlots.filter((slot, index, self) => 
+              index === self.findIndex(s => s.id === slot.id)
+            )
+            
+            if (uniqueTimeSlots.length !== timeSlots.length) {
+              console.warn('Duplicate time slots detected and removed:', timeSlots.length - uniqueTimeSlots.length)
+            }
+            
+            set({ timeSlots: uniqueTimeSlots })
+          })
+        }
         
       } catch (error) {
         console.error('Failed to initialize task store:', error)
+        isInitialized = false
+        
+        // サブスクリプションのクリーンアップ（エラー時）
+        if (unsubscribeTasks) {
+          unsubscribeTasks()
+          unsubscribeTasks = null
+        }
+        if (unsubscribeTimeSlots) {
+          unsubscribeTimeSlots()
+          unsubscribeTimeSlots = null
+        }
+        
         set({ 
-          error: 'データの読み込みに失敗しました',
+          error: 'データの読み込みに失敗しました。再ログインしてください。',
           loading: false 
         })
       }
     },
 
     cleanup: () => {
+      console.log('Cleaning up Supabase store')
+      
       // Clean up subscriptions
       if (unsubscribeTasks) {
         unsubscribeTasks()
@@ -111,6 +159,9 @@ export const useSupabaseTaskStore = create<SupabaseTaskStore>()((set, get) => {
         unsubscribeTimeSlots()
         unsubscribeTimeSlots = null
       }
+      
+      // Reset initialization flag
+      isInitialized = false
       
       // Reset state
       set({
@@ -180,22 +231,11 @@ export const useSupabaseTaskStore = create<SupabaseTaskStore>()((set, get) => {
         
         set({ syncing: true, error: null })
         
-        // Optimistic update - 正しくフィルターする
-        const filteredTasks = beforeTasks.filter((task) => task.id !== id)
-        console.log('Filtered tasks:', filteredTasks.length, filteredTasks.map(t => t.id))
-        
-        set((state) => ({
-          tasks: filteredTasks,
-          timeSlots: state.timeSlots.filter((slot) => slot.taskId !== id),
-          syncing: false
-        }))
-        
-        console.log('Tasks after optimistic update:', get().tasks.length)
-        
-        // データベースから削除
+        // データベースから削除（楽観的更新を削除してリアルタイム同期に任せる）
         await TaskService.deleteTask(id)
         
         console.log('Task deleted successfully from database:', id)
+        set({ syncing: false })
         
       } catch (error) {
         console.error('Failed to delete task:', error)
