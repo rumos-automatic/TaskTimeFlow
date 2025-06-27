@@ -11,10 +11,27 @@ interface TimerStore {
   completedPomodoros: number
   isBreak: boolean // Track if currently in break mode
   
-  // Timer settings
+  // Basic timer settings
   pomodoroTime: number // in minutes
   breakTime: number // in minutes
   longBreakTime: number // in minutes
+  longBreakInterval: number // How many pomodoros before long break
+  
+  // Notification settings
+  soundEnabled: boolean
+  notificationEnabled: boolean
+  customNotificationMessage: {
+    pomodoroComplete: string
+    breakComplete: string
+  }
+  
+  // Automation settings
+  autoStartBreaks: boolean
+  autoStartPomodoros: boolean
+  
+  // Display settings
+  timerColor: string
+  displayMode: 'digital' | 'analog'
   
   // Actions
   startTimer: (taskId?: string) => void
@@ -31,6 +48,17 @@ interface TimerStore {
     pomodoroTime: number
     breakTime: number
     longBreakTime: number
+    longBreakInterval: number
+    soundEnabled: boolean
+    notificationEnabled: boolean
+    customNotificationMessage: {
+      pomodoroComplete: string
+      breakComplete: string
+    }
+    autoStartBreaks: boolean
+    autoStartPomodoros: boolean
+    timerColor: string
+    displayMode: 'digital' | 'analog'
   }>) => void
 }
 
@@ -46,10 +74,27 @@ export const useTimerStore = create<TimerStore>()(
       completedPomodoros: 0,
       isBreak: false,
       
-      // Default settings
+      // Basic timer settings
       pomodoroTime: 25,
       breakTime: 5,
       longBreakTime: 15,
+      longBreakInterval: 4,
+      
+      // Notification settings
+      soundEnabled: true,
+      notificationEnabled: true,
+      customNotificationMessage: {
+        pomodoroComplete: 'ポモドーロ完了！休憩を取りましょう',
+        breakComplete: '休憩終了！作業を再開しましょう'
+      },
+      
+      // Automation settings
+      autoStartBreaks: false,
+      autoStartPomodoros: false,
+      
+      // Display settings
+      timerColor: 'orange',
+      displayMode: 'digital' as const,
       
       // Actions
       startTimer: (taskId) => {
@@ -110,43 +155,57 @@ export const useTimerStore = create<TimerStore>()(
       },
       
       completePomodoro: () => {
-        const { completedPomodoros, breakTime, longBreakTime } = get()
+        const { 
+          completedPomodoros, 
+          breakTime, 
+          longBreakTime, 
+          longBreakInterval,
+          notificationEnabled,
+          customNotificationMessage,
+          autoStartBreaks
+        } = get()
+        
         const newCompletedCount = completedPomodoros + 1
-        const isLongBreak = newCompletedCount % 4 === 0
+        const isLongBreak = newCompletedCount % longBreakInterval === 0
         const nextTime = isLongBreak ? longBreakTime : breakTime
         
         set({
           completedPomodoros: newCompletedCount,
           timeRemaining: nextTime * 60,
           totalTime: nextTime * 60,
-          isRunning: false,
+          isRunning: autoStartBreaks,
           currentTaskId: null,
           isBreak: true // Set break mode
         })
         
-        // Play notification sound or show notification
-        if (typeof window !== 'undefined' && 'Notification' in window) {
+        // Show notification if enabled
+        if (notificationEnabled && typeof window !== 'undefined' && 'Notification' in window) {
           new Notification('ポモドーロ完了！', {
-            body: `${isLongBreak ? '長い' : '短い'}休憩を取りましょう`,
+            body: customNotificationMessage.pomodoroComplete,
             icon: '/favicon.ico'
           })
         }
       },
       
       completeBreak: () => {
-        const { pomodoroTime } = get()
+        const { 
+          pomodoroTime, 
+          notificationEnabled, 
+          customNotificationMessage,
+          autoStartPomodoros
+        } = get()
         
         set({
           isBreak: false,
           timeRemaining: pomodoroTime * 60,
           totalTime: pomodoroTime * 60,
-          isRunning: false
+          isRunning: autoStartPomodoros
         })
         
-        // Play notification sound or show notification
-        if (typeof window !== 'undefined' && 'Notification' in window) {
+        // Show notification if enabled
+        if (notificationEnabled && typeof window !== 'undefined' && 'Notification' in window) {
           new Notification('休憩終了！', {
-            body: '作業を再開しましょう',
+            body: customNotificationMessage.breakComplete,
             icon: '/favicon.ico'
           })
         }
@@ -159,9 +218,26 @@ export const useTimerStore = create<TimerStore>()(
     {
       name: 'timer-store',
       partialize: (state) => ({
+        // Basic timer settings
         pomodoroTime: state.pomodoroTime,
         breakTime: state.breakTime,
         longBreakTime: state.longBreakTime,
+        longBreakInterval: state.longBreakInterval,
+        
+        // Notification settings
+        soundEnabled: state.soundEnabled,
+        notificationEnabled: state.notificationEnabled,
+        customNotificationMessage: state.customNotificationMessage,
+        
+        // Automation settings
+        autoStartBreaks: state.autoStartBreaks,
+        autoStartPomodoros: state.autoStartPomodoros,
+        
+        // Display settings
+        timerColor: state.timerColor,
+        displayMode: state.displayMode,
+        
+        // Statistics
         completedPomodoros: state.completedPomodoros
       })
     }

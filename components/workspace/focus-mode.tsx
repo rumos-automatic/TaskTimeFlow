@@ -7,6 +7,7 @@ import { Play, Pause, SkipForward, Settings, TrendingUp, CheckCircle, Square } f
 import { useEffect } from 'react'
 import { useTimerStore } from '@/lib/store/use-timer-store'
 import { useTaskStore } from '@/lib/store/use-task-store'
+import { TimerSettings } from './timer-settings'
 
 export function FocusMode() {
   const {
@@ -16,6 +17,8 @@ export function FocusMode() {
     totalTime,
     currentTaskId,
     completedPomodoros,
+    timerColor,
+    displayMode,
     startTimer,
     pauseTimer,
     resumeTimer,
@@ -109,6 +112,18 @@ export function FocusMode() {
 
   const progress = totalTime > 0 ? ((totalTime - timeRemaining) / totalTime) * 100 : 0
 
+  // Color mapping for timer display
+  const colorClasses = {
+    orange: 'text-orange-500',
+    blue: 'text-blue-500',
+    green: 'text-green-500',
+    purple: 'text-purple-500',
+    red: 'text-red-500',
+    pink: 'text-pink-500'
+  }
+
+  const progressColor = colorClasses[timerColor as keyof typeof colorClasses] || 'text-orange-500'
+
   const handleStartPause = () => {
     if (!isRunning && !isPaused) {
       // Start timer with current task ID if available, otherwise start without task
@@ -166,15 +181,26 @@ export function FocusMode() {
               strokeLinecap="round"
               strokeDasharray={`${2 * Math.PI * 45}`}
               strokeDashoffset={`${2 * Math.PI * 45 * (1 - progress / 100)}`}
-              className="text-orange-500 transition-all duration-1000"
+              className={`${progressColor} transition-all duration-1000`}
             />
           </svg>
           
           {/* Time Display */}
           <div className="absolute inset-0 flex items-center justify-center">
-            <div className="text-2xl font-mono font-bold text-foreground">
-              {formatTime(timeRemaining)}
-            </div>
+            {displayMode === 'digital' ? (
+              <div className="text-2xl font-mono font-bold text-foreground">
+                {formatTime(timeRemaining)}
+              </div>
+            ) : (
+              <div className="text-center">
+                <div className="text-lg font-bold text-foreground">
+                  {Math.floor(timeRemaining / 60)}
+                </div>
+                <div className="text-xs text-muted-foreground">
+                  分
+                </div>
+              </div>
+            )}
           </div>
         </div>
 
@@ -192,9 +218,11 @@ export function FocusMode() {
               <Square className="w-4 h-4" />
             </Button>
           )}
-          <Button variant="outline" size="sm">
-            <Settings className="w-4 h-4" />
-          </Button>
+          <TimerSettings>
+            <Button variant="outline" size="sm">
+              <Settings className="w-4 h-4" />
+            </Button>
+          </TimerSettings>
         </div>
 
         {/* Timer Status */}
