@@ -401,15 +401,11 @@ function DroppableTimeSlot({ time, hour, minute, slotIndex, isBusinessHour, isHo
 interface TimelineProps {
   hasInitialScroll?: boolean
   setHasInitialScroll?: (value: boolean) => void
-  scrollPosition?: number
-  onScroll?: () => void
 }
 
 export function Timeline({ 
   hasInitialScroll = false, 
-  setHasInitialScroll,
-  scrollPosition = 0,
-  onScroll 
+  setHasInitialScroll
 }: TimelineProps = {}) {
   const [viewMode, setViewMode] = useState<'timeline' | 'calendar'>('timeline')
   const [selectedDate, setSelectedDate] = useState(new Date())
@@ -419,7 +415,6 @@ export function Timeline({
   const { timeSlots: scheduledSlots, tasks } = useTaskStore()
   const timelineContainerRef = useRef<HTMLDivElement>(null)
   const currentTimeIndicatorRef = useRef<HTMLDivElement>(null)
-  const [isFirstScroll, setIsFirstScroll] = useState(true)
   
   // Get selected date for filtering
   const selectedDateSlots = scheduledSlots.filter(slot => {
@@ -496,19 +491,6 @@ export function Timeline({
     }
   }, [hasInitialScroll, setHasInitialScroll, scrollToCurrentTime])
   
-  // Restore scroll position when scrollPosition prop changes
-  useEffect(() => {
-    if (timelineContainerRef.current && scrollPosition && scrollPosition > 0 && !isFirstScroll) {
-      timelineContainerRef.current.scrollTop = scrollPosition
-    }
-  }, [scrollPosition, isFirstScroll])
-  
-  // Mark that first scroll has been completed
-  useEffect(() => {
-    if (hasInitialScroll) {
-      setIsFirstScroll(false)
-    }
-  }, [hasInitialScroll])
 
   return (
     <div className="space-y-4 h-full flex flex-col">
@@ -588,7 +570,6 @@ export function Timeline({
           ref={timelineContainerRef} 
           className="flex-1 overflow-y-auto" 
           data-timeline="true"
-          onScroll={onScroll}
         >
           <SortableContext items={sortableIds} strategy={verticalListSortingStrategy}>
           <div className="relative">

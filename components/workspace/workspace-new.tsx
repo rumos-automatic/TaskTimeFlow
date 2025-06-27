@@ -74,28 +74,12 @@ export function WorkspaceNew() {
   const mobileTimelineRef = React.useRef<HTMLDivElement>(null)
   const mobileFocusRef = React.useRef<HTMLDivElement>(null)
   
-  // タイムラインのスクロール位置を保存
-  const [timelineScrollPosition, setTimelineScrollPosition] = React.useState(0)
+  // タイムラインの初回スクロール管理
   const [hasInitialTimelineScroll, setHasInitialTimelineScroll] = React.useState(false)
 
-  // タイムラインから他のビューに移動時にスクロール位置を保存
-  const saveTimelineScrollPosition = React.useCallback(() => {
-    if (hasInitialTimelineScroll) {
-      setTimelineScrollPosition(prev => {
-        // タイムラインコンポーネント内で管理されるため、
-        // ここでは以前の値を維持
-        return prev
-      })
-    }
-  }, [hasInitialTimelineScroll])
   
   // ビュー切り替え時のスクロール位置リセット
   const resetScrollOnViewChange = React.useCallback((prevView: string) => {
-    // タイムラインから他のビューに移動する時はスクロール位置を保存
-    if (prevView === 'timeline') {
-      saveTimelineScrollPosition()
-    }
-    
     // タスクプールビューまたはフォーカスビューの場合は一番上にスクロール
     if (currentView === 'tasks') {
       const taskContainer = isMobile ? mobileTaskPoolRef.current : taskPoolRef.current
@@ -109,7 +93,7 @@ export function WorkspaceNew() {
         focusContainer.scrollTop = 0
       }
     }
-  }, [currentView, isMobile, saveTimelineScrollPosition])
+  }, [currentView, isMobile])
   
   // ビューが変更された時にスクロール位置を処理
   const prevViewRef = React.useRef(currentView)
@@ -122,13 +106,6 @@ export function WorkspaceNew() {
     }
   }, [currentView, resetScrollOnViewChange])
   
-  // タイムラインのスクロールイベントハンドラ
-  const handleTimelineScroll = React.useCallback(() => {
-    const timelineContainer = isMobile ? mobileTimelineRef.current : timelineRef.current
-    if (timelineContainer && hasInitialTimelineScroll) {
-      setTimelineScrollPosition(timelineContainer.scrollTop)
-    }
-  }, [isMobile, hasInitialTimelineScroll])
   
   // スワイプジェスチャーの設定（フッターエリアのみ、ドラッグ中は無効）
   useSwipe({
@@ -475,8 +452,6 @@ export function WorkspaceNew() {
                 <Timeline 
                   hasInitialScroll={hasInitialTimelineScroll} 
                   setHasInitialScroll={setHasInitialTimelineScroll}
-                  scrollPosition={timelineScrollPosition}
-                  onScroll={handleTimelineScroll}
                 />
               </div>
             )}
@@ -700,8 +675,6 @@ export function WorkspaceNew() {
             <Timeline 
               hasInitialScroll={hasInitialTimelineScroll} 
               setHasInitialScroll={setHasInitialTimelineScroll}
-              scrollPosition={timelineScrollPosition}
-              onScroll={handleTimelineScroll}
             />
           </div>
         </motion.div>
