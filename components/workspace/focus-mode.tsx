@@ -7,7 +7,7 @@ import { Play, Pause, SkipForward, Settings, TrendingUp, CheckCircle, Square } f
 import { useEffect } from 'react'
 import { useTheme } from 'next-themes'
 import { useTimerStore } from '@/lib/store/use-timer-store'
-import { useTaskStore } from '@/lib/store/use-task-store'
+import { useTaskStoreWithAuth } from '@/lib/hooks/use-task-store-with-auth'
 import { TimerSettings } from './timer-settings'
 import './fluid-animations.css'
 
@@ -32,7 +32,7 @@ export function FocusMode() {
     tick
   } = useTimerStore()
 
-  const { tasks, updateTask, timeSlots } = useTaskStore()
+  const { tasks, updateTask, timeSlots } = useTaskStoreWithAuth()
 
   // Timer effect
   useEffect(() => {

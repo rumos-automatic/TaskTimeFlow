@@ -8,7 +8,8 @@ import { Calendar, ChevronLeft, ChevronRight, Clock, Edit2, Trash2, X, Check, Ro
 import { useDroppable } from '@dnd-kit/core'
 import { useSortable, SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
-import { useTaskStore } from '@/lib/store/use-task-store'
+import { useTaskStoreWithAuth } from '@/lib/hooks/use-task-store-with-auth'
+import { useAuth } from '@/lib/auth/auth-context'
 import { useViewState } from '@/lib/hooks/use-view-state'
 
 const timeSlots = Array.from({ length: 96 }, (_, i) => {
@@ -35,7 +36,7 @@ interface ScheduledTaskCardProps {
 function ScheduledTaskCard({ task, slotId, slotData }: ScheduledTaskCardProps) {
   const [showActions, setShowActions] = useState(false)
   const [isEditing, setIsEditing] = useState(false)
-  const { updateTask, removeTimeSlot, completeTask, uncompleteTask } = useTaskStore()
+  const { updateTask, removeTimeSlot, completeTask, uncompleteTask } = useTaskStoreWithAuth()
   const {
     attributes,
     listeners,
@@ -413,7 +414,7 @@ export function Timeline({
   const now = new Date()
   const currentHour = now.getHours()
   const currentMinute = now.getMinutes()
-  const { timeSlots: scheduledSlots, tasks } = useTaskStore()
+  const { timeSlots: scheduledSlots, tasks } = useTaskStoreWithAuth()
   const { isMobile } = useViewState()
   const timelineContainerRef = useRef<HTMLDivElement>(null)
   const currentTimeIndicatorRef = useRef<HTMLDivElement>(null)
@@ -663,7 +664,7 @@ interface CalendarViewProps {
 }
 
 function CalendarView({ selectedDate, setSelectedDate, scheduledSlots, tasks }: CalendarViewProps) {
-  const { completeTask, uncompleteTask, removeTimeSlot } = useTaskStore()
+  const { completeTask, uncompleteTask, removeTimeSlot } = useTaskStoreWithAuth()
   
   // Get calendar data for the current month
   const currentMonth = selectedDate.getMonth()

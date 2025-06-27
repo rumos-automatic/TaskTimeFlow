@@ -13,7 +13,8 @@ import { useEdgePull } from '@/lib/hooks/use-edge-pull'
 import { useAutoScroll } from '@/lib/hooks/use-auto-scroll'
 import { useScrollLock } from '@/lib/hooks/use-scroll-lock'
 import { usePullToRefreshBlocker } from '@/lib/hooks/use-pull-to-refresh-blocker'
-import { useTaskStore } from '@/lib/store/use-task-store'
+import { useTaskStoreWithAuth } from '@/lib/hooks/use-task-store-with-auth'
+import { useAuth } from '@/lib/auth/auth-context'
 import { Task } from '@/lib/types'
 import { ThemeToggle } from '@/components/theme-toggle'
 import { UserMenu } from '@/components/auth/user-menu'
@@ -56,7 +57,8 @@ export function WorkspaceNew() {
     prevView 
   } = useViewState()
 
-  const { moveTaskToTimeline, tasks, removeTimeSlot, timeSlots, reorderTasks } = useTaskStore()
+  const { user } = useAuth()
+  const { moveTaskToTimeline, tasks, removeTimeSlot, timeSlots, reorderTasks, loading, syncing } = useTaskStoreWithAuth()
   
   // ドラッグ状態管理
   const [activeTask, setActiveTask] = useState<Task | null>(null)
@@ -254,19 +256,19 @@ export function WorkspaceNew() {
       }
       
       // 2. タスクプール → タイムライン (既存タスクの新規スケジュール)
-      else if (overId && overId.startsWith('timeline-slot-') && !activeId.startsWith('scheduled-')) {
+      else if (overId && overId.startsWith('timeline-slot-') && !activeId.startsWith('scheduled-') && user) {
         const timeString = overId.replace('timeline-slot-', '')
         const today = new Date()
-        moveTaskToTimeline(activeId, today, timeString)
+        moveTaskToTimeline(activeId, today, timeString, user.id)
         console.log('Normal: Moved task to timeline slot:', activeId, 'at', timeString)
       }
       
       // 3. タイムライン → 別のタイムスロット (スケジュール済みタスクの移動)
-      else if (overId && overId.startsWith('timeline-slot-') && activeId.startsWith('scheduled-')) {
+      else if (overId && overId.startsWith('timeline-slot-') && activeId.startsWith('scheduled-') && user) {
         const taskId = activeId.split('-')[1]
         const timeString = overId.replace('timeline-slot-', '')
         const today = new Date()
-        moveTaskToTimeline(taskId, today, timeString)
+        moveTaskToTimeline(taskId, today, timeString, user.id)
         console.log('Normal: Moved scheduled task to new slot:', taskId, 'at', timeString)
       }
       
@@ -282,7 +284,7 @@ export function WorkspaceNew() {
       console.log('Cross-view drag without drop target:', dragStartView, '->', currentView, 'activeId:', activeId)
       
       // タスクプールからタイムラインへのクロスビュードラッグ
-      if (dragStartView === 'tasks' && currentView === 'timeline' && !activeId.startsWith('scheduled-')) {
+      if (dragStartView === 'tasks' && currentView === 'timeline' && !activeId.startsWith('scheduled-') && user) {
         const now = new Date()
         const currentHour = now.getHours()
         const currentMinute = now.getMinutes()
@@ -290,7 +292,7 @@ export function WorkspaceNew() {
         const roundedMinute = Math.floor(currentMinute / 15) * 15
         const timeString = `${currentHour.toString().padStart(2, '0')}:${roundedMinute.toString().padStart(2, '0')}`
         const today = new Date()
-        moveTaskToTimeline(activeId, today, timeString)
+        moveTaskToTimeline(activeId, today, timeString, user.id)
         console.log('Cross-view: Moved task to current time:', activeId, 'at', timeString)
       }
       
@@ -406,8 +408,16 @@ export function WorkspaceNew() {
                 <div className="flex items-center justify-between mb-6">
                   <h2 className="text-xl font-semibold text-foreground">タスクプール</h2>
                   <div className="flex items-center space-x-2">
-                    <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
-                    <span className="text-xs text-muted-foreground">同期済み</span>
+                    <div className={`w-2 h-2 rounded-full ${
+                      syncing 
+                        ? 'bg-yellow-500 animate-pulse' 
+                        : loading 
+                          ? 'bg-blue-500 animate-pulse'
+                          : 'bg-green-500'
+                    }`} />
+                    <span className="text-xs text-muted-foreground">
+                      {syncing ? '同期中...' : loading ? '読み込み中...' : '同期済み'}
+                    </span>
                   </div>
                 </div>
                 <TaskPool />
@@ -619,8 +629,16 @@ export function WorkspaceNew() {
               <h2 className="text-xl font-semibold text-foreground">タスクプール</h2>
               <div className="flex items-center space-x-3">
                 <div className="flex items-center space-x-2">
-                  <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
-                  <span className="text-xs text-muted-foreground">同期済み</span>
+                  <div className={`w-2 h-2 rounded-full ${
+                    syncing 
+                      ? 'bg-yellow-500 animate-pulse' 
+                      : loading 
+                        ? 'bg-blue-500 animate-pulse'
+                        : 'bg-green-500'
+                  }`} />
+                  <span className="text-xs text-muted-foreground">
+                    {syncing ? '同期中...' : loading ? '読み込み中...' : '同期済み'}
+                  </span>
                 </div>
                 <UserMenu />
                 <ThemeToggle />

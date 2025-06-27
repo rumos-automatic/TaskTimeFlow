@@ -7,7 +7,8 @@ import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
 import { Plus, Circle, Clock, AlertCircle, X, Edit2, Trash2, MoreVertical, Check, RotateCcw, ChevronDown, ChevronUp } from 'lucide-react'
-import { useTaskStore } from '@/lib/store/use-task-store'
+import { useTaskStoreWithAuth } from '@/lib/hooks/use-task-store-with-auth'
+import { useAuth } from '@/lib/auth/auth-context'
 import { useSortable, SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable'
 import { useDroppable } from '@dnd-kit/core'
 import { CSS } from '@dnd-kit/utilities'
@@ -36,7 +37,7 @@ interface DraggableTaskCardProps {
 function DraggableTaskCard({ task }: DraggableTaskCardProps) {
   const [showActions, setShowActions] = useState(false)
   const [isEditing, setIsEditing] = useState(false)
-  const { updateTask, deleteTask, completeTask } = useTaskStore()
+  const { updateTask, deleteTask, completeTask } = useTaskStoreWithAuth()
   const {
     attributes,
     listeners,
@@ -168,7 +169,7 @@ interface CompletedTaskCardProps {
 
 function CompletedTaskCard({ task }: CompletedTaskCardProps) {
   const [showActions, setShowActions] = useState(false)
-  const { uncompleteTask } = useTaskStore()
+  const { uncompleteTask } = useTaskStoreWithAuth()
   
   const formatTime = (minutes: number) => {
     if (minutes < 60) return `${minutes}分`
@@ -384,7 +385,8 @@ function EditTaskCard({ task, onSave, onCancel }: EditTaskCardProps) {
 }
 
 function AddTaskForm() {
-  const { addTask } = useTaskStore()
+  const { user } = useAuth()
+  const { addTask } = useTaskStoreWithAuth()
   const [showForm, setShowForm] = useState(false)
   const [formData, setFormData] = useState({
     title: '',
@@ -394,18 +396,18 @@ function AddTaskForm() {
     estimatedTime: 30 as number | ''
   })
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!formData.title.trim()) return
+    if (!formData.title.trim() || !user) return
 
-    addTask({
+    await addTask({
       title: formData.title,
       priority: formData.priority,
       urgency: formData.urgency,
       category: formData.category,
       estimatedTime: formData.estimatedTime === '' ? 30 : formData.estimatedTime,
       status: 'todo'
-    })
+    }, user.id)
 
     // Reset form
     setFormData({
@@ -550,7 +552,7 @@ export function TaskPool() {
     getTasksByCategory,
     getUnscheduledTasks,
     getCompletedTasks
-  } = useTaskStore()
+  } = useTaskStoreWithAuth()
 
   const { setNodeRef, isOver } = useDroppable({
     id: 'task-pool'
