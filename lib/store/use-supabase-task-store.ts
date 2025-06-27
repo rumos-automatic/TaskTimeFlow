@@ -82,7 +82,8 @@ export const useSupabaseTaskStore = create<SupabaseTaskStore>()((set, get) => {
         
         // Set up real-time subscriptions
         unsubscribeTasks = TaskService.subscribeToTasks(userId, (tasks) => {
-          console.log('Real-time tasks update:', tasks.length)
+          console.log('Real-time tasks update received:', tasks.length, 'tasks')
+          console.log('Current tasks in store:', get().tasks.length)
           set({ tasks })
         })
         
@@ -173,16 +174,28 @@ export const useSupabaseTaskStore = create<SupabaseTaskStore>()((set, get) => {
 
     deleteTask: async (id) => {
       try {
+        console.log('Deleting task:', id)
+        const beforeTasks = get().tasks
+        console.log('Tasks before delete:', beforeTasks.length, beforeTasks.map(t => t.id))
+        
         set({ syncing: true, error: null })
         
-        // Optimistic update
+        // Optimistic update - 正しくフィルターする
+        const filteredTasks = beforeTasks.filter((task) => task.id !== id)
+        console.log('Filtered tasks:', filteredTasks.length, filteredTasks.map(t => t.id))
+        
         set((state) => ({
-          tasks: state.tasks.filter((task) => task.id !== id),
-          timeSlots: state.timeSlots.filter((slot) => slot.taskId !== id)
+          tasks: filteredTasks,
+          timeSlots: state.timeSlots.filter((slot) => slot.taskId !== id),
+          syncing: false
         }))
         
+        console.log('Tasks after optimistic update:', get().tasks.length)
+        
+        // データベースから削除
         await TaskService.deleteTask(id)
-        set({ syncing: false })
+        
+        console.log('Task deleted successfully from database:', id)
         
       } catch (error) {
         console.error('Failed to delete task:', error)

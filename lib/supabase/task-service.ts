@@ -217,10 +217,12 @@ export class TaskService {
           table: 'tasks',
           filter: `user_id=eq.${userId}`
         },
-        async () => {
+        async (payload) => {
           // Refetch all tasks when any change occurs
+          console.log('Tasks real-time update triggered:', payload.eventType, payload.new?.id)
           try {
             const tasks = await TaskService.getTasks(userId)
+            console.log('Refetched tasks count:', tasks.length)
             callback(tasks)
           } catch (error) {
             console.error('Error refetching tasks:', error)
