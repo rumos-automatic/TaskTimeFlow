@@ -463,8 +463,8 @@ export function Timeline({
     let calculatedScrollPosition
     
     if (isMobile) {
-      // スマホ：現在時刻を上から1/4の位置に表示（次のタスクが見やすくなる）
-      calculatedScrollPosition = Math.max(0, totalHeight - containerHeight / 4)
+      // スマホ：現在時刻を上から1/5の位置に表示（次のタスクがより見やすくなる）
+      calculatedScrollPosition = Math.max(0, totalHeight - containerHeight / 5)
     } else {
       // PC：画面中央に表示
       calculatedScrollPosition = Math.max(0, totalHeight - containerHeight / 2.2)
