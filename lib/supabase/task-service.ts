@@ -219,7 +219,7 @@ export class TaskService {
         },
         async (payload) => {
           // Refetch all tasks when any change occurs
-          console.log('Tasks real-time update triggered:', payload.eventType, payload.new?.id)
+          console.log('Tasks real-time update triggered:', payload.eventType, (payload.new as any)?.id)
           try {
             const tasks = await TaskService.getTasks(userId)
             console.log('Refetched tasks count:', tasks.length)
