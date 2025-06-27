@@ -40,6 +40,12 @@ interface SupabaseTaskStore {
   getUnscheduledTasks: () => Task[]
   getCompletedTasks: () => Task[]
   
+  // Maintenance operations
+  removeDuplicateTasks: () => Promise<void>
+  hideCompletedTask: (taskId: string) => void
+  showCompletedTask: (taskId: string) => void
+  clearHiddenCompletedTasks: () => void
+  
   // Internal state management
   setTasks: (tasks: Task[]) => void
   setTimeSlots: (timeSlots: TimeSlot[]) => void
@@ -54,6 +60,25 @@ export const useSupabaseTaskStore = create<SupabaseTaskStore>()((set, get) => {
   let unsubscribeTimeSlots: (() => void) | null = null
   let isInitialized = false
   let pauseRealTimeUpdates = false // 楽観的更新の競合を防ぐ
+
+  // 非表示完了済みタスクの管理
+  const getHiddenCompletedTasks = (): string[] => {
+    try {
+      const hidden = localStorage.getItem('hidden_completed_tasks')
+      return hidden ? JSON.parse(hidden) : []
+    } catch (error) {
+      console.warn('Failed to get hidden completed tasks:', error)
+      return []
+    }
+  }
+
+  const setHiddenCompletedTasks = (taskIds: string[]) => {
+    try {
+      localStorage.setItem('hidden_completed_tasks', JSON.stringify(taskIds))
+    } catch (error) {
+      console.warn('Failed to set hidden completed tasks:', error)
+    }
+  }
 
   return {
     // Initial state
@@ -439,7 +464,93 @@ export const useSupabaseTaskStore = create<SupabaseTaskStore>()((set, get) => {
     },
 
     getCompletedTasks: () => {
-      return get().tasks.filter((task) => task.status === 'completed')
+      const hiddenIds = getHiddenCompletedTasks()
+      return get().tasks.filter((task) => 
+        task.status === 'completed' && !hiddenIds.includes(task.id)
+      )
+    },
+
+    // Maintenance operations
+    removeDuplicateTasks: async () => {
+      try {
+        console.log('Starting duplicate task removal process')
+        set({ syncing: true, error: null })
+        
+        const allTasks = get().tasks
+        console.log('Total tasks before duplicate removal:', allTasks.length)
+        
+        // Group tasks by title
+        const tasksByTitle = new Map<string, Task[]>()
+        
+        allTasks.forEach(task => {
+          const title = task.title.trim().toLowerCase()
+          if (!tasksByTitle.has(title)) {
+            tasksByTitle.set(title, [])
+          }
+          tasksByTitle.get(title)!.push(task)
+        })
+        
+        const tasksToDelete: string[] = []
+        
+        // Find duplicates and mark older ones for deletion
+        tasksByTitle.forEach((tasks, title) => {
+          if (tasks.length > 1) {
+            // Sort by creation date (newest first)
+            tasks.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
+            
+            // Keep the newest, delete the rest
+            const duplicates = tasks.slice(1)
+            console.log(`Found ${duplicates.length} duplicates for "${title}":`, duplicates.map(t => t.id))
+            
+            duplicates.forEach(task => {
+              tasksToDelete.push(task.id)
+            })
+          }
+        })
+        
+        console.log(`Found ${tasksToDelete.length} duplicate tasks to remove`)
+        
+        if (tasksToDelete.length === 0) {
+          console.log('No duplicate tasks found')
+          set({ syncing: false })
+          return
+        }
+        
+        // Delete duplicates from database
+        const deletePromises = tasksToDelete.map(id => TaskService.deleteTask(id))
+        await Promise.all(deletePromises)
+        
+        console.log(`Successfully removed ${tasksToDelete.length} duplicate tasks`)
+        set({ syncing: false })
+        
+      } catch (error) {
+        console.error('Failed to remove duplicate tasks:', error)
+        set({ 
+          error: '重複タスクの削除に失敗しました',
+          syncing: false 
+        })
+      }
+    },
+
+    // 完了済みタスクの非表示機能（削除せずプールから隠す）
+    hideCompletedTask: (taskId: string) => {
+      const hiddenIds = getHiddenCompletedTasks()
+      if (!hiddenIds.includes(taskId)) {
+        setHiddenCompletedTasks([...hiddenIds, taskId])
+        console.log('Hidden completed task:', taskId)
+      }
+    },
+
+    showCompletedTask: (taskId: string) => {
+      const hiddenIds = getHiddenCompletedTasks()
+      const updatedIds = hiddenIds.filter(id => id !== taskId)
+      setHiddenCompletedTasks(updatedIds)
+      console.log('Showed completed task:', taskId)
+    },
+
+    clearHiddenCompletedTasks: () => {
+      setHiddenCompletedTasks([])
+      console.log('Cleared all hidden completed tasks')
     },
 
     // Internal state management

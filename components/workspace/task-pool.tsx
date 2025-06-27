@@ -551,8 +551,14 @@ export function TaskPool() {
     setSelectedCategory, 
     getTasksByCategory,
     getUnscheduledTasks,
-    getCompletedTasks
+    getCompletedTasks,
+    removeDuplicateTasks,
+    resetMigrationStatus,
+    hideCompletedTask,
+    clearHiddenCompletedTasks
   } = useTaskStoreWithAuth()
+  
+  const [showDebugMenu, setShowDebugMenu] = useState(false)
 
   const { setNodeRef, isOver } = useDroppable({
     id: 'task-pool'
@@ -619,6 +625,99 @@ export function TaskPool() {
       </div>
 
       <Separator />
+
+      {/* Debug Menu (Development Only) */}
+      {process.env.NODE_ENV === 'development' && (
+        <>
+          <div className="space-y-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowDebugMenu(!showDebugMenu)}
+              className="w-full text-xs"
+            >
+              🔧 デバッグメニュー ({tasks.length}個のタスク)
+            </Button>
+            
+            {showDebugMenu && (
+              <motion.div
+                initial={{ height: 0, opacity: 0 }}
+                animate={{ height: "auto", opacity: 1 }}
+                exit={{ height: 0, opacity: 0 }}
+                className="space-y-2 overflow-hidden"
+              >
+                <div className="grid grid-cols-1 gap-2">
+                  <Button
+                    variant="destructive"
+                    size="sm"
+                    onClick={async () => {
+                      if (confirm('重複タスクを削除しますか？この操作は元に戻せません。')) {
+                        await removeDuplicateTasks()
+                      }
+                    }}
+                    className="text-xs"
+                  >
+                    🗑️ 重複タスク削除
+                  </Button>
+
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    onClick={() => {
+                      const completedTasks = tasks.filter(task => task.status === 'completed')
+                      if (completedTasks.length === 0) {
+                        alert('完了済みタスクがありません')
+                        return
+                      }
+                      if (confirm(`完了済みタスク${completedTasks.length}個をプールから非表示にしますか？\n（カレンダーには残ります）`)) {
+                        completedTasks.forEach(task => hideCompletedTask(task.id))
+                      }
+                    }}
+                    className="text-xs"
+                  >
+                    👁️‍🗨️ 完了済みタスクを非表示
+                  </Button>
+                  
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      if (confirm('マイグレーション状態をリセットしますか？')) {
+                        resetMigrationStatus()
+                      }
+                    }}
+                    className="text-xs"
+                  >
+                    🔄 マイグレーション状態リセット
+                  </Button>
+
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      if (confirm('非表示にした完了済みタスクを全て表示しますか？')) {
+                        clearHiddenCompletedTasks()
+                      }
+                    }}
+                    className="text-xs"
+                  >
+                    👁️ 非表示タスクを復元
+                  </Button>
+                  
+                  <div className="text-xs text-muted-foreground p-2 bg-muted/30 rounded">
+                    <p>⚠️ 開発用機能</p>
+                    <p>• 重複削除: 同じタイトルのタスクで古いものを削除</p>
+                    <p>• 完了済み非表示: プールから隠す（カレンダーには残る）</p>
+                    <p>• マイグレーション状態リセット: 次回ログイン時に再マイグレーション</p>
+                  </div>
+                </div>
+              </motion.div>
+            )}
+          </div>
+          
+          <Separator />
+        </>
+      )}
 
       {/* Add Task Form */}
       <AddTaskForm />

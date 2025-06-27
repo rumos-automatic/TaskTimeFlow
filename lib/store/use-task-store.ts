@@ -30,6 +30,12 @@ interface TaskStore {
   getTasksForDate: (date: Date) => TimeSlot[]
   getUnscheduledTasks: () => Task[]
   getCompletedTasks: () => Task[]
+  
+  // Maintenance operations (placeholder for local store)
+  removeDuplicateTasks: () => Promise<void>
+  hideCompletedTask: (taskId: string) => void
+  showCompletedTask: (taskId: string) => void
+  clearHiddenCompletedTasks: () => void
 }
 
 export const useTaskStore = create<TaskStore>()(
@@ -221,6 +227,20 @@ export const useTaskStore = create<TaskStore>()(
         
         const reorderedTasks = arrayMove(tasks, activeIndex, overIndex)
         set({ tasks: reorderedTasks })
+      },
+
+      // Maintenance operations (local store placeholder)
+      removeDuplicateTasks: async () => {
+        console.log('Duplicate removal not implemented for local store')
+      },
+      hideCompletedTask: (taskId: string) => {
+        console.log('Hide completed task not implemented for local store:', taskId)
+      },
+      showCompletedTask: (taskId: string) => {
+        console.log('Show completed task not implemented for local store:', taskId)
+      },
+      clearHiddenCompletedTasks: () => {
+        console.log('Clear hidden completed tasks not implemented for local store')
       }
     }),
     {

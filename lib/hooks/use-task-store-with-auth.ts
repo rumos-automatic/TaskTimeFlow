@@ -14,44 +14,85 @@ export function useTaskStoreWithAuth() {
   const [initialized, setInitialized] = useState(false)
   const initializingRef = useRef(false)
 
+  // ユーザーIDベースでマイグレーション完了状態をチェック
+  const checkMigrationStatus = (userId: string): boolean => {
+    try {
+      const migrationKey = `migration_completed_${userId}`
+      return localStorage.getItem(migrationKey) === 'true'
+    } catch (error) {
+      console.warn('Failed to check migration status:', error)
+      return false
+    }
+  }
+
+  // マイグレーション完了状態を永続化
+  const setMigrationStatus = (userId: string, completed: boolean) => {
+    try {
+      const migrationKey = `migration_completed_${userId}`
+      if (completed) {
+        localStorage.setItem(migrationKey, 'true')
+      } else {
+        localStorage.removeItem(migrationKey)
+      }
+      setMigrationCompleted(completed)
+    } catch (error) {
+      console.warn('Failed to set migration status:', error)
+      setMigrationCompleted(completed)
+    }
+  }
+
   // Migrate local storage data to Supabase
   const migrateLocalDataToSupabase = useCallback(async () => {
     if (!user) return
 
-    // 状態を直接確認（依存配列から除外）
+    // 永続化されたマイグレーション状態をチェック
+    const alreadyMigrated = checkMigrationStatus(user.id)
+    if (alreadyMigrated) {
+      console.log(`Migration already completed for user ${user.id}, skipping`)
+      setMigrationCompleted(true)
+      return
+    }
+
+    // 現在マイグレーション中または完了済みの場合はスキップ
     if (migrationCompleted || migrating) return
 
     try {
       setMigrating(true)
-      console.log('Starting data migration from local storage to Supabase')
+      console.log('Starting data migration from local storage to Supabase for user:', user.id)
 
       // Get data from local store
       const localTasks = localStore.tasks
       const localTimeSlots = localStore.timeSlots
 
+      console.log(`Local data found: ${localTasks.length} tasks, ${localTimeSlots.length} time slots`)
+
+      // ローカルデータがない場合は即座に完了マークを付ける
       if (localTasks.length === 0 && localTimeSlots.length === 0) {
         console.log('No local data to migrate')
-        setMigrationCompleted(true)
+        setMigrationStatus(user.id, true)
         setMigrating(false)
         return
       }
 
-      // Check if Supabase already has data (avoid duplicate migration)
+      // Supabaseに既にデータがある場合はマイグレーションをスキップ
       const existingTasks = supabaseStore.tasks
+      console.log(`Existing Supabase data: ${existingTasks.length} tasks`)
+      
       if (existingTasks.length > 0) {
-        console.log('Supabase already has data, skipping migration')
-        setMigrationCompleted(true)
+        console.log('Supabase already has data, marking migration as completed without duplicating')
+        setMigrationStatus(user.id, true)
         setMigrating(false)
         return
       }
 
-      console.log(`Migrating ${localTasks.length} tasks and ${localTimeSlots.length} time slots`)
+      console.log(`Starting migration of ${localTasks.length} tasks`)
 
       // Migrate tasks first
       const taskMigrationPromises = localTasks.map(async (task) => {
         const { id, createdAt, updatedAt, ...taskData } = task
         try {
           await supabaseStore.addTask(taskData, user.id)
+          console.log(`Migrated task: ${task.title}`)
         } catch (error) {
           console.error('Failed to migrate task:', task.title, error)
         }
@@ -67,7 +108,7 @@ export function useTaskStoreWithAuth() {
       // TODO: Implement proper ID mapping for time slots
 
       console.log('Data migration completed successfully')
-      setMigrationCompleted(true)
+      setMigrationStatus(user.id, true)
 
     } catch (error) {
       console.error('Data migration failed:', error)
@@ -82,13 +123,23 @@ export function useTaskStoreWithAuth() {
     if (authLoading) return
 
     if (user && !initializingRef.current) {
-      console.log('User authenticated, initializing Supabase store')
+      console.log('User authenticated, initializing Supabase store for user:', user.id)
       initializingRef.current = true
+      
+      // 永続化されたマイグレーション状態を復元
+      const alreadyMigrated = checkMigrationStatus(user.id)
+      setMigrationCompleted(alreadyMigrated)
+      console.log(`Migration status for user ${user.id}:`, alreadyMigrated)
       
       supabaseStore.initialize(user.id).then(() => {
         setInitialized(true)
-        // Migrate data from local storage to Supabase (one-time)
-        migrateLocalDataToSupabase()
+        // Migrate data from local storage to Supabase (one-time only)
+        if (!alreadyMigrated) {
+          console.log('Running migration as it has not been completed yet')
+          migrateLocalDataToSupabase()
+        } else {
+          console.log('Migration already completed, skipping')
+        }
       }).catch((error) => {
         console.error('Failed to initialize Supabase store:', error)
         initializingRef.current = false
@@ -105,19 +156,29 @@ export function useTaskStoreWithAuth() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user, authLoading]) // Zustandストアと安定化された関数のためESLint警告を無効化
 
+  // 重複マイグレーション状態をリセットする関数（デバッグ用）
+  const resetMigrationStatus = () => {
+    if (user) {
+      console.log('Resetting migration status for user:', user.id)
+      setMigrationStatus(user.id, false)
+    }
+  }
+
   // Return the appropriate store based on authentication status
   if (authLoading) {
     return {
       ...supabaseStore,
       loading: true,
-      migrating: false
+      migrating: false,
+      resetMigrationStatus
     }
   }
 
   if (user) {
     return {
       ...supabaseStore,
-      migrating
+      migrating,
+      resetMigrationStatus
     }
   }
 
@@ -128,6 +189,8 @@ export function useTaskStoreWithAuth() {
     syncing: false,
     migrating: false,
     initialize: async () => {},
-    cleanup: () => {}
+    cleanup: () => {},
+    resetMigrationStatus: () => {},
+    removeDuplicateTasks: async () => {}
   }
 }
