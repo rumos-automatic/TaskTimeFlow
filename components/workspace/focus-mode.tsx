@@ -5,12 +5,14 @@ import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
 import { Play, Pause, SkipForward, Settings, TrendingUp, CheckCircle, Square } from 'lucide-react'
 import { useEffect } from 'react'
+import { useTheme } from 'next-themes'
 import { useTimerStore } from '@/lib/store/use-timer-store'
 import { useTaskStore } from '@/lib/store/use-task-store'
 import { TimerSettings } from './timer-settings'
 import './fluid-animations.css'
 
 export function FocusMode() {
+  const { theme } = useTheme()
   const {
     isRunning,
     isPaused,
@@ -193,11 +195,11 @@ export function FocusMode() {
       style={gradientAnimation ? {
         background: `
           linear-gradient(135deg, 
-            hsl(${(progress * 3.6) % 360}, 70%, 95%) 0%,
-            hsl(${((progress * 3.6) + 60) % 360}, 60%, 92%) 25%,
-            hsl(${((progress * 3.6) + 120) % 360}, 65%, 94%) 50%,
-            hsl(${((progress * 3.6) + 180) % 360}, 55%, 96%) 75%,
-            hsl(${((progress * 3.6) + 240) % 360}, 75%, 93%) 100%
+            hsl(${(progress * 3.6) % 360}, 70%, ${theme === 'dark' ? '15%' : '95%'}) 0%,
+            hsl(${((progress * 3.6) + 60) % 360}, 60%, ${theme === 'dark' ? '12%' : '92%'}) 25%,
+            hsl(${((progress * 3.6) + 120) % 360}, 65%, ${theme === 'dark' ? '18%' : '94%'}) 50%,
+            hsl(${((progress * 3.6) + 180) % 360}, 55%, ${theme === 'dark' ? '20%' : '96%'}) 75%,
+            hsl(${((progress * 3.6) + 240) % 360}, 75%, ${theme === 'dark' ? '16%' : '93%'}) 100%
           )
         `,
         backgroundSize: '200% 200%',
@@ -485,15 +487,33 @@ export function FocusMode() {
           {/* Time Display */}
           <div className="absolute inset-0 flex items-center justify-center">
             {displayMode === 'digital' ? (
-              <div className="text-2xl font-mono font-bold text-foreground">
+              <div className={`text-2xl font-mono font-bold ${
+                gradientAnimation && theme === 'dark' 
+                  ? 'text-white drop-shadow-md' 
+                  : gradientAnimation 
+                    ? 'text-slate-700 drop-shadow-sm'
+                    : 'text-foreground'
+              }`}>
                 {formatTime(timeRemaining)}
               </div>
             ) : (
               <div className="text-center">
-                <div className="text-lg font-bold text-foreground">
+                <div className={`text-lg font-bold ${
+                  gradientAnimation && theme === 'dark' 
+                    ? 'text-white drop-shadow-md' 
+                    : gradientAnimation 
+                      ? 'text-slate-700 drop-shadow-sm'
+                      : 'text-foreground'
+                }`}>
                   {Math.floor(timeRemaining / 60)}
                 </div>
-                <div className="text-xs text-muted-foreground">
+                <div className={`text-xs ${
+                  gradientAnimation && theme === 'dark' 
+                    ? 'text-white/80 drop-shadow-md' 
+                    : gradientAnimation 
+                      ? 'text-slate-600 drop-shadow-sm'
+                      : 'text-muted-foreground'
+                }`}>
                   分
                 </div>
               </div>
