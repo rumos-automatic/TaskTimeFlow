@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
@@ -81,20 +81,12 @@ export function WorkspaceNew() {
   // タイムラインから他のビューに移動時にスクロール位置を保存
   const saveTimelineScrollPosition = React.useCallback(() => {
     const timelineContainer = isMobile ? mobileTimelineRef.current : timelineRef.current
-    if (timelineContainer) {
-      setTimelineScrollPosition(timelineContainer.scrollTop)
-    }
-  }, [isMobile])
-  
-  // タイムラインに戻る時にスクロール位置を復元
-  const restoreTimelineScrollPosition = React.useCallback(() => {
-    const timelineContainer = isMobile ? mobileTimelineRef.current : timelineRef.current
     if (timelineContainer && hasInitialTimelineScroll) {
-      setTimeout(() => {
-        timelineContainer.scrollTop = timelineScrollPosition
-      }, 100)
+      const scrollTop = timelineContainer.scrollTop
+      setTimelineScrollPosition(scrollTop)
+      console.log('Timeline scroll position saved:', scrollTop)
     }
-  }, [isMobile, timelineScrollPosition, hasInitialTimelineScroll])
+  }, [isMobile, hasInitialTimelineScroll])
   
   // ビュー切り替え時のスクロール位置リセット
   const resetScrollOnViewChange = React.useCallback((prevView: string) => {
@@ -116,12 +108,7 @@ export function WorkspaceNew() {
         focusContainer.scrollTop = 0
       }
     }
-    
-    // タイムラインビューに戻る時はスクロール位置を復元
-    if (currentView === 'timeline') {
-      restoreTimelineScrollPosition()
-    }
-  }, [currentView, isMobile, saveTimelineScrollPosition, restoreTimelineScrollPosition])
+  }, [currentView, isMobile, saveTimelineScrollPosition])
   
   // ビューが変更された時にスクロール位置を処理
   const prevViewRef = React.useRef(currentView)
@@ -133,6 +120,27 @@ export function WorkspaceNew() {
       resetScrollOnViewChange(prevView)
     }
   }, [currentView, resetScrollOnViewChange])
+  
+  // タイムラインビューに戻った時にスクロール位置を復元
+  React.useEffect(() => {
+    if (currentView === 'timeline' && hasInitialTimelineScroll && timelineScrollPosition > 0) {
+      const timelineContainer = isMobile ? mobileTimelineRef.current : timelineRef.current
+      if (timelineContainer) {
+        console.log('Attempting to restore timeline scroll position:', timelineScrollPosition)
+        // DOMの準備を待ってから復元
+        const restoreScroll = () => {
+          if (timelineContainer.scrollHeight > timelineContainer.clientHeight) {
+            timelineContainer.scrollTop = timelineScrollPosition
+            console.log('Timeline scroll position restored to:', timelineContainer.scrollTop)
+          } else {
+            // コンテンツがまだ読み込まれていない場合は再試行
+            setTimeout(restoreScroll, 100)
+          }
+        }
+        setTimeout(restoreScroll, 100)
+      }
+    }
+  }, [currentView, hasInitialTimelineScroll, timelineScrollPosition, isMobile])
   
   // スワイプジェスチャーの設定（フッターエリアのみ、ドラッグ中は無効）
   useSwipe({
