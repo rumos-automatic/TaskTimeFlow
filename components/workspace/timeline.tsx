@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
@@ -401,9 +401,16 @@ function DroppableTimeSlot({ time, hour, minute, slotIndex, isBusinessHour, isHo
 interface TimelineProps {
   hasInitialScroll?: boolean
   setHasInitialScroll?: (value: boolean) => void
+  scrollPosition?: number
+  onScroll?: () => void
 }
 
-export function Timeline({ hasInitialScroll = false, setHasInitialScroll }: TimelineProps = {}) {
+export function Timeline({ 
+  hasInitialScroll = false, 
+  setHasInitialScroll,
+  scrollPosition = 0,
+  onScroll 
+}: TimelineProps = {}) {
   const [viewMode, setViewMode] = useState<'timeline' | 'calendar'>('timeline')
   const [selectedDate, setSelectedDate] = useState(new Date())
   const now = new Date()
@@ -412,6 +419,7 @@ export function Timeline({ hasInitialScroll = false, setHasInitialScroll }: Time
   const { timeSlots: scheduledSlots, tasks } = useTaskStore()
   const timelineContainerRef = useRef<HTMLDivElement>(null)
   const currentTimeIndicatorRef = useRef<HTMLDivElement>(null)
+  const [isFirstScroll, setIsFirstScroll] = useState(true)
   
   // Get selected date for filtering
   const selectedDateSlots = scheduledSlots.filter(slot => {
@@ -442,7 +450,7 @@ export function Timeline({ hasInitialScroll = false, setHasInitialScroll }: Time
     .map(item => `scheduled-${item.task!.id}-${item.slotId}`)
 
   // Function to scroll to current time indicator
-  const scrollToCurrentTime = () => {
+  const scrollToCurrentTime = useCallback(() => {
     if (!currentTimeIndicatorRef.current || !timelineContainerRef.current) return
     
     // Calculate scroll position based on current time
@@ -455,9 +463,9 @@ export function Timeline({ hasInitialScroll = false, setHasInitialScroll }: Time
     
     // Scroll to position with some offset to center it
     const containerHeight = timelineContainerRef.current.clientHeight
-    const scrollPosition = Math.max(0, totalHeight - containerHeight / 2)
-    timelineContainerRef.current.scrollTop = scrollPosition
-  }
+    const calculatedScrollPosition = Math.max(0, totalHeight - containerHeight / 2)
+    timelineContainerRef.current.scrollTop = calculatedScrollPosition
+  }, [currentHour, currentMinute])
 
   // Scroll to current time on component mount (only once per session)
   useEffect(() => {
