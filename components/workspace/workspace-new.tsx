@@ -16,6 +16,7 @@ import { usePullToRefreshBlocker } from '@/lib/hooks/use-pull-to-refresh-blocker
 import { useTaskStore } from '@/lib/store/use-task-store'
 import { Task } from '@/lib/types'
 import { ThemeToggle } from '@/components/theme-toggle'
+import { UserMenu } from '@/components/auth/user-menu'
 import { 
   DndContext,
   DragEndEvent,
@@ -366,14 +367,17 @@ export function WorkspaceNew() {
           <div className="flex items-center justify-between p-4 border-b border-border/40 bg-card/50 backdrop-blur-sm">
             <ThemeToggle />
             <h1 className="text-lg font-semibold text-foreground">TaskTimeFlow</h1>
-            {/* 再読み込みボタン */}
-            <button
-              onClick={() => window.location.reload()}
-              className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-muted/50 active:bg-muted transition-colors text-muted-foreground hover:text-foreground"
-              title="ページを再読み込み"
-            >
-              <RotateCcw className="w-4 h-4" />
-            </button>
+            <div className="flex items-center space-x-2">
+              <UserMenu />
+              {/* 再読み込みボタン */}
+              <button
+                onClick={() => window.location.reload()}
+                className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-muted/50 active:bg-muted transition-colors text-muted-foreground hover:text-foreground"
+                title="ページを再読み込み"
+              >
+                <RotateCcw className="w-4 h-4" />
+              </button>
+            </div>
           </div>
 
           {/* スライドビュー */}
@@ -557,6 +561,7 @@ export function WorkspaceNew() {
             <div className="flex items-center justify-between mb-8">
               <h1 className="text-3xl font-bold text-foreground">フォーカスモード</h1>
               <div className="flex items-center space-x-2">
+                <UserMenu />
                 <ThemeToggle />
                 <Button
                   variant="ghost"
@@ -617,6 +622,7 @@ export function WorkspaceNew() {
                   <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
                   <span className="text-xs text-muted-foreground">同期済み</span>
                 </div>
+                <UserMenu />
                 <ThemeToggle />
               </div>
             </div>

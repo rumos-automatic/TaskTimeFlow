@@ -1,6 +1,8 @@
 import type { Metadata } from 'next'
 import './globals.css'
 import { ThemeProvider } from '@/components/theme-provider'
+import { AuthProvider } from '@/lib/auth/auth-context'
+import { AuthGuard } from '@/components/auth/auth-guard'
 
 export const metadata: Metadata = {
   title: 'TaskTimeFlow',
@@ -30,7 +32,11 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
-          {children}
+          <AuthProvider>
+            <AuthGuard>
+              {children}
+            </AuthGuard>
+          </AuthProvider>
         </ThemeProvider>
       </body>
     </html>
