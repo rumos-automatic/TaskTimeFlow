@@ -9,6 +9,7 @@ import { useDroppable } from '@dnd-kit/core'
 import { useSortable, SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
 import { useTaskStore } from '@/lib/store/use-task-store'
+import { useViewState } from '@/lib/hooks/use-view-state'
 
 const timeSlots = Array.from({ length: 96 }, (_, i) => {
   const hour = Math.floor(i / 4)
@@ -413,6 +414,7 @@ export function Timeline({
   const currentHour = now.getHours()
   const currentMinute = now.getMinutes()
   const { timeSlots: scheduledSlots, tasks } = useTaskStore()
+  const { isMobile } = useViewState()
   const timelineContainerRef = useRef<HTMLDivElement>(null)
   const currentTimeIndicatorRef = useRef<HTMLDivElement>(null)
   
@@ -456,12 +458,20 @@ export function Timeline({
       totalHeight += slotMinute === 0 ? 64 : 40 // h-16 or h-10
     }
     
-    // 常に画面中央にスクロール（より正確な中央位置調整）
+    // PC/スマホで異なる表示位置
     const containerHeight = timelineContainerRef.current.clientHeight
-    const calculatedScrollPosition = Math.max(0, totalHeight - containerHeight / 2.2)
+    let calculatedScrollPosition
+    
+    if (isMobile) {
+      // スマホ：上から3/4の位置に表示
+      calculatedScrollPosition = Math.max(0, totalHeight - containerHeight * 0.75)
+    } else {
+      // PC：画面中央に表示
+      calculatedScrollPosition = Math.max(0, totalHeight - containerHeight / 2.2)
+    }
     
     timelineContainerRef.current.scrollTop = calculatedScrollPosition
-  }, [currentHour, currentMinute])
+  }, [currentHour, currentMinute, isMobile])
 
   // Scroll to current time on component mount
   useEffect(() => {
