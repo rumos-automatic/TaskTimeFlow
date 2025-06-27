@@ -185,9 +185,9 @@ export function FocusMode() {
   return (
     <div className="space-y-6 h-full flex flex-col">
       {/* Pomodoro Timer */}
-      <Card className={`p-6 text-center transition-all duration-1000 ${
+      <Card className={`p-6 text-center transition-all duration-1000 h-auto min-h-fit ${
         gradientAnimation
-          ? 'relative overflow-hidden shadow-2xl timer-fluid-effect timer-smoke-effect' 
+          ? 'shadow-2xl' 
           : 'bg-gradient-to-br from-orange-50 to-red-50 dark:from-orange-950/30 dark:to-red-950/30'
       } ${waveAnimation ? 'animate-pulse' : ''}`}
       style={gradientAnimation ? {
@@ -203,9 +203,9 @@ export function FocusMode() {
         backgroundSize: '200% 200%',
         animation: waveAnimation ? 'gradient-shift 8s ease infinite, pulse 2s ease-in-out infinite alternate' : 'gradient-shift 8s ease infinite'
       } : {}}>
-        <div className="relative w-32 h-32 mx-auto mb-4">
+        <div className="relative w-32 h-32 mx-auto mb-4 overflow-visible">
           {/* Progress Ring with Magic Effects */}
-          <svg className={`w-32 h-32 transform -rotate-90 ${waveAnimationClass}`} viewBox="0 0 100 100">
+          <svg className={`w-32 h-32 transform -rotate-90 ${waveAnimationClass}`} viewBox="0 0 100 100" style={{ overflow: 'visible' }}>
             {/* 🌊 Dynamic Fluid Gradient Definitions */}
             <defs>
               {gradientAnimation && (
@@ -306,27 +306,13 @@ export function FocusMode() {
                       repeatCount="indefinite" />
                   </radialGradient>
 
-                  {/* 高度なフィルター効果 */}
-                  <filter id="fluid-glow" x="-50%" y="-50%" width="200%" height="200%">
-                    <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
-                    <feOffset dx="0" dy="0" result="offsetBlur"/>
-                    <feFlood floodColor="rgb(59, 130, 246)" floodOpacity="0.3"/>
-                    <feComposite in="SourceGraphic" in2="offsetBlur" operator="over"/>
+                  {/* Simplified glow effect */}
+                  <filter id="fluid-glow" x="-20%" y="-20%" width="140%" height="140%">
+                    <feGaussianBlur stdDeviation="2" result="coloredBlur"/>
                     <feMerge> 
                       <feMergeNode in="coloredBlur"/>
                       <feMergeNode in="SourceGraphic"/>
                     </feMerge>
-                  </filter>
-
-                  {/* 波状の歪み効果 */}
-                  <filter id="wave-distort">
-                    <feTurbulence baseFrequency="0.01 0.02" numOctaves="2" result="noise">
-                      <animate attributeName="baseFrequency" 
-                        values="0.01 0.02;0.03 0.01;0.01 0.02" 
-                        dur="8s" 
-                        repeatCount="indefinite" />
-                    </feTurbulence>
-                    <feDisplacementMap in="SourceGraphic" in2="noise" scale="2"/>
                   </filter>
                 </>
               )}
@@ -396,7 +382,6 @@ export function FocusMode() {
                   strokeDasharray={`${2 * Math.PI * 47}`}
                   strokeDashoffset={`${2 * Math.PI * 47 * (1 - progress / 100)}`}
                   opacity="0.6"
-                  filter="url(#wave-distort)"
                   style={{
                     transform: waveAnimation ? 'scale(1.05) rotate(2deg)' : 'scale(1)',
                     transformOrigin: 'center',
@@ -477,21 +462,17 @@ export function FocusMode() {
                   </circle>
                 </g>
                 
-                {/* 追加の煙のようなパーティクル */}
-                <g opacity="0.4">
-                  {Array.from({length: 8}).map((_, i) => {
-                    const angle = (i * 45) + (progress * 3.6) // progressに基づいて動的に配置
-                    const x = 50 + 35 * Math.cos(angle * Math.PI / 180)
-                    const y = 50 + 35 * Math.sin(angle * Math.PI / 180)
+                {/* 追加の煙のようなパーティクル - simplified */}
+                <g opacity="0.3">
+                  {Array.from({length: 4}).map((_, i) => {
+                    const angle = (i * 90) + (progress * 1.8) // progressに基づいて動的に配置
+                    const x = 50 + 30 * Math.cos(angle * Math.PI / 180)
+                    const y = 50 + 30 * Math.sin(angle * Math.PI / 180)
                     return (
-                      <circle key={i} cx={x} cy={y} r="0.5" fill={`rgb(${100 + i * 20}, ${150 - i * 10}, ${200 + i * 5})`}>
+                      <circle key={i} cx={x} cy={y} r="0.8" fill={`hsl(${200 + i * 40}, 60%, 70%)`}>
                         <animate attributeName="opacity" 
-                          values={`${0.2 + i * 0.1};${0.8 - i * 0.1};${0.2 + i * 0.1}`} 
-                          dur={`${2 + i * 0.5}s`} 
-                          repeatCount="indefinite" />
-                        <animate attributeName="r" 
-                          values={`0.3;${1 + i * 0.2};0.3`} 
-                          dur={`${2 + i * 0.3}s`} 
+                          values="0.1;0.6;0.1" 
+                          dur={`${3 + i}s`} 
                           repeatCount="indefinite" />
                       </circle>
                     )
