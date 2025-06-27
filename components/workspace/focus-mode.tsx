@@ -8,6 +8,7 @@ import { useEffect } from 'react'
 import { useTimerStore } from '@/lib/store/use-timer-store'
 import { useTaskStore } from '@/lib/store/use-task-store'
 import { TimerSettings } from './timer-settings'
+import './fluid-animations.css'
 
 export function FocusMode() {
   const {
@@ -186,42 +187,146 @@ export function FocusMode() {
       {/* Pomodoro Timer */}
       <Card className={`p-6 text-center transition-all duration-1000 ${
         gradientAnimation
-          ? 'bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50 dark:from-blue-950/30 dark:via-purple-950/30 dark:to-pink-950/30 shadow-lg'
+          ? 'relative overflow-hidden shadow-2xl timer-fluid-effect timer-smoke-effect' 
           : 'bg-gradient-to-br from-orange-50 to-red-50 dark:from-orange-950/30 dark:to-red-950/30'
-      } ${waveAnimation ? 'animate-pulse' : ''}`}>
+      } ${waveAnimation ? 'animate-pulse' : ''}`}
+      style={gradientAnimation ? {
+        background: `
+          linear-gradient(135deg, 
+            hsl(${(progress * 3.6) % 360}, 70%, 95%) 0%,
+            hsl(${((progress * 3.6) + 60) % 360}, 60%, 92%) 25%,
+            hsl(${((progress * 3.6) + 120) % 360}, 65%, 94%) 50%,
+            hsl(${((progress * 3.6) + 180) % 360}, 55%, 96%) 75%,
+            hsl(${((progress * 3.6) + 240) % 360}, 75%, 93%) 100%
+          )
+        `,
+        backgroundSize: '200% 200%',
+        animation: waveAnimation ? 'gradient-shift 8s ease infinite, pulse 2s ease-in-out infinite alternate' : 'gradient-shift 8s ease infinite'
+      } : {}}>
         <div className="relative w-32 h-32 mx-auto mb-4">
           {/* Progress Ring with Magic Effects */}
           <svg className={`w-32 h-32 transform -rotate-90 ${waveAnimationClass}`} viewBox="0 0 100 100">
-            {/* ✨ Gradient Definitions */}
+            {/* 🌊 Dynamic Fluid Gradient Definitions */}
             <defs>
               {gradientAnimation && (
                 <>
-                  <linearGradient id={gradientId} x1="0%" y1="0%" x2="100%" y2="100%">
-                    <stop offset="0%" stopColor="currentColor" stopOpacity="0.8">
+                  {/* 流体グラデーション1: 煙のような動き */}
+                  <linearGradient id={`${gradientId}-fluid1`} x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" stopOpacity="1">
+                      <animate attributeName="stop-color" 
+                        values="rgb(59, 130, 246);rgb(147, 51, 234);rgb(239, 68, 68);rgb(34, 197, 94);rgb(236, 72, 153);rgb(59, 130, 246)" 
+                        dur="4s" 
+                        repeatCount="indefinite" />
+                    </stop>
+                    <stop offset="30%" stopOpacity="0.9">
+                      <animate attributeName="stop-color" 
+                        values="rgb(147, 51, 234);rgb(239, 68, 68);rgb(34, 197, 94);rgb(236, 72, 153);rgb(59, 130, 246);rgb(147, 51, 234)" 
+                        dur="4s" 
+                        repeatCount="indefinite" />
+                    </stop>
+                    <stop offset="70%" stopOpacity="0.8">
+                      <animate attributeName="stop-color" 
+                        values="rgb(239, 68, 68);rgb(34, 197, 94);rgb(236, 72, 153);rgb(59, 130, 246);rgb(147, 51, 234);rgb(239, 68, 68)" 
+                        dur="4s" 
+                        repeatCount="indefinite" />
+                    </stop>
+                    <stop offset="100%" stopOpacity="1">
+                      <animate attributeName="stop-color" 
+                        values="rgb(34, 197, 94);rgb(236, 72, 153);rgb(59, 130, 246);rgb(147, 51, 234);rgb(239, 68, 68);rgb(34, 197, 94)" 
+                        dur="4s" 
+                        repeatCount="indefinite" />
+                    </stop>
+                    
+                    {/* グラデーション位置のアニメーション */}
+                    <animateTransform 
+                      attributeName="gradientTransform" 
+                      type="rotate" 
+                      values="0 50 50;360 50 50" 
+                      dur="8s" 
+                      repeatCount="indefinite" />
+                  </linearGradient>
+
+                  {/* 流体グラデーション2: 波のような逆回転 */}
+                  <linearGradient id={`${gradientId}-fluid2`} x1="100%" y1="0%" x2="0%" y2="100%">
+                    <stop offset="0%" stopOpacity="0.7">
+                      <animate attributeName="stop-color" 
+                        values="rgb(236, 72, 153);rgb(59, 130, 246);rgb(147, 51, 234);rgb(239, 68, 68);rgb(34, 197, 94);rgb(236, 72, 153)" 
+                        dur="6s" 
+                        repeatCount="indefinite" />
+                    </stop>
+                    <stop offset="50%" stopOpacity="1">
+                      <animate attributeName="stop-color" 
+                        values="rgb(59, 130, 246);rgb(147, 51, 234);rgb(239, 68, 68);rgb(34, 197, 94);rgb(236, 72, 153);rgb(59, 130, 246)" 
+                        dur="6s" 
+                        repeatCount="indefinite" />
+                    </stop>
+                    <stop offset="100%" stopOpacity="0.8">
+                      <animate attributeName="stop-color" 
+                        values="rgb(147, 51, 234);rgb(239, 68, 68);rgb(34, 197, 94);rgb(236, 72, 153);rgb(59, 130, 246);rgb(147, 51, 234)" 
+                        dur="6s" 
+                        repeatCount="indefinite" />
+                    </stop>
+                    
+                    {/* 逆回転 */}
+                    <animateTransform 
+                      attributeName="gradientTransform" 
+                      type="rotate" 
+                      values="360 50 50;0 50 50" 
+                      dur="12s" 
+                      repeatCount="indefinite" />
+                  </linearGradient>
+
+                  {/* 煙効果用ラジアルグラデーション */}
+                  <radialGradient id={`${gradientId}-smoke`} cx="50%" cy="50%" r="60%">
+                    <stop offset="0%" stopOpacity="0">
+                      <animate attributeName="stop-color" 
+                        values="rgb(255, 255, 255);rgb(59, 130, 246);rgb(147, 51, 234);rgb(239, 68, 68);rgb(255, 255, 255)" 
+                        dur="5s" 
+                        repeatCount="indefinite" />
+                    </stop>
+                    <stop offset="40%" stopOpacity="0.3">
                       <animate attributeName="stop-color" 
                         values="rgb(59, 130, 246);rgb(147, 51, 234);rgb(239, 68, 68);rgb(34, 197, 94);rgb(59, 130, 246)" 
-                        dur="8s" 
+                        dur="5s" 
                         repeatCount="indefinite" />
                     </stop>
-                    <stop offset="50%" stopColor="currentColor" stopOpacity="0.6">
+                    <stop offset="100%" stopOpacity="0.8">
                       <animate attributeName="stop-color" 
-                        values="rgb(147, 51, 234);rgb(239, 68, 68);rgb(34, 197, 94);rgb(59, 130, 246);rgb(147, 51, 234)" 
-                        dur="8s" 
+                        values="rgb(147, 51, 234);rgb(239, 68, 68);rgb(34, 197, 94);rgb(236, 72, 153);rgb(147, 51, 234)" 
+                        dur="5s" 
                         repeatCount="indefinite" />
                     </stop>
-                    <stop offset="100%" stopColor="currentColor" stopOpacity="1">
-                      <animate attributeName="stop-color" 
-                        values="rgb(239, 68, 68);rgb(34, 197, 94);rgb(59, 130, 246);rgb(147, 51, 234);rgb(239, 68, 68)" 
-                        dur="8s" 
-                        repeatCount="indefinite" />
-                    </stop>
-                  </linearGradient>
-                  <filter id="glow">
+                    
+                    {/* 煙の拡散アニメーション */}
+                    <animateTransform 
+                      attributeName="gradientTransform" 
+                      type="scale" 
+                      values="0.8 0.8;1.2 1.2;0.8 0.8" 
+                      dur="6s" 
+                      repeatCount="indefinite" />
+                  </radialGradient>
+
+                  {/* 高度なフィルター効果 */}
+                  <filter id="fluid-glow" x="-50%" y="-50%" width="200%" height="200%">
                     <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
+                    <feOffset dx="0" dy="0" result="offsetBlur"/>
+                    <feFlood floodColor="rgb(59, 130, 246)" floodOpacity="0.3"/>
+                    <feComposite in="SourceGraphic" in2="offsetBlur" operator="over"/>
                     <feMerge> 
                       <feMergeNode in="coloredBlur"/>
                       <feMergeNode in="SourceGraphic"/>
                     </feMerge>
+                  </filter>
+
+                  {/* 波状の歪み効果 */}
+                  <filter id="wave-distort">
+                    <feTurbulence baseFrequency="0.01 0.02" numOctaves="2" result="noise">
+                      <animate attributeName="baseFrequency" 
+                        values="0.01 0.02;0.03 0.01;0.01 0.02" 
+                        dur="8s" 
+                        repeatCount="indefinite" />
+                    </feTurbulence>
+                    <feDisplacementMap in="SourceGraphic" in2="noise" scale="2"/>
                   </filter>
                 </>
               )}
@@ -238,41 +343,161 @@ export function FocusMode() {
               className="text-muted-foreground/20"
             />
             
-            {/* Progress Circle with Effects */}
-            <circle
-              cx="50"
-              cy="50"
-              r="45"
-              fill="none"
-              stroke={gradientAnimation ? `url(#${gradientId})` : "currentColor"}
-              strokeWidth={gradientAnimation ? "4" : "3"}
-              strokeLinecap="round"
-              strokeDasharray={`${2 * Math.PI * 45}`}
-              strokeDashoffset={`${2 * Math.PI * 45 * (1 - progress / 100)}`}
-              className={`${gradientAnimation ? '' : progressColor} transition-all duration-1000 ${
-                gradientAnimation ? 'drop-shadow-lg' : ''
-              }`}
-              filter={gradientAnimation ? "url(#glow)" : "none"}
-              style={{
-                transform: waveAnimation ? 'scale(1.02)' : 'scale(1)',
-                transformOrigin: 'center',
-                transition: 'transform 2s ease-in-out infinite alternate'
-              }}
-            />
+            {gradientAnimation ? (
+              /* 🌊 Multi-Layer Fluid Animation */
+              <g>
+                {/* Layer 1: メインの流体グラデーション */}
+                <circle
+                  cx="50"
+                  cy="50"
+                  r="45"
+                  fill="none"
+                  stroke={`url(#${gradientId}-fluid1)`}
+                  strokeWidth="6"
+                  strokeLinecap="round"
+                  strokeDasharray={`${2 * Math.PI * 45}`}
+                  strokeDashoffset={`${2 * Math.PI * 45 * (1 - progress / 100)}`}
+                  filter="url(#fluid-glow)"
+                  style={{
+                    transform: waveAnimation ? 'scale(1.03)' : 'scale(1)',
+                    transformOrigin: 'center',
+                    transition: 'transform 3s ease-in-out infinite alternate'
+                  }}
+                />
+                
+                {/* Layer 2: 逆回転する波の層 */}
+                <circle
+                  cx="50"
+                  cy="50"
+                  r="43"
+                  fill="none"
+                  stroke={`url(#${gradientId}-fluid2)`}
+                  strokeWidth="3"
+                  strokeLinecap="round"
+                  strokeDasharray={`${2 * Math.PI * 43}`}
+                  strokeDashoffset={`${2 * Math.PI * 43 * (1 - progress / 100)}`}
+                  opacity="0.8"
+                  style={{
+                    transform: waveAnimation ? 'scale(0.98)' : 'scale(1)',
+                    transformOrigin: 'center',
+                    transition: 'transform 2s ease-in-out infinite alternate-reverse'
+                  }}
+                />
+                
+                {/* Layer 3: 煙のような内側の効果 */}
+                <circle
+                  cx="50"
+                  cy="50"
+                  r="47"
+                  fill="none"
+                  stroke={`url(#${gradientId}-smoke)`}
+                  strokeWidth="8"
+                  strokeLinecap="round"
+                  strokeDasharray={`${2 * Math.PI * 47}`}
+                  strokeDashoffset={`${2 * Math.PI * 47 * (1 - progress / 100)}`}
+                  opacity="0.6"
+                  filter="url(#wave-distort)"
+                  style={{
+                    transform: waveAnimation ? 'scale(1.05) rotate(2deg)' : 'scale(1)',
+                    transformOrigin: 'center',
+                    transition: 'transform 4s ease-in-out infinite alternate'
+                  }}
+                />
+                
+                {/* Layer 4: 微細な動きの追加レイヤー */}
+                <circle
+                  cx="50"
+                  cy="50"
+                  r="41"
+                  fill="none"
+                  stroke={`url(#${gradientId}-fluid1)`}
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeDasharray={`${2 * Math.PI * 41}`}
+                  strokeDashoffset={`${2 * Math.PI * 41 * (1 - progress / 100)}`}
+                  opacity="0.5"
+                  style={{
+                    transform: waveAnimation ? 'scale(0.95) rotate(-1deg)' : 'scale(1)',
+                    transformOrigin: 'center',
+                    transition: 'transform 1.5s ease-in-out infinite alternate'
+                  }}
+                />
+              </g>
+            ) : (
+              /* Static Progress Circle */
+              <circle
+                cx="50"
+                cy="50"
+                r="45"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="3"
+                strokeLinecap="round"
+                strokeDasharray={`${2 * Math.PI * 45}`}
+                strokeDashoffset={`${2 * Math.PI * 45 * (1 - progress / 100)}`}
+                className={`${progressColor} transition-all duration-1000`}
+                style={{
+                  transform: waveAnimation ? 'scale(1.02)' : 'scale(1)',
+                  transformOrigin: 'center',
+                  transition: 'transform 2s ease-in-out infinite alternate'
+                }}
+              />
+            )}
 
-            {/* ✨ Sparkle Effects for Special Moments */}
-            {(progress > 90 || progress < 10) && gradientAnimation && (
-              <>
-                <circle cx="20" cy="30" r="1" fill="currentColor" className="text-yellow-400">
-                  <animate attributeName="opacity" values="0;1;0" dur="1.5s" repeatCount="indefinite" />
-                </circle>
-                <circle cx="80" cy="70" r="1" fill="currentColor" className="text-blue-400">
-                  <animate attributeName="opacity" values="1;0;1" dur="2s" repeatCount="indefinite" />
-                </circle>
-                <circle cx="70" cy="20" r="1" fill="currentColor" className="text-purple-400">
-                  <animate attributeName="opacity" values="0;1;0" dur="1.8s" repeatCount="indefinite" />
-                </circle>
-              </>
+            {/* ✨ Enhanced Dynamic Sparkle Effects */}
+            {gradientAnimation && (
+              <g opacity={progress > 85 || progress < 15 ? "1" : "0.6"}>
+                {/* 動的なスパークル群 1 */}
+                <g>
+                  <circle r="2" fill="rgb(236, 72, 153)">
+                    <animateMotion dur="6s" repeatCount="indefinite" 
+                      path="M 15,25 Q 50,15 85,35 Q 50,85 15,25" />
+                    <animate attributeName="opacity" values="0;1;0.5;1;0" dur="6s" repeatCount="indefinite" />
+                    <animate attributeName="r" values="1;3;1;2;1" dur="6s" repeatCount="indefinite" />
+                  </circle>
+                </g>
+                
+                {/* 動的なスパークル群 2 */}
+                <g>
+                  <circle r="1.5" fill="rgb(59, 130, 246)">
+                    <animateMotion dur="8s" repeatCount="indefinite" 
+                      path="M 85,20 Q 30,40 25,80 Q 70,40 85,20" />
+                    <animate attributeName="opacity" values="1;0;1;0.3;1" dur="8s" repeatCount="indefinite" />
+                    <animate attributeName="r" values="0.5;2;1;2.5;0.5" dur="8s" repeatCount="indefinite" />
+                  </circle>
+                </g>
+                
+                {/* 動的なスパークル群 3 */}
+                <g>
+                  <circle r="1" fill="rgb(34, 197, 94)">
+                    <animateMotion dur="5s" repeatCount="indefinite" 
+                      path="M 50,15 Q 80,50 50,85 Q 20,50 50,15" />
+                    <animate attributeName="opacity" values="0.3;1;0;1;0.3" dur="5s" repeatCount="indefinite" />
+                    <animate attributeName="r" values="1;1.5;2;1;1" dur="5s" repeatCount="indefinite" />
+                  </circle>
+                </g>
+                
+                {/* 追加の煙のようなパーティクル */}
+                <g opacity="0.4">
+                  {Array.from({length: 8}).map((_, i) => {
+                    const angle = (i * 45) + (progress * 3.6) // progressに基づいて動的に配置
+                    const x = 50 + 35 * Math.cos(angle * Math.PI / 180)
+                    const y = 50 + 35 * Math.sin(angle * Math.PI / 180)
+                    return (
+                      <circle key={i} cx={x} cy={y} r="0.5" fill={`rgb(${100 + i * 20}, ${150 - i * 10}, ${200 + i * 5})`}>
+                        <animate attributeName="opacity" 
+                          values={`${0.2 + i * 0.1};${0.8 - i * 0.1};${0.2 + i * 0.1}`} 
+                          dur={`${2 + i * 0.5}s`} 
+                          repeatCount="indefinite" />
+                        <animate attributeName="r" 
+                          values={`0.3;${1 + i * 0.2};0.3`} 
+                          dur={`${2 + i * 0.3}s`} 
+                          repeatCount="indefinite" />
+                      </circle>
+                    )
+                  })}
+                </g>
+              </g>
             )}
           </svg>
           
