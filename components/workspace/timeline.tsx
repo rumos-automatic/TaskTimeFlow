@@ -445,7 +445,7 @@ export function Timeline({
     .map(item => `scheduled-${item.task!.id}-${item.slotId}`)
 
   // Function to scroll to current time indicator
-  const scrollToCurrentTime = useCallback((isInitialScroll = false) => {
+  const scrollToCurrentTime = useCallback(() => {
     if (!currentTimeIndicatorRef.current || !timelineContainerRef.current) return
     
     // Calculate scroll position based on current time
@@ -456,17 +456,9 @@ export function Timeline({
       totalHeight += slotMinute === 0 ? 64 : 40 // h-16 or h-10
     }
     
-    // Scroll to position
+    // 常に画面中央にスクロール
     const containerHeight = timelineContainerRef.current.clientHeight
-    let calculatedScrollPosition
-    
-    if (isInitialScroll) {
-      // 初回：画面中央にスクロール
-      calculatedScrollPosition = Math.max(0, totalHeight - containerHeight / 2)
-    } else {
-      // 2回目以降：現在時刻が見える程度に軽くスクロール（上から1/4の位置）
-      calculatedScrollPosition = Math.max(0, totalHeight - containerHeight / 4)
-    }
+    const calculatedScrollPosition = Math.max(0, totalHeight - containerHeight / 2)
     
     timelineContainerRef.current.scrollTop = calculatedScrollPosition
   }, [currentHour, currentMinute])
@@ -483,12 +475,11 @@ export function Timeline({
       }
       
       if (currentTimeIndicatorRef.current) {
-        // 初回かどうかでスクロール動作を変える
-        const isInitialScroll = !hasInitialScroll
-        scrollToCurrentTime(isInitialScroll)
+        // 常に画面中央にスクロール
+        scrollToCurrentTime()
         
         // 初回の場合のみフラグを更新
-        if (isInitialScroll && setHasInitialScroll) {
+        if (!hasInitialScroll && setHasInitialScroll) {
           setHasInitialScroll(true)
         }
       } else {
