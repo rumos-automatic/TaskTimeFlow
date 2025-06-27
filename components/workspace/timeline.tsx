@@ -456,9 +456,9 @@ export function Timeline({
       totalHeight += slotMinute === 0 ? 64 : 40 // h-16 or h-10
     }
     
-    // 常に画面中央にスクロール
+    // 常に画面中央にスクロール（より正確な中央位置調整）
     const containerHeight = timelineContainerRef.current.clientHeight
-    const calculatedScrollPosition = Math.max(0, totalHeight - containerHeight / 2)
+    const calculatedScrollPosition = Math.max(0, totalHeight - containerHeight / 2.2)
     
     timelineContainerRef.current.scrollTop = calculatedScrollPosition
   }, [currentHour, currentMinute])
