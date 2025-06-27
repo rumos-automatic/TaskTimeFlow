@@ -27,7 +27,9 @@ import {
   Volume2,
   VolumeX,
   Play,
-  Pause
+  Pause,
+  Sparkles,
+  Waves
 } from 'lucide-react'
 
 interface TimerSettingsProps {
@@ -55,6 +57,11 @@ export function TimerSettings({ children }: TimerSettingsProps) {
     // Display settings
     timerColor,
     displayMode,
+    
+    // Animation settings
+    gradientAnimation,
+    waveAnimation,
+    colorTransition,
     
     updateTimerSettings
   } = useTimerStore()
@@ -125,7 +132,17 @@ export function TimerSettings({ children }: TimerSettingsProps) {
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
                   <Label>作業時間（ポモドーロ）</Label>
-                  <span className="text-sm font-medium">{pomodoroTime}分</span>
+                  <div className="flex items-center gap-2">
+                    <Input
+                      type="number"
+                      value={pomodoroTime}
+                      onChange={(e) => updateTimerSettings({ pomodoroTime: Math.max(1, Math.min(120, parseInt(e.target.value) || 1)) })}
+                      className="w-16 h-8 text-center text-sm"
+                      min="1"
+                      max="120"
+                    />
+                    <span className="text-sm text-muted-foreground">分</span>
+                  </div>
                 </div>
                 <Slider
                   value={[pomodoroTime]}
@@ -147,6 +164,22 @@ export function TimerSettings({ children }: TimerSettingsProps) {
                       {time}分
                     </Button>
                   ))}
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => updateTimerSettings({ pomodoroTime: 90 })}
+                    className="text-xs"
+                  >
+                    90分
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => updateTimerSettings({ pomodoroTime: 120 })}
+                    className="text-xs"
+                  >
+                    120分
+                  </Button>
                 </div>
               </div>
 
@@ -154,7 +187,17 @@ export function TimerSettings({ children }: TimerSettingsProps) {
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
                   <Label>短い休憩時間</Label>
-                  <span className="text-sm font-medium">{breakTime}分</span>
+                  <div className="flex items-center gap-2">
+                    <Input
+                      type="number"
+                      value={breakTime}
+                      onChange={(e) => updateTimerSettings({ breakTime: Math.max(1, Math.min(60, parseInt(e.target.value) || 1)) })}
+                      className="w-16 h-8 text-center text-sm"
+                      min="1"
+                      max="60"
+                    />
+                    <span className="text-sm text-muted-foreground">分</span>
+                  </div>
                 </div>
                 <Slider
                   value={[breakTime]}
@@ -183,7 +226,17 @@ export function TimerSettings({ children }: TimerSettingsProps) {
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
                   <Label>長い休憩時間</Label>
-                  <span className="text-sm font-medium">{longBreakTime}分</span>
+                  <div className="flex items-center gap-2">
+                    <Input
+                      type="number"
+                      value={longBreakTime}
+                      onChange={(e) => updateTimerSettings({ longBreakTime: Math.max(1, Math.min(120, parseInt(e.target.value) || 1)) })}
+                      className="w-16 h-8 text-center text-sm"
+                      min="1"
+                      max="120"
+                    />
+                    <span className="text-sm text-muted-foreground">分</span>
+                  </div>
                 </div>
                 <Slider
                   value={[longBreakTime]}
@@ -376,6 +429,74 @@ export function TimerSettings({ children }: TimerSettingsProps) {
                   </SelectContent>
                 </Select>
               </div>
+            </CardContent>
+          </Card>
+
+          {/* ✨ アニメーション設定 */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-base">
+                <Sparkles className="w-4 h-4" />
+                アニメーション設定
+              </CardTitle>
+              <CardDescription>
+                美しい動的エフェクトを設定します
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex items-center justify-between">
+                <div className="space-y-1">
+                  <Label className="flex items-center gap-2">
+                    <Sparkles className="w-4 h-4" />
+                    グラデーションエフェクト
+                  </Label>
+                  <p className="text-sm text-muted-foreground">美しいグラデーション効果を表示</p>
+                </div>
+                <Switch
+                  checked={gradientAnimation}
+                  onCheckedChange={(checked) => updateTimerSettings({ gradientAnimation: checked })}
+                />
+              </div>
+
+              <div className="flex items-center justify-between">
+                <div className="space-y-1">
+                  <Label className="flex items-center gap-2">
+                    <Waves className="w-4 h-4" />
+                    ユラユラアニメーション
+                  </Label>
+                  <p className="text-sm text-muted-foreground">リングが波打つような動きを追加</p>
+                </div>
+                <Switch
+                  checked={waveAnimation}
+                  onCheckedChange={(checked) => updateTimerSettings({ waveAnimation: checked })}
+                />
+              </div>
+
+              <div className="flex items-center justify-between">
+                <div className="space-y-1">
+                  <Label className="flex items-center gap-2">
+                    <Palette className="w-4 h-4" />
+                    時間経過カラーチェンジ
+                  </Label>
+                  <p className="text-sm text-muted-foreground">残り時間に応じて色が変化</p>
+                </div>
+                <Switch
+                  checked={colorTransition}
+                  onCheckedChange={(checked) => updateTimerSettings({ colorTransition: checked })}
+                />
+              </div>
+
+              {(gradientAnimation || waveAnimation || colorTransition) && (
+                <div className="p-3 bg-muted/50 rounded-lg">
+                  <div className="flex items-center gap-2 text-sm">
+                    <Sparkles className="w-4 h-4 text-yellow-500" />
+                    <span className="font-medium">プレビュー効果が有効</span>
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    設定した効果はタイマー画面で確認できます
+                  </p>
+                </div>
+              )}
             </CardContent>
           </Card>
         </div>

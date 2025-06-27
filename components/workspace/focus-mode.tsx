@@ -19,6 +19,9 @@ export function FocusMode() {
     completedPomodoros,
     timerColor,
     displayMode,
+    gradientAnimation,
+    waveAnimation,
+    colorTransition,
     startTimer,
     pauseTimer,
     resumeTimer,
@@ -112,17 +115,40 @@ export function FocusMode() {
 
   const progress = totalTime > 0 ? ((totalTime - timeRemaining) / totalTime) * 100 : 0
 
-  // Color mapping for timer display
-  const colorClasses = {
-    orange: 'text-orange-500',
-    blue: 'text-blue-500',
-    green: 'text-green-500',
-    purple: 'text-purple-500',
-    red: 'text-red-500',
-    pink: 'text-pink-500'
+  // 🎨 Dynamic color calculation based on time remaining
+  const getTimerColor = () => {
+    if (!colorTransition) {
+      // Use static color
+      const colorClasses = {
+        orange: 'text-orange-500',
+        blue: 'text-blue-500',
+        green: 'text-green-500',
+        purple: 'text-purple-500',
+        red: 'text-red-500',
+        pink: 'text-pink-500'
+      }
+      return colorClasses[timerColor as keyof typeof colorClasses] || 'text-orange-500'
+    }
+
+    // Dynamic color transition based on progress
+    const progressPercent = progress
+    if (progressPercent < 30) {
+      return 'text-green-500' // 開始時は緑
+    } else if (progressPercent < 60) {
+      return 'text-yellow-500' // 中間は黄色
+    } else if (progressPercent < 85) {
+      return 'text-orange-500' // 後半はオレンジ
+    } else {
+      return 'text-red-500' // 終盤は赤
+    }
   }
 
-  const progressColor = colorClasses[timerColor as keyof typeof colorClasses] || 'text-orange-500'
+  // 🌊 Wave animation CSS
+  const waveAnimationClass = waveAnimation ? 'animate-pulse' : ''
+  
+  // ✨ Gradient animation styles
+  const gradientId = 'timer-gradient'
+  const progressColor = getTimerColor()
 
   const handleStartPause = () => {
     if (!isRunning && !isPaused) {
@@ -158,10 +184,50 @@ export function FocusMode() {
   return (
     <div className="space-y-6 h-full flex flex-col">
       {/* Pomodoro Timer */}
-      <Card className="p-6 text-center bg-gradient-to-br from-orange-50 to-red-50 dark:from-orange-950/30 dark:to-red-950/30">
+      <Card className={`p-6 text-center transition-all duration-1000 ${
+        gradientAnimation
+          ? 'bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50 dark:from-blue-950/30 dark:via-purple-950/30 dark:to-pink-950/30 shadow-lg'
+          : 'bg-gradient-to-br from-orange-50 to-red-50 dark:from-orange-950/30 dark:to-red-950/30'
+      } ${waveAnimation ? 'animate-pulse' : ''}`}>
         <div className="relative w-32 h-32 mx-auto mb-4">
-          {/* Progress Ring */}
-          <svg className="w-32 h-32 transform -rotate-90" viewBox="0 0 100 100">
+          {/* Progress Ring with Magic Effects */}
+          <svg className={`w-32 h-32 transform -rotate-90 ${waveAnimationClass}`} viewBox="0 0 100 100">
+            {/* ✨ Gradient Definitions */}
+            <defs>
+              {gradientAnimation && (
+                <>
+                  <linearGradient id={gradientId} x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" stopColor="currentColor" stopOpacity="0.8">
+                      <animate attributeName="stop-color" 
+                        values="rgb(59, 130, 246);rgb(147, 51, 234);rgb(239, 68, 68);rgb(34, 197, 94);rgb(59, 130, 246)" 
+                        dur="8s" 
+                        repeatCount="indefinite" />
+                    </stop>
+                    <stop offset="50%" stopColor="currentColor" stopOpacity="0.6">
+                      <animate attributeName="stop-color" 
+                        values="rgb(147, 51, 234);rgb(239, 68, 68);rgb(34, 197, 94);rgb(59, 130, 246);rgb(147, 51, 234)" 
+                        dur="8s" 
+                        repeatCount="indefinite" />
+                    </stop>
+                    <stop offset="100%" stopColor="currentColor" stopOpacity="1">
+                      <animate attributeName="stop-color" 
+                        values="rgb(239, 68, 68);rgb(34, 197, 94);rgb(59, 130, 246);rgb(147, 51, 234);rgb(239, 68, 68)" 
+                        dur="8s" 
+                        repeatCount="indefinite" />
+                    </stop>
+                  </linearGradient>
+                  <filter id="glow">
+                    <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
+                    <feMerge> 
+                      <feMergeNode in="coloredBlur"/>
+                      <feMergeNode in="SourceGraphic"/>
+                    </feMerge>
+                  </filter>
+                </>
+              )}
+            </defs>
+
+            {/* Background Circle */}
             <circle
               cx="50"
               cy="50"
@@ -171,18 +237,43 @@ export function FocusMode() {
               strokeWidth="2"
               className="text-muted-foreground/20"
             />
+            
+            {/* Progress Circle with Effects */}
             <circle
               cx="50"
               cy="50"
               r="45"
               fill="none"
-              stroke="currentColor"
-              strokeWidth="3"
+              stroke={gradientAnimation ? `url(#${gradientId})` : "currentColor"}
+              strokeWidth={gradientAnimation ? "4" : "3"}
               strokeLinecap="round"
               strokeDasharray={`${2 * Math.PI * 45}`}
               strokeDashoffset={`${2 * Math.PI * 45 * (1 - progress / 100)}`}
-              className={`${progressColor} transition-all duration-1000`}
+              className={`${gradientAnimation ? '' : progressColor} transition-all duration-1000 ${
+                gradientAnimation ? 'drop-shadow-lg' : ''
+              }`}
+              filter={gradientAnimation ? "url(#glow)" : "none"}
+              style={{
+                transform: waveAnimation ? 'scale(1.02)' : 'scale(1)',
+                transformOrigin: 'center',
+                transition: 'transform 2s ease-in-out infinite alternate'
+              }}
             />
+
+            {/* ✨ Sparkle Effects for Special Moments */}
+            {(progress > 90 || progress < 10) && gradientAnimation && (
+              <>
+                <circle cx="20" cy="30" r="1" fill="currentColor" className="text-yellow-400">
+                  <animate attributeName="opacity" values="0;1;0" dur="1.5s" repeatCount="indefinite" />
+                </circle>
+                <circle cx="80" cy="70" r="1" fill="currentColor" className="text-blue-400">
+                  <animate attributeName="opacity" values="1;0;1" dur="2s" repeatCount="indefinite" />
+                </circle>
+                <circle cx="70" cy="20" r="1" fill="currentColor" className="text-purple-400">
+                  <animate attributeName="opacity" values="0;1;0" dur="1.8s" repeatCount="indefinite" />
+                </circle>
+              </>
+            )}
           </svg>
           
           {/* Time Display */}

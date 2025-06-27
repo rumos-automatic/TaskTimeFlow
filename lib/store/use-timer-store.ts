@@ -33,6 +33,11 @@ interface TimerStore {
   timerColor: string
   displayMode: 'digital' | 'analog'
   
+  // Animation settings
+  gradientAnimation: boolean
+  waveAnimation: boolean
+  colorTransition: boolean
+  
   // Actions
   startTimer: (taskId?: string) => void
   pauseTimer: () => void
@@ -59,6 +64,9 @@ interface TimerStore {
     autoStartPomodoros: boolean
     timerColor: string
     displayMode: 'digital' | 'analog'
+    gradientAnimation: boolean
+    waveAnimation: boolean
+    colorTransition: boolean
   }>) => void
 }
 
@@ -95,6 +103,11 @@ export const useTimerStore = create<TimerStore>()(
       // Display settings
       timerColor: 'orange',
       displayMode: 'digital' as const,
+      
+      // Animation settings
+      gradientAnimation: true,
+      waveAnimation: false,
+      colorTransition: true,
       
       // Actions
       startTimer: (taskId) => {
@@ -236,6 +249,11 @@ export const useTimerStore = create<TimerStore>()(
         // Display settings
         timerColor: state.timerColor,
         displayMode: state.displayMode,
+        
+        // Animation settings
+        gradientAnimation: state.gradientAnimation,
+        waveAnimation: state.waveAnimation,
+        colorTransition: state.colorTransition,
         
         // Statistics
         completedPomodoros: state.completedPomodoros
