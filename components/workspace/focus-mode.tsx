@@ -111,11 +111,8 @@ export function FocusMode() {
 
   const handleStartPause = () => {
     if (!isRunning && !isPaused) {
-      // Start timer for current timeline task only
-      if (currentTask) {
-        startTimer(currentTask.id)
-      }
-      // If no current task is scheduled, timer cannot be started
+      // Start timer with current task ID if available, otherwise start without task
+      startTimer(currentTask?.id)
     } else if (isRunning) {
       // Pause timer
       pauseTimer()
@@ -187,7 +184,6 @@ export function FocusMode() {
             variant={isRunning ? "secondary" : "default"}
             size="sm"
             onClick={handleStartPause}
-            disabled={!currentTask && !isRunning && !isPaused}
           >
             {isRunning ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}
           </Button>
@@ -205,8 +201,7 @@ export function FocusMode() {
         <div className="text-center text-xs text-muted-foreground">
           {isRunning && "タイマー実行中"}
           {isPaused && "一時停止中"}
-          {!isRunning && !isPaused && currentTask && "開始準備完了"}
-          {!isRunning && !isPaused && !currentTask && "タイムラインにタスクをスケジュールしてください"}
+          {!isRunning && !isPaused && "開始準備完了"}
         </div>
       </Card>
 
