@@ -486,11 +486,11 @@ export function Timeline({ hasInitialScroll = false, setHasInitialScroll }: Time
       const timer = setTimeout(attemptScroll, 200)
       return () => clearTimeout(timer)
     }
-  }, [hasInitialScroll, setHasInitialScroll]) // Only run when hasInitialScroll changes
+  }, [hasInitialScroll, setHasInitialScroll, scrollToCurrentTime])
   
   // Restore scroll position when scrollPosition prop changes
   useEffect(() => {
-    if (timelineContainerRef.current && scrollPosition > 0 && !isFirstScroll) {
+    if (timelineContainerRef.current && scrollPosition && scrollPosition > 0 && !isFirstScroll) {
       timelineContainerRef.current.scrollTop = scrollPosition
     }
   }, [scrollPosition, isFirstScroll])
