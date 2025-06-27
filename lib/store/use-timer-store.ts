@@ -9,6 +9,7 @@ interface TimerStore {
   totalTime: number // in seconds
   currentTaskId: string | null
   completedPomodoros: number
+  isBreak: boolean // Track if currently in break mode
   
   // Timer settings
   pomodoroTime: number // in minutes
@@ -23,6 +24,7 @@ interface TimerStore {
   resetTimer: () => void
   tick: () => void
   completePomodoro: () => void
+  completeBreak: () => void
   
   // Settings
   updateTimerSettings: (settings: Partial<{
@@ -42,6 +44,7 @@ export const useTimerStore = create<TimerStore>()(
       totalTime: 25 * 60,
       currentTaskId: null,
       completedPomodoros: 0,
+      isBreak: false,
       
       // Default settings
       pomodoroTime: 25,
@@ -50,12 +53,17 @@ export const useTimerStore = create<TimerStore>()(
       
       // Actions
       startTimer: (taskId) => {
-        const { pomodoroTime } = get()
+        const { pomodoroTime, isBreak, timeRemaining, totalTime } = get()
+        
+        // If in break mode, use the already set break time
+        // Otherwise, use pomodoro time
+        const time = isBreak ? totalTime : pomodoroTime * 60
+        
         set({
           isRunning: true,
           isPaused: false,
-          timeRemaining: pomodoroTime * 60,
-          totalTime: pomodoroTime * 60,
+          timeRemaining: isBreak ? timeRemaining : time,
+          totalTime: time,
           currentTaskId: taskId || null
         })
       },
@@ -75,7 +83,8 @@ export const useTimerStore = create<TimerStore>()(
           isPaused: false,
           timeRemaining: pomodoroTime * 60,
           totalTime: pomodoroTime * 60,
-          currentTaskId: null
+          currentTaskId: null,
+          isBreak: false // Reset break mode when stopping
         })
       },
       
@@ -88,11 +97,15 @@ export const useTimerStore = create<TimerStore>()(
       },
       
       tick: () => {
-        const { timeRemaining, isRunning } = get()
+        const { timeRemaining, isRunning, isBreak } = get()
         if (isRunning && timeRemaining > 0) {
           set({ timeRemaining: timeRemaining - 1 })
         } else if (isRunning && timeRemaining === 0) {
-          get().completePomodoro()
+          if (isBreak) {
+            get().completeBreak()
+          } else {
+            get().completePomodoro()
+          }
         }
       },
       
@@ -107,13 +120,33 @@ export const useTimerStore = create<TimerStore>()(
           timeRemaining: nextTime * 60,
           totalTime: nextTime * 60,
           isRunning: false,
-          currentTaskId: null
+          currentTaskId: null,
+          isBreak: true // Set break mode
         })
         
         // Play notification sound or show notification
         if (typeof window !== 'undefined' && 'Notification' in window) {
           new Notification('ポモドーロ完了！', {
             body: `${isLongBreak ? '長い' : '短い'}休憩を取りましょう`,
+            icon: '/favicon.ico'
+          })
+        }
+      },
+      
+      completeBreak: () => {
+        const { pomodoroTime } = get()
+        
+        set({
+          isBreak: false,
+          timeRemaining: pomodoroTime * 60,
+          totalTime: pomodoroTime * 60,
+          isRunning: false
+        })
+        
+        // Play notification sound or show notification
+        if (typeof window !== 'undefined' && 'Notification' in window) {
+          new Notification('休憩終了！', {
+            body: '作業を再開しましょう',
             icon: '/favicon.ico'
           })
         }
