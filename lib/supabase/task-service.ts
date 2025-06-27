@@ -239,7 +239,7 @@ export class TaskService {
             } catch (error) {
               console.error('Error refetching tasks:', error)
             }
-          }, 100) // 100ms デバウンス
+          }, 50) // 50ms デバウンス（反応性向上）
         }
       )
       .subscribe()

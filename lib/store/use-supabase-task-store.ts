@@ -53,6 +53,7 @@ export const useSupabaseTaskStore = create<SupabaseTaskStore>()((set, get) => {
   let unsubscribeTasks: (() => void) | null = null
   let unsubscribeTimeSlots: (() => void) | null = null
   let isInitialized = false
+  let pauseRealTimeUpdates = false // 楽観的更新の競合を防ぐ
 
   return {
     // Initial state
@@ -93,8 +94,14 @@ export const useSupabaseTaskStore = create<SupabaseTaskStore>()((set, get) => {
         // Set up real-time subscriptions only if not already set up
         if (!unsubscribeTasks) {
           unsubscribeTasks = TaskService.subscribeToTasks(userId, (tasks) => {
+            // 楽観的更新中はリアルタイム更新を一時停止
+            if (pauseRealTimeUpdates) {
+              console.log('Pausing real-time update during optimistic update')
+              return
+            }
+            
             console.log('Real-time tasks update received:', tasks.length, 'tasks')
-            console.log('Current tasks in store:', get().tasks.length)
+            console.log('Current tasks in store before update:', get().tasks.length)
             
             // 重複チェック：タスクIDでユニーク化
             const uniqueTasks = tasks.filter((task, index, self) => 
@@ -105,7 +112,9 @@ export const useSupabaseTaskStore = create<SupabaseTaskStore>()((set, get) => {
               console.warn('Duplicate tasks detected and removed:', tasks.length - uniqueTasks.length)
             }
             
+            console.log('Setting tasks to store:', uniqueTasks.length, 'tasks')
             set({ tasks: uniqueTasks })
+            console.log('Tasks in store after update:', get().tasks.length)
           })
         }
         
@@ -231,14 +240,40 @@ export const useSupabaseTaskStore = create<SupabaseTaskStore>()((set, get) => {
         
         set({ syncing: true, error: null })
         
-        // データベースから削除（楽観的更新を削除してリアルタイム同期に任せる）
+        // リアルタイム更新を一時停止
+        pauseRealTimeUpdates = true
+        console.log('Paused real-time updates for delete operation')
+        
+        // 楽観的更新を即座に実行（UIの反応性向上）
+        const filteredTasks = beforeTasks.filter((task) => task.id !== id)
+        console.log('Filtered tasks:', filteredTasks.length)
+        
+        set((state) => ({
+          tasks: filteredTasks,
+          timeSlots: state.timeSlots.filter((slot) => slot.taskId !== id)
+        }))
+        
+        console.log('Tasks after optimistic update:', get().tasks.length)
+        
+        // データベースから削除
         await TaskService.deleteTask(id)
         
         console.log('Task deleted successfully from database:', id)
+        
+        // 少し待ってからリアルタイム更新を再開
+        setTimeout(() => {
+          pauseRealTimeUpdates = false
+          console.log('Resumed real-time updates')
+        }, 500)
+        
         set({ syncing: false })
         
       } catch (error) {
         console.error('Failed to delete task:', error)
+        
+        // エラー時はリアルタイム更新を即座に再開
+        pauseRealTimeUpdates = false
+        
         set({ 
           error: 'タスクの削除に失敗しました',
           syncing: false 
