@@ -443,13 +443,20 @@ export function Timeline({ hasInitialScroll = false, setHasInitialScroll }: Time
 
   // Function to scroll to current time indicator
   const scrollToCurrentTime = () => {
-    if (!currentTimeIndicatorRef.current) return
-
-    // Use scrollIntoView for reliable cross-platform scrolling
-    currentTimeIndicatorRef.current.scrollIntoView({
-      behavior: 'smooth',
-      block: 'center'
-    })
+    if (!currentTimeIndicatorRef.current || !timelineContainerRef.current) return
+    
+    // Calculate scroll position based on current time
+    const currentSlotIndex = currentHour * 4 + Math.floor(currentMinute / 15)
+    let totalHeight = 0
+    for (let i = 0; i < currentSlotIndex; i++) {
+      const slotMinute = (i % 4) * 15
+      totalHeight += slotMinute === 0 ? 64 : 40 // h-16 or h-10
+    }
+    
+    // Scroll to position with some offset to center it
+    const containerHeight = timelineContainerRef.current.clientHeight
+    const scrollPosition = Math.max(0, totalHeight - containerHeight / 2)
+    timelineContainerRef.current.scrollTop = scrollPosition
   }
 
   // Scroll to current time on component mount (only once per session)
@@ -466,7 +473,9 @@ export function Timeline({ hasInitialScroll = false, setHasInitialScroll }: Time
         
         if (currentTimeIndicatorRef.current) {
           scrollToCurrentTime()
-          setHasInitialScroll(true)
+          if (setHasInitialScroll) {
+            setHasInitialScroll(true)
+          }
         } else {
           // Try again after short delay
           setTimeout(() => attemptScroll(attempt + 1), 500)
@@ -478,6 +487,20 @@ export function Timeline({ hasInitialScroll = false, setHasInitialScroll }: Time
       return () => clearTimeout(timer)
     }
   }, [hasInitialScroll, setHasInitialScroll]) // Only run when hasInitialScroll changes
+  
+  // Restore scroll position when scrollPosition prop changes
+  useEffect(() => {
+    if (timelineContainerRef.current && scrollPosition > 0 && !isFirstScroll) {
+      timelineContainerRef.current.scrollTop = scrollPosition
+    }
+  }, [scrollPosition, isFirstScroll])
+  
+  // Mark that first scroll has been completed
+  useEffect(() => {
+    if (hasInitialScroll) {
+      setIsFirstScroll(false)
+    }
+  }, [hasInitialScroll])
 
   return (
     <div className="space-y-4 h-full flex flex-col">
@@ -553,7 +576,12 @@ export function Timeline({ hasInitialScroll = false, setHasInitialScroll }: Time
 
       {/* Timeline or Calendar View */}
       {viewMode === 'timeline' ? (
-        <div ref={timelineContainerRef} className="flex-1 overflow-y-auto" data-timeline="true">
+        <div 
+          ref={timelineContainerRef} 
+          className="flex-1 overflow-y-auto" 
+          data-timeline="true"
+          onScroll={onScroll}
+        >
           <SortableContext items={sortableIds} strategy={verticalListSortingStrategy}>
           <div className="relative">
             {/* Current Time Indicator */}
