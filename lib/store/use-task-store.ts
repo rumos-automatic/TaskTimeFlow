@@ -11,6 +11,7 @@ interface TaskStore {
   completeTask: (id: string) => void
   uncompleteTask: (id: string) => void
   moveTaskToTimeline: (taskId: string, date: Date, time: string) => void
+  reorderTasks: (activeId: string, overId: string) => void
   
   // Timeline slots
   timeSlots: TimeSlot[]
@@ -209,6 +210,17 @@ export const useTaskStore = create<TaskStore>()(
 
       getCompletedTasks: () => {
         return get().tasks.filter((task) => task.status === 'completed')
+      },
+
+      reorderTasks: (activeId, overId) => {
+        const { tasks } = get()
+        const activeIndex = tasks.findIndex((task) => task.id === activeId)
+        const overIndex = tasks.findIndex((task) => task.id === overId)
+        
+        if (activeIndex === -1 || overIndex === -1) return
+        
+        const reorderedTasks = arrayMove(tasks, activeIndex, overIndex)
+        set({ tasks: reorderedTasks })
       }
     }),
     {
@@ -265,4 +277,11 @@ function calculateEndTime(startTime: string, durationMinutes: number): string {
   return `${endHours.toString().padStart(2, '0')}:${endMinutes
     .toString()
     .padStart(2, '0')}`
+}
+
+function arrayMove<T>(array: T[], from: number, to: number): T[] {
+  const result = [...array]
+  const [removed] = result.splice(from, 1)
+  result.splice(to, 0, removed)
+  return result
 }

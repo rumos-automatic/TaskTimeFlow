@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
 import { Plus, Circle, Clock, AlertCircle, X, Edit2, Trash2, MoreVertical, Check, RotateCcw } from 'lucide-react'
 import { useTaskStore } from '@/lib/store/use-task-store'
-import { useSortable } from '@dnd-kit/sortable'
+import { useSortable, SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable'
 import { useDroppable } from '@dnd-kit/core'
 import { CSS } from '@dnd-kit/utilities'
 import { Task, Priority, Urgency, TaskCategory } from '@/lib/types'
@@ -606,12 +606,15 @@ export function TaskPool() {
 
       {/* Task List */}
       <div className="flex-1 overflow-y-auto space-y-3">
-        {filteredTasks.map((task) => (
-          <DraggableTaskCard 
-            key={task.id} 
-            task={task} 
-          />
-        ))}
+        <SortableContext items={filteredTasks.map(task => task.id)} strategy={verticalListSortingStrategy}>
+          {filteredTasks.map((task) => (
+            <DraggableTaskCard 
+              key={task.id} 
+              task={task} 
+            />
+          ))}
+        </SortableContext>
+        
         {filteredTasks.length === 0 && (
           <div className="text-center text-muted-foreground py-8">
             タスクがありません

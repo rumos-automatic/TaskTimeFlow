@@ -54,7 +54,7 @@ export function WorkspaceNew() {
     prevView 
   } = useViewState()
 
-  const { moveTaskToTimeline, tasks, removeTimeSlot, timeSlots } = useTaskStore()
+  const { moveTaskToTimeline, tasks, removeTimeSlot, timeSlots, reorderTasks } = useTaskStore()
   
   // ドラッグ状態管理
   const [activeTask, setActiveTask] = useState<Task | null>(null)
@@ -244,15 +244,22 @@ export function WorkspaceNew() {
     if (over) {
       console.log('Normal drag & drop with over:', overId)
       
-      // 1. タスクプール → タイムライン (既存タスクの新規スケジュール)
-      if (overId && overId.startsWith('timeline-slot-') && !activeId.startsWith('scheduled-')) {
+      // 1. タスクプール内の並び替え
+      if (overId && !overId.startsWith('timeline-slot-') && !overId.startsWith('scheduled-') && 
+          overId !== 'task-pool' && !activeId.startsWith('scheduled-')) {
+        console.log('Task pool reorder:', activeId, 'over', overId)
+        reorderTasks(activeId, overId)
+      }
+      
+      // 2. タスクプール → タイムライン (既存タスクの新規スケジュール)
+      else if (overId && overId.startsWith('timeline-slot-') && !activeId.startsWith('scheduled-')) {
         const timeString = overId.replace('timeline-slot-', '')
         const today = new Date()
         moveTaskToTimeline(activeId, today, timeString)
         console.log('Normal: Moved task to timeline slot:', activeId, 'at', timeString)
       }
       
-      // 2. タイムライン → 別のタイムスロット (スケジュール済みタスクの移動)
+      // 3. タイムライン → 別のタイムスロット (スケジュール済みタスクの移動)
       else if (overId && overId.startsWith('timeline-slot-') && activeId.startsWith('scheduled-')) {
         const taskId = activeId.split('-')[1]
         const timeString = overId.replace('timeline-slot-', '')
@@ -261,7 +268,7 @@ export function WorkspaceNew() {
         console.log('Normal: Moved scheduled task to new slot:', taskId, 'at', timeString)
       }
       
-      // 3. タイムライン → タスクプール (スケジュール削除)
+      // 4. タイムライン → タスクプール (スケジュール削除)
       else if (overId === 'task-pool' && activeId.startsWith('scheduled-')) {
         const slotId = activeId.split('-')[2]
         removeTimeSlot(slotId)
@@ -301,33 +308,6 @@ export function WorkspaceNew() {
     // エッジプル機能終了（モバイルのみ）
     if (isMobile) {
       endEdgePull()
-    }
-
-
-    if (!over && !(isMobile && dragStartView !== currentView)) return
-
-    // 1. タスクプール → タイムライン (既存タスクの新規スケジュール)
-    if (overId && overId.startsWith('timeline-slot-') && !activeId.startsWith('scheduled-')) {
-      const timeString = overId.replace('timeline-slot-', '')
-      const today = new Date()
-      
-      moveTaskToTimeline(activeId, today, timeString)
-    }
-    
-    // 2. タイムライン → 別のタイムスロット (スケジュール済みタスクの移動)
-    else if (overId && overId.startsWith('timeline-slot-') && activeId.startsWith('scheduled-')) {
-      const taskId = activeId.split('-')[1]
-      
-      // 新しい時間にスケジュール（moveTaskToTimelineが既存スロットを自動削除）
-      const timeString = overId.replace('timeline-slot-', '')
-      const today = new Date()
-      moveTaskToTimeline(taskId, today, timeString)
-    }
-    
-    // 3. タイムライン → タスクプール (スケジュール削除)
-    else if (overId === 'task-pool' && activeId.startsWith('scheduled-')) {
-      const slotId = activeId.split('-')[2]
-      removeTimeSlot(slotId)
     }
   }
 
