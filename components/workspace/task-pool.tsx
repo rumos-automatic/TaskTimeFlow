@@ -1,11 +1,12 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import type { ReactElement } from 'react'
+import { motion, AnimatePresence } from 'framer-motion'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
-import { Plus, Circle, Clock, AlertCircle, X, Edit2, Trash2, MoreVertical, Check, RotateCcw } from 'lucide-react'
+import { Plus, Circle, Clock, AlertCircle, X, Edit2, Trash2, MoreVertical, Check, RotateCcw, ChevronDown, ChevronUp } from 'lucide-react'
 import { useTaskStore } from '@/lib/store/use-task-store'
 import { useSortable, SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable'
 import { useDroppable } from '@dnd-kit/core'
@@ -555,6 +556,22 @@ export function TaskPool() {
     id: 'task-pool'
   })
 
+  // 完了済みタスクの折りたたみ状態管理（デフォルト：折りたたみ）
+  const [isCompletedCollapsed, setIsCompletedCollapsed] = useState<boolean>(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('task-pool-completed-collapsed')
+      return saved ? JSON.parse(saved) : true
+    }
+    return true
+  })
+
+  // 折りたたみ状態をローカルストレージに保存
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('task-pool-completed-collapsed', JSON.stringify(isCompletedCollapsed))
+    }
+  }, [isCompletedCollapsed])
+
   const unscheduledTasks = getUnscheduledTasks()
   const completedTasks = getCompletedTasks()
   const filteredTasks = selectedCategory === 'all' 
@@ -625,17 +642,49 @@ export function TaskPool() {
         {filteredCompletedTasks.length > 0 && (
           <div className="pt-4">
             <Separator />
-            <div className="flex items-center space-x-2 py-3">
-              <Check className="w-4 h-4 text-green-600" />
-              <h3 className="text-sm font-medium text-muted-foreground">
-                完了済み ({filteredCompletedTasks.length})
-              </h3>
-            </div>
-            <div className="space-y-2">
-              {filteredCompletedTasks.map((task) => (
-                <CompletedTaskCard key={task.id} task={task} />
-              ))}
-            </div>
+            
+            {/* Collapsible Header */}
+            <button
+              onClick={() => setIsCompletedCollapsed(!isCompletedCollapsed)}
+              className="flex items-center justify-between w-full py-3 text-left hover:bg-muted/50 rounded-md px-2 -mx-2 transition-colors group"
+            >
+              <div className="flex items-center space-x-2">
+                <Check className="w-4 h-4 text-green-600" />
+                <h3 className="text-sm font-medium text-muted-foreground group-hover:text-foreground transition-colors">
+                  完了済み ({filteredCompletedTasks.length})
+                </h3>
+              </div>
+              <motion.div
+                animate={{ rotate: isCompletedCollapsed ? 0 : 180 }}
+                transition={{ duration: 0.2, ease: "easeInOut" }}
+                className="text-muted-foreground group-hover:text-foreground transition-colors"
+              >
+                <ChevronDown className="w-4 h-4" />
+              </motion.div>
+            </button>
+
+            {/* Collapsible Content */}
+            <AnimatePresence initial={false}>
+              {!isCompletedCollapsed && (
+                <motion.div
+                  initial={{ height: 0, opacity: 0 }}
+                  animate={{ height: "auto", opacity: 1 }}
+                  exit={{ height: 0, opacity: 0 }}
+                  transition={{ 
+                    duration: 0.3, 
+                    ease: "easeInOut",
+                    opacity: { duration: 0.2 }
+                  }}
+                  style={{ overflow: "hidden" }}
+                >
+                  <div className="space-y-2 pt-2">
+                    {filteredCompletedTasks.map((task) => (
+                      <CompletedTaskCard key={task.id} task={task} />
+                    ))}
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
           </div>
         )}
       </div>
