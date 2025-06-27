@@ -445,7 +445,7 @@ export function Timeline({
     .map(item => `scheduled-${item.task!.id}-${item.slotId}`)
 
   // Function to scroll to current time indicator
-  const scrollToCurrentTime = useCallback(() => {
+  const scrollToCurrentTime = useCallback((isInitialScroll = false) => {
     if (!currentTimeIndicatorRef.current || !timelineContainerRef.current) return
     
     // Calculate scroll position based on current time
@@ -456,39 +456,50 @@ export function Timeline({
       totalHeight += slotMinute === 0 ? 64 : 40 // h-16 or h-10
     }
     
-    // Scroll to position with some offset to center it
+    // Scroll to position
     const containerHeight = timelineContainerRef.current.clientHeight
-    const calculatedScrollPosition = Math.max(0, totalHeight - containerHeight / 2)
+    let calculatedScrollPosition
+    
+    if (isInitialScroll) {
+      // 初回：画面中央にスクロール
+      calculatedScrollPosition = Math.max(0, totalHeight - containerHeight / 2)
+    } else {
+      // 2回目以降：現在時刻が見える程度に軽くスクロール（上から1/4の位置）
+      calculatedScrollPosition = Math.max(0, totalHeight - containerHeight / 4)
+    }
+    
     timelineContainerRef.current.scrollTop = calculatedScrollPosition
   }, [currentHour, currentMinute])
 
-  // Scroll to current time on component mount (only once per session)
+  // Scroll to current time on component mount
   useEffect(() => {
-    // Only scroll to current time if it hasn't been done yet
-    if (!hasInitialScroll && setHasInitialScroll) {
-      // Simple retry mechanism for current time indicator
-      const attemptScroll = (attempt = 1) => {
-        if (attempt > 3) {
-          // Mark as scrolled even if failed to prevent infinite retries
+    const attemptScroll = (attempt = 1) => {
+      if (attempt > 3) {
+        // Mark as initial scroll done if this was the first time
+        if (!hasInitialScroll && setHasInitialScroll) {
           setHasInitialScroll(true)
-          return
         }
-        
-        if (currentTimeIndicatorRef.current) {
-          scrollToCurrentTime()
-          if (setHasInitialScroll) {
-            setHasInitialScroll(true)
-          }
-        } else {
-          // Try again after short delay
-          setTimeout(() => attemptScroll(attempt + 1), 500)
-        }
+        return
       }
-
-      // Start after DOM is ready
-      const timer = setTimeout(attemptScroll, 200)
-      return () => clearTimeout(timer)
+      
+      if (currentTimeIndicatorRef.current) {
+        // 初回かどうかでスクロール動作を変える
+        const isInitialScroll = !hasInitialScroll
+        scrollToCurrentTime(isInitialScroll)
+        
+        // 初回の場合のみフラグを更新
+        if (isInitialScroll && setHasInitialScroll) {
+          setHasInitialScroll(true)
+        }
+      } else {
+        // Try again after short delay
+        setTimeout(() => attemptScroll(attempt + 1), 500)
+      }
     }
+
+    // Start after DOM is ready
+    const timer = setTimeout(attemptScroll, 200)
+    return () => clearTimeout(timer)
   }, [hasInitialScroll, setHasInitialScroll, scrollToCurrentTime])
   
 
