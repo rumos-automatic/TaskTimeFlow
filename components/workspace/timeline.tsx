@@ -96,7 +96,7 @@ function ScheduledTaskCard({ task, slotId, slotData }: ScheduledTaskCardProps) {
           isDragging ? 'z-50 shadow-2xl scale-105' : 'z-20'
         } ${
           isCompleted 
-            ? 'bg-muted/50 border-muted opacity-60' 
+            ? 'bg-muted/70 border-muted-foreground/30 opacity-75' 
             : 'bg-blue-100 border-blue-300 dark:bg-blue-950/30 hover:bg-blue-200 dark:hover:bg-blue-900/40'
         }`}
         style={{ 
