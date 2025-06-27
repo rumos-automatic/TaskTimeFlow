@@ -15,6 +15,7 @@ import { useScrollLock } from '@/lib/hooks/use-scroll-lock'
 import { usePullToRefreshBlocker } from '@/lib/hooks/use-pull-to-refresh-blocker'
 import { useTaskStore } from '@/lib/store/use-task-store'
 import { Task } from '@/lib/types'
+import { ThemeToggle } from '@/components/theme-toggle'
 import { 
   DndContext,
   DragEndEvent,
@@ -363,7 +364,7 @@ export function WorkspaceNew() {
         <div className={`flex flex-col h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800 mobile-drag-container ${isMobile && isDragging ? 'dragging' : ''}`}>
           {/* シンプルヘッダー */}
           <div className="flex items-center justify-between p-4 border-b border-border/40 bg-card/50 backdrop-blur-sm">
-            <div className="w-8" /> {/* スペーサー */}
+            <ThemeToggle />
             <h1 className="text-lg font-semibold text-foreground">TaskTimeFlow</h1>
             {/* 再読み込みボタン */}
             <button
@@ -545,7 +546,7 @@ export function WorkspaceNew() {
         onDragStart={handleDragStart}
         onDragEnd={handleDragEnd}
       >
-        <div className="flex h-screen bg-gradient-to-br from-orange-50 to-red-50 dark:from-orange-950/30 dark:to-red-950/30">
+        <div className="flex h-screen bg-gradient-to-br from-orange-50 to-red-50 dark:from-orange-950/20 dark:to-red-950/20">
           <motion.div
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
@@ -555,17 +556,20 @@ export function WorkspaceNew() {
           >
             <div className="flex items-center justify-between mb-8">
               <h1 className="text-3xl font-bold text-foreground">フォーカスモード</h1>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => {
-                  setCurrentView('timeline')
-                  // フォーカスモードからタイムラインに戻る時は現在時刻スクロール機能を維持
-                }}
-                className="p-2"
-              >
-                <X className="w-5 h-5" />
-              </Button>
+              <div className="flex items-center space-x-2">
+                <ThemeToggle />
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => {
+                    setCurrentView('timeline')
+                    // フォーカスモードからタイムラインに戻る時は現在時刻スクロール機能を維持
+                  }}
+                  className="p-2"
+                >
+                  <X className="w-5 h-5" />
+                </Button>
+              </div>
             </div>
             <FocusMode />
           </motion.div>
@@ -608,9 +612,12 @@ export function WorkspaceNew() {
           <div className="p-6 h-full">
             <div className="flex items-center justify-between mb-6">
               <h2 className="text-xl font-semibold text-foreground">タスクプール</h2>
-              <div className="flex items-center space-x-2">
-                <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
-                <span className="text-xs text-muted-foreground">同期済み</span>
+              <div className="flex items-center space-x-3">
+                <div className="flex items-center space-x-2">
+                  <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
+                  <span className="text-xs text-muted-foreground">同期済み</span>
+                </div>
+                <ThemeToggle />
               </div>
             </div>
             <TaskPool />

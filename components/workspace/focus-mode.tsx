@@ -188,7 +188,7 @@ export function FocusMode() {
       <Card className={`p-6 text-center transition-all duration-1000 h-auto min-h-fit ${
         gradientAnimation
           ? 'shadow-lg' 
-          : 'bg-gradient-to-br from-orange-50 to-red-50 dark:from-orange-950/30 dark:to-red-950/30'
+          : 'bg-gradient-to-br from-orange-50 to-red-50 dark:from-orange-950/20 dark:to-red-950/20'
       } ${waveAnimation ? 'animate-pulse' : ''}`}
       style={gradientAnimation ? {
         background: `
