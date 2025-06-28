@@ -913,10 +913,6 @@ export function TaskPool() {
         )}
       </div>
 
-      {/* Sync Status */}
-      <div className="text-xs text-muted-foreground text-center">
-        最終同期: ローカル保存
-      </div>
     </div>
   )
 }
