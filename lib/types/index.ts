@@ -1,7 +1,10 @@
 export type Priority = 'high' | 'low'
 export type Urgency = 'high' | 'low'
 export type TaskStatus = 'todo' | 'in_progress' | 'completed'
-export type TaskCategory = 'work' | 'personal' | 'custom'
+
+// Category system - supports both built-in and custom categories
+export type BuiltInCategory = 'work' | 'personal' | 'google-tasks'
+export type TaskCategory = string // Now supports custom categories
 
 export interface Task {
   id: string
@@ -48,4 +51,40 @@ export interface CalendarEvent {
   date: Date
   type: 'event'
   color: string
+}
+
+// Custom Category Management
+export interface CustomCategory {
+  id: string
+  name: string
+  color: string
+  icon?: string
+  description?: string
+  isBuiltIn: boolean
+  userId: string
+  order: number
+  createdAt: Date
+  updatedAt: Date
+}
+
+// Category filter type for UI
+export type CategoryFilter = TaskCategory | 'all'
+
+// Built-in category configurations
+export interface BuiltInCategoryConfig {
+  id: BuiltInCategory
+  name: string
+  color: string
+  icon: string
+  description: string
+  isBuiltIn: true
+  order: number
+}
+
+// Google Tasks sync status
+export interface GoogleTasksSyncStatus {
+  isEnabled: boolean
+  lastSync?: Date
+  syncStatus: 'idle' | 'syncing' | 'error'
+  errorMessage?: string
 }

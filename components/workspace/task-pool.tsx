@@ -6,14 +6,16 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
-import { Plus, Circle, Clock, AlertCircle, X, Edit2, Trash2, MoreVertical, Check, RotateCcw, ChevronDown, ChevronUp } from 'lucide-react'
+import { Plus, Circle, Clock, AlertCircle, X, Edit2, Trash2, MoreVertical, Check, RotateCcw, ChevronDown, ChevronUp, Settings, ChevronLeft, ChevronRight } from 'lucide-react'
 import { useTaskStoreWithAuth } from '@/lib/hooks/use-task-store-with-auth'
 import { useAuth } from '@/lib/auth/auth-context'
 import { useSortable, SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable'
 import { useDroppable } from '@dnd-kit/core'
 import { CSS } from '@dnd-kit/utilities'
-import { Task, Priority, Urgency, TaskCategory } from '@/lib/types'
+import { Task, Priority, Urgency, TaskCategory, CategoryFilter } from '@/lib/types'
 import { useViewState } from '@/lib/hooks/use-view-state'
+import { useCategoryStoreWithAuth, BUILT_IN_CATEGORIES } from '@/lib/store/use-category-store'
+import { CategoryManagement } from './category-management'
 
 const priorityColors: Record<Priority, string> = {
   high: 'border-red-500 bg-red-50 dark:bg-red-950/20',
@@ -547,8 +549,6 @@ function AddTaskForm() {
 export function TaskPool() {
   const { 
     tasks, 
-    selectedCategory, 
-    setSelectedCategory, 
     getTasksByCategory,
     getUnscheduledTasks,
     getCompletedTasks,
@@ -557,6 +557,13 @@ export function TaskPool() {
     hideCompletedTask,
     clearHiddenCompletedTasks
   } = useTaskStoreWithAuth()
+  
+  const { 
+    allCategories, 
+    selectedCategory, 
+    setSelectedCategory,
+    googleTasksSync 
+  } = useCategoryStoreWithAuth()
   
   const [showDebugMenu, setShowDebugMenu] = useState(false)
 
@@ -596,32 +603,108 @@ export function TaskPool() {
         isOver ? 'bg-muted/20' : ''
       }`}
     >
-      {/* Category Tabs */}
-      <div className="flex space-x-2">
-        <Button 
-          variant={selectedCategory === 'work' ? 'default' : 'outline'}
-          size="sm" 
-          className="flex-1"
-          onClick={() => setSelectedCategory('work')}
-        >
-          仕事
-        </Button>
-        <Button 
-          variant={selectedCategory === 'personal' ? 'default' : 'outline'}
-          size="sm" 
-          className="flex-1"
-          onClick={() => setSelectedCategory('personal')}
-        >
-          個人
-        </Button>
-        <Button 
-          variant={selectedCategory === 'all' ? 'default' : 'outline'}
-          size="sm" 
-          className="flex-1"
-          onClick={() => setSelectedCategory('all')}
-        >
-          すべて
-        </Button>
+      {/* Dynamic Category Tabs */}
+      <div className="space-y-2">
+        {/* Main tab row with scroll */}
+        <div className="flex items-center space-x-2">
+          <div className="flex-1 overflow-hidden">
+            <div className="flex space-x-2 overflow-x-auto scrollbar-hide pb-1">
+              {/* All tab */}
+              <Button 
+                variant={selectedCategory === 'all' ? 'default' : 'outline'}
+                size="sm" 
+                className="flex-shrink-0"
+                onClick={() => setSelectedCategory('all')}
+              >
+                すべて
+              </Button>
+              
+              {/* Built-in and custom category tabs */}
+              {allCategories.map((category) => {
+                const isGoogleTasks = category.id === 'google-tasks'
+                const isSelected = selectedCategory === category.id
+                
+                return (
+                  <Button 
+                    key={category.id}
+                    variant={isSelected ? 'default' : 'outline'}
+                    size="sm" 
+                    className="flex-shrink-0 flex items-center space-x-1"
+                    onClick={() => setSelectedCategory(category.id)}
+                  >
+                    {/* Category indicator */}
+                    <div 
+                      className="w-2 h-2 rounded-full"
+                      style={{ backgroundColor: category.color }}
+                    />
+                    <span className="text-sm">{category.icon}</span>
+                    <span>{category.name}</span>
+                    
+                    {/* Google Tasks sync indicator */}
+                    {isGoogleTasks && (
+                      <div className={`w-1.5 h-1.5 rounded-full ${
+                        googleTasksSync.syncStatus === 'syncing' 
+                          ? 'bg-yellow-500 animate-pulse' 
+                          : googleTasksSync.syncStatus === 'error'
+                          ? 'bg-red-500'
+                          : googleTasksSync.isEnabled
+                          ? 'bg-green-500'
+                          : 'bg-gray-400'
+                      }`} />
+                    )}
+                  </Button>
+                )
+              })}
+            </div>
+          </div>
+          
+          {/* Category management button */}
+          <CategoryManagement>
+            <Button 
+              variant="ghost" 
+              size="sm"
+              className="flex-shrink-0 h-8 w-8 p-0"
+              title="カテゴリ管理"
+            >
+              <Settings className="w-4 h-4" />
+            </Button>
+          </CategoryManagement>
+        </div>
+        
+        {/* Category info row */}
+        {selectedCategory !== 'all' && (() => {
+          const category = allCategories.find(c => c.id === selectedCategory)
+          if (!category) return null
+          
+          return (
+            <div className="flex items-center space-x-2 px-2 py-1 bg-muted/30 rounded-sm">
+              <div 
+                className="w-3 h-3 rounded-full"
+                style={{ backgroundColor: category.color }}
+              />
+              <span className="text-lg">{category.icon}</span>
+              <span className="text-sm font-medium">{category.name}</span>
+              {category.description && (
+                <span className="text-xs text-muted-foreground">- {category.description}</span>
+              )}
+              {category.id === 'google-tasks' && (
+                <div className="flex items-center space-x-1 text-xs text-muted-foreground">
+                  <span>•</span>
+                  <span>
+                    {googleTasksSync.syncStatus === 'syncing' 
+                      ? '同期中...' 
+                      : googleTasksSync.syncStatus === 'error'
+                      ? 'エラー'
+                      : googleTasksSync.isEnabled
+                      ? '同期済み'
+                      : '未同期'
+                    }
+                  </span>
+                </div>
+              )}
+            </div>
+          )
+        })()}
       </div>
 
       <Separator />

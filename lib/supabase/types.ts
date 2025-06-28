@@ -220,6 +220,45 @@ export type Database = {
           },
         ]
       }
+      custom_categories: {
+        Row: {
+          id: string
+          name: string
+          color: string
+          icon: string | null
+          description: string | null
+          is_built_in: boolean
+          user_id: string
+          order: number
+          created_at: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          id?: string
+          name: string
+          color: string
+          icon?: string | null
+          description?: string | null
+          is_built_in?: boolean
+          user_id: string
+          order?: number
+          created_at?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          id?: string
+          name?: string
+          color?: string
+          icon?: string | null
+          description?: string | null
+          is_built_in?: boolean
+          user_id?: string
+          order?: number
+          created_at?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
