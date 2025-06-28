@@ -4,13 +4,15 @@ import { useState, useEffect, useRef, useCallback } from 'react'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
-import { Calendar, ChevronLeft, ChevronRight, Clock, Edit2, Trash2, X, Check, RotateCcw, CalendarDays } from 'lucide-react'
+import { Calendar, ChevronLeft, ChevronRight, Clock, Edit2, Trash2, X, Check, RotateCcw, CalendarDays, Plus } from 'lucide-react'
 import { useDroppable } from '@dnd-kit/core'
 import { useSortable, SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
 import { useTaskStoreWithAuth } from '@/lib/hooks/use-task-store-with-auth'
 import { useAuth } from '@/lib/auth/auth-context'
 import { useViewState } from '@/lib/hooks/use-view-state'
+import { useCategoryStoreWithAuth } from '@/lib/hooks/use-category-store-with-auth'
+import { Task, Priority, Urgency, TaskCategory } from '@/lib/types'
 
 const timeSlots = Array.from({ length: 96 }, (_, i) => {
   const hour = Math.floor(i / 4)
@@ -320,6 +322,131 @@ function EditScheduledTaskCard({ task, slot, onSave, onCancel }: EditScheduledTa
   )
 }
 
+interface AddTimeSlotTaskFormProps {
+  time: string
+  hour: number
+  minute: number
+  onSave: (taskData: any) => void
+  onCancel: () => void
+}
+
+function AddTimeSlotTaskForm({ time, hour, minute, onSave, onCancel }: AddTimeSlotTaskFormProps) {
+  const { allCategories } = useCategoryStoreWithAuth()
+  const [formData, setFormData] = useState({
+    title: '',
+    priority: 'low' as Priority,
+    urgency: 'low' as Urgency,
+    category: 'work' as TaskCategory,
+    estimatedTime: 60 as number | ''
+  })
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!formData.title.trim()) return
+    
+    const finalData = {
+      ...formData,
+      estimatedTime: formData.estimatedTime === '' ? 60 : formData.estimatedTime,
+      scheduledTime: time
+    }
+    onSave(finalData)
+  }
+
+  return (
+    <div className="absolute left-0 right-0 top-0 z-50 bg-white dark:bg-gray-800 border border-border rounded-md shadow-lg">
+      <form onSubmit={handleSubmit} className="p-3 space-y-2">
+        <div className="flex items-center justify-between mb-2">
+          <span className="text-xs font-medium text-muted-foreground">{time} のタスク</span>
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            onClick={onCancel}
+            className="h-6 w-6 p-0"
+          >
+            <X className="w-3 h-3" />
+          </Button>
+        </div>
+
+        <input
+          type="text"
+          value={formData.title}
+          onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
+          className="w-full px-2 py-1 border border-border rounded text-sm bg-background text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+          placeholder="タスク名を入力"
+          autoFocus
+          required
+        />
+
+        <div className="grid grid-cols-2 gap-2">
+          <select
+            value={formData.priority}
+            onChange={(e) => setFormData(prev => ({ ...prev, priority: e.target.value as Priority }))}
+            className="px-2 py-1 border border-border rounded text-xs bg-background"
+          >
+            <option value="high">優先度：高</option>
+            <option value="low">優先度：低</option>
+          </select>
+
+          <select
+            value={formData.urgency}
+            onChange={(e) => setFormData(prev => ({ ...prev, urgency: e.target.value as Urgency }))}
+            className="px-2 py-1 border border-border rounded text-xs bg-background"
+          >
+            <option value="high">緊急度：高</option>
+            <option value="low">緊急度：低</option>
+          </select>
+        </div>
+
+        <div className="grid grid-cols-2 gap-2">
+          <select
+            value={formData.category}
+            onChange={(e) => setFormData(prev => ({ ...prev, category: e.target.value as TaskCategory }))}
+            className="px-2 py-1 border border-border rounded text-xs bg-background"
+          >
+            {allCategories.map((category) => (
+              <option key={category.id} value={category.id}>
+                {category.icon} {category.name}
+              </option>
+            ))}
+          </select>
+
+          <input
+            type="number"
+            min="15"
+            max="480"
+            value={formData.estimatedTime}
+            onChange={(e) => {
+              const value = e.target.value
+              setFormData(prev => ({ 
+                ...prev, 
+                estimatedTime: value === '' ? '' : (parseInt(value) || 60)
+              }))
+            }}
+            className="px-2 py-1 border border-border rounded text-xs bg-background"
+            placeholder="分"
+          />
+        </div>
+
+        <div className="flex space-x-2 pt-1">
+          <Button type="submit" size="sm" className="flex-1 h-7 text-xs">
+            作成
+          </Button>
+          <Button 
+            type="button" 
+            variant="outline" 
+            size="sm" 
+            onClick={onCancel}
+            className="h-7 text-xs"
+          >
+            <X className="w-3 h-3" />
+          </Button>
+        </div>
+      </form>
+    </div>
+  )
+}
+
 interface DroppableTimeSlotProps {
   time: string
   hour: number
@@ -334,6 +461,11 @@ interface DroppableTimeSlotProps {
 }
 
 function DroppableTimeSlot({ time, hour, minute, slotIndex, isBusinessHour, isHourStart, isHalfHour, currentHour, currentMinute, scheduledTasks }: DroppableTimeSlotProps) {
+  const { user } = useAuth()
+  const { addTask, moveTaskToTimeline } = useTaskStoreWithAuth()
+  const [showAddForm, setShowAddForm] = useState(false)
+  const [isHovered, setIsHovered] = useState(false)
+  
   const { setNodeRef, isOver } = useDroppable({
     id: `timeline-slot-${time}`
   })
@@ -345,6 +477,37 @@ function DroppableTimeSlot({ time, hour, minute, slotIndex, isBusinessHour, isHo
   })
 
   const isCurrentSlot = hour === currentHour && minute <= currentMinute && currentMinute < minute + 15
+  const hasNoTasks = tasksAtThisTime.length === 0
+
+  const handleAddTask = async (taskData: any) => {
+    if (!user) return
+    
+    try {
+      // タスクを作成
+      const newTask = await addTask({
+        title: taskData.title,
+        priority: taskData.priority,
+        urgency: taskData.urgency,
+        category: taskData.category,
+        estimatedTime: taskData.estimatedTime,
+        status: 'todo'
+      }, user.id)
+      
+      // 作成されたタスクを即座にタイムラインに移動
+      if (newTask) {
+        await moveTaskToTimeline(
+          newTask.id,
+          new Date(), // 今日の日付
+          time, // 選択された時間
+          taskData.estimatedTime
+        )
+      }
+      
+      setShowAddForm(false)
+    } catch (error) {
+      console.error('Failed to create task:', error)
+    }
+  }
 
   return (
     <div
@@ -366,6 +529,8 @@ function DroppableTimeSlot({ time, hour, minute, slotIndex, isBusinessHour, isHo
         className={`flex-1 min-h-full border-l border-border/20 p-2 relative transition-colors ${
           isOver ? 'bg-blue-100 dark:bg-blue-950/30 border-blue-300' : ''
         }`}
+        onMouseEnter={() => setIsHovered(true)}
+        onMouseLeave={() => setIsHovered(false)}
       >
         {/* Scheduled Tasks at this time */}
         {tasksAtThisTime.map((item) => {
@@ -380,20 +545,46 @@ function DroppableTimeSlot({ time, hour, minute, slotIndex, isBusinessHour, isHo
         })}
 
         {/* Available Time Slot Indicator */}
-        {tasksAtThisTime.length === 0 && (
+        {hasNoTasks && !showAddForm && (
           <div className={`absolute inset-0 border-2 border-dashed transition-all ${
             isOver 
               ? 'border-blue-400 bg-blue-50/50 dark:bg-blue-950/20' 
               : 'border-transparent hover:border-border/40'
           }`}>
-            <div className={`flex items-center justify-center h-full text-xs transition-opacity ${
+            <div className={`flex items-center justify-center h-full text-xs transition-all ${
               isOver 
                 ? 'text-blue-600 opacity-100' 
                 : 'text-muted-foreground opacity-0 hover:opacity-100'
             }`}>
               {isOver ? 'ここにドロップ' : 'タスクをドロップ'}
             </div>
+            
+            {/* Add Task Button */}
+            {isHovered && !isOver && (
+              <div className="absolute inset-0 flex items-center justify-center">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setShowAddForm(true)}
+                  className="h-6 w-6 p-0 rounded-full bg-primary/10 hover:bg-primary/20 text-primary opacity-70 hover:opacity-100 transition-all"
+                  title="タスクを追加"
+                >
+                  <Plus className="w-3 h-3" />
+                </Button>
+              </div>
+            )}
           </div>
+        )}
+
+        {/* Add Task Form */}
+        {showAddForm && (
+          <AddTimeSlotTaskForm
+            time={time}
+            hour={hour}
+            minute={minute}
+            onSave={handleAddTask}
+            onCancel={() => setShowAddForm(false)}
+          />
         )}
       </div>
     </div>
