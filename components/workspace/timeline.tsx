@@ -990,7 +990,7 @@ function CalendarTaskForm({ date, onSave, onCancel }: CalendarTaskFormProps) {
     category: 'personal' as TaskCategory,
     priority: 'low' as Priority,
     urgency: 'low' as Urgency,
-    estimatedTime: 60,
+    estimatedTime: 60 as number | '',
     selectedTime: '09:00'
   })
 
@@ -998,13 +998,18 @@ function CalendarTaskForm({ date, onSave, onCancel }: CalendarTaskFormProps) {
     e.preventDefault()
     if (formData.title.trim()) {
       const { selectedTime, ...taskData } = formData
-      onSave(taskData, selectedTime)
+      // estimatedTimeが空文字の場合は60に設定
+      const finalTaskData = {
+        ...taskData,
+        estimatedTime: taskData.estimatedTime === '' ? 60 : taskData.estimatedTime
+      }
+      onSave(finalTaskData, selectedTime)
       setFormData({
         title: '',
         category: 'personal',
         priority: 'low',
         urgency: 'low',
-        estimatedTime: 60,
+        estimatedTime: 60 as number | '',
         selectedTime: '09:00'
       })
     }
@@ -1071,12 +1076,12 @@ function CalendarTaskForm({ date, onSave, onCancel }: CalendarTaskFormProps) {
             type="number"
             min="15"
             max="480"
-            value={formData.estimatedTime}
+            value={formData.estimatedTime === '' ? '' : formData.estimatedTime}
             onChange={(e) => {
               const value = e.target.value
               setFormData(prev => ({ 
                 ...prev, 
-                estimatedTime: value === '' ? '' : (parseInt(value) || 60)
+                estimatedTime: value === '' ? '' as '' : (parseInt(value) || 60)
               }))
             }}
             className="px-2 py-1 border border-border rounded text-xs bg-background"
