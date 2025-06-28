@@ -463,9 +463,10 @@ interface DroppableTimeSlotProps {
   setActiveSlot: (slot: string | null) => void
   activeFormSlot: string | null
   setActiveFormSlot: (slot: string | null) => void
+  selectedDate: Date
 }
 
-function DroppableTimeSlot({ time, hour, minute, slotIndex, isBusinessHour, isHourStart, isHalfHour, currentHour, currentMinute, scheduledTasks, activeSlot, setActiveSlot, activeFormSlot, setActiveFormSlot }: DroppableTimeSlotProps) {
+function DroppableTimeSlot({ time, hour, minute, slotIndex, isBusinessHour, isHourStart, isHalfHour, currentHour, currentMinute, scheduledTasks, activeSlot, setActiveSlot, activeFormSlot, setActiveFormSlot, selectedDate }: DroppableTimeSlotProps) {
   const { user } = useAuth()
   const { addTask, moveTaskToTimeline, tasks } = useTaskStoreWithAuth()
   
@@ -537,12 +538,12 @@ function DroppableTimeSlot({ time, hour, minute, slotIndex, isBusinessHour, isHo
               console.log('📅 Moving task to timeline...', { 
                 taskId: latestTask.id, 
                 time, 
-                date: new Date().toDateString() 
+                date: selectedDate.toDateString() 
               })
               
               await moveTaskToTimeline(
                 latestTask.id,
-                new Date(), // 今日の日付
+                selectedDate, // 選択された日付
                 time, // 選択された時間
                 user.id // userIdを追加
               )
@@ -682,14 +683,22 @@ function DroppableTimeSlot({ time, hour, minute, slotIndex, isBusinessHour, isHo
 interface TimelineProps {
   hasInitialScroll?: boolean
   setHasInitialScroll?: (value: boolean) => void
+  selectedDate?: Date
+  setSelectedDate?: (date: Date) => void
 }
 
 export function Timeline({ 
   hasInitialScroll = false, 
-  setHasInitialScroll
+  setHasInitialScroll,
+  selectedDate: propSelectedDate,
+  setSelectedDate: propSetSelectedDate
 }: TimelineProps = {}) {
   const [viewMode, setViewMode] = useState<'timeline' | 'calendar'>('timeline')
-  const [selectedDate, setSelectedDate] = useState(new Date())
+  
+  // Props から selectedDate を受け取る場合はそれを使用、そうでなければ internal state を使用
+  const [internalSelectedDate, setInternalSelectedDate] = useState(new Date())
+  const selectedDate = propSelectedDate || internalSelectedDate
+  const setSelectedDate = propSetSelectedDate || setInternalSelectedDate
   const now = new Date()
   const currentHour = now.getHours()
   const currentMinute = now.getMinutes()
@@ -949,6 +958,7 @@ export function Timeline({
                 setActiveSlot={setActiveSlot}
                 activeFormSlot={activeFormSlot}
                 setActiveFormSlot={setActiveFormSlot}
+                selectedDate={selectedDate}
               />
             ))}
           </div>

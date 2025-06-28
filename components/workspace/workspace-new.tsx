@@ -66,6 +66,9 @@ export function WorkspaceNew() {
   const [activeTask, setActiveTask] = useState<Task | null>(null)
   const [isDragging, setIsDragging] = useState(false)
   const [dragStartView, setDragStartView] = useState<string | null>(null)
+  
+  // タイムライン日付管理
+  const [selectedDate, setSelectedDate] = useState(new Date())
 
   // フッター要素のref
   const footerRef = React.useRef<HTMLDivElement>(null)
@@ -276,10 +279,9 @@ export function WorkspaceNew() {
       // 2. タスクプール → タイムライン (既存タスクの新規スケジュール)
       else if (overId && overId.startsWith('timeline-slot-') && !activeId.startsWith('scheduled-') && user) {
         const timeString = overId.replace('timeline-slot-', '')
-        const today = new Date()
-        console.log('📅➡️ Moving task to timeline:', { activeId, timeString, today, userId: user.id })
-        moveTaskToTimeline(activeId, today, timeString, user.id)
-        console.log('✅ Normal: Moved task to timeline slot:', activeId, 'at', timeString)
+        console.log('📅➡️ Moving task to timeline:', { activeId, timeString, selectedDate: selectedDate.toDateString(), userId: user.id })
+        moveTaskToTimeline(activeId, selectedDate, timeString, user.id)
+        console.log('✅ Normal: Moved task to timeline slot:', activeId, 'at', timeString, 'on', selectedDate.toDateString())
       }
       
       // 3. タイムライン → 別のタイムスロット (スケジュール済みタスクの移動)
@@ -300,7 +302,7 @@ export function WorkspaceNew() {
           
           // 既存のスロットから現在の日付を取得
           const existingSlot = timeSlots.find(slot => slot.id === slotId)
-          const moveDate = existingSlot?.date || new Date() // 既存の日付を保持、なければ今日
+          const moveDate = existingSlot?.date || selectedDate // 既存の日付を保持、なければ選択された日付
           
           console.log('📅🔄 Moving scheduled task to new slot:', { 
             taskId, 
@@ -349,10 +351,9 @@ export function WorkspaceNew() {
         // 15分単位に丸める
         const roundedMinute = Math.floor(currentMinute / 15) * 15
         const timeString = `${currentHour.toString().padStart(2, '0')}:${roundedMinute.toString().padStart(2, '0')}`
-        const today = new Date()
-        console.log('📱📅➡️ Cross-view moving task to current time:', { activeId, timeString, today, userId: user.id })
-        moveTaskToTimeline(activeId, today, timeString, user.id)
-        console.log('✅ Cross-view: Moved task to current time:', activeId, 'at', timeString)
+        console.log('📱📅➡️ Cross-view moving task to selected date:', { activeId, timeString, selectedDate: selectedDate.toDateString(), userId: user.id })
+        moveTaskToTimeline(activeId, selectedDate, timeString, user.id)
+        console.log('✅ Cross-view: Moved task to selected date:', activeId, 'at', timeString, 'on', selectedDate.toDateString())
       }
       
       // タイムラインからタスクプールへのクロスビュードラッグ
@@ -526,6 +527,8 @@ export function WorkspaceNew() {
                 <Timeline 
                   hasInitialScroll={hasInitialTimelineScroll} 
                   setHasInitialScroll={setHasInitialTimelineScroll}
+                  selectedDate={selectedDate}
+                  setSelectedDate={setSelectedDate}
                 />
               </div>
             )}
@@ -756,6 +759,8 @@ export function WorkspaceNew() {
               <Timeline 
                 hasInitialScroll={hasInitialTimelineScroll} 
                 setHasInitialScroll={setHasInitialTimelineScroll}
+                selectedDate={selectedDate}
+                setSelectedDate={setSelectedDate}
               />
             </div>
           </div>
