@@ -35,6 +35,15 @@ function AddCategoryModal({ open, onOpenChange }: AddCategoryModalProps) {
 
     setIsSubmitting(true)
     try {
+      console.log('🎯 AddCategoryModal: Starting to add category:', {
+        name: formData.name.trim(),
+        color: formData.color,
+        icon: formData.icon,
+        description: formData.description.trim() || undefined,
+        isBuiltIn: false,
+        userId: user.id
+      })
+      
       await addCustomCategory({
         name: formData.name.trim(),
         color: formData.color,
@@ -43,6 +52,8 @@ function AddCategoryModal({ open, onOpenChange }: AddCategoryModalProps) {
         isBuiltIn: false,
         userId: user.id
       })
+      
+      console.log('✅ AddCategoryModal: Category added successfully')
       
       // Reset form
       setFormData({
@@ -53,7 +64,7 @@ function AddCategoryModal({ open, onOpenChange }: AddCategoryModalProps) {
       })
       onOpenChange(false)
     } catch (error) {
-      console.error('Failed to add category:', error)
+      console.error('❌ AddCategoryModal: Failed to add category:', error)
     } finally {
       setIsSubmitting(false)
     }

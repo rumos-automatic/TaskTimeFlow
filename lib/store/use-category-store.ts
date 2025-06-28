@@ -111,7 +111,14 @@ export const useCategoryStore = create<CategoryStore>()(
       get allCategories() {
         const { customCategories } = get()
         const sortedCustom = [...customCategories].sort((a, b) => a.order - b.order)
-        return [...BUILT_IN_CATEGORIES, ...sortedCustom]
+        const allCats = [...BUILT_IN_CATEGORIES, ...sortedCustom]
+        console.log('📂 getAllCategories called:', { 
+          customCategories, 
+          sortedCustom, 
+          builtIn: BUILT_IN_CATEGORIES,
+          total: allCats 
+        })
+        return allCats
       },
       
       // Actions
@@ -135,15 +142,20 @@ export const useCategoryStore = create<CategoryStore>()(
           }
           
           // TODO: Save to Supabase when database integration is ready
-          console.log('Adding custom category (local only):', newCategory)
+          console.log('✅ Adding custom category (local only):', newCategory)
           
-          set((state) => ({
-            customCategories: [...state.customCategories, newCategory],
-            loading: false
-          }))
+          set((state) => {
+            const updatedCategories = [...state.customCategories, newCategory]
+            console.log('✅ Updated customCategories:', updatedCategories)
+            console.log('✅ All categories after add:', [...BUILT_IN_CATEGORIES, ...updatedCategories])
+            return {
+              customCategories: updatedCategories,
+              loading: false
+            }
+          })
           
         } catch (error) {
-          console.error('Failed to add custom category:', error)
+          console.error('❌ Failed to add custom category:', error)
           set({ 
             error: 'カテゴリの追加に失敗しました',
             loading: false 
@@ -302,6 +314,7 @@ export const useCategoryStore = create<CategoryStore>()(
       storage: {
         getItem: (name) => {
           const str = localStorage.getItem(name)
+          console.log('📖 Reading from localStorage:', name, str)
           if (!str) return null
           const parsed = JSON.parse(str)
           
@@ -314,9 +327,11 @@ export const useCategoryStore = create<CategoryStore>()(
             }))
           }
           
+          console.log('📖 Parsed localStorage data:', parsed)
           return parsed
         },
         setItem: (name, value) => {
+          console.log('💾 Saving to localStorage:', name, value)
           localStorage.setItem(name, JSON.stringify(value))
         },
         removeItem: (name) => {

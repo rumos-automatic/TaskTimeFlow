@@ -258,6 +258,7 @@ interface EditTaskCardProps {
 }
 
 function EditTaskCard({ task, onSave, onCancel }: EditTaskCardProps) {
+  const { allCategories } = useCategoryStoreWithAuth()
   const [formData, setFormData] = useState({
     title: task.title,
     priority: task.priority,
@@ -265,6 +266,10 @@ function EditTaskCard({ task, onSave, onCancel }: EditTaskCardProps) {
     category: task.category,
     estimatedTime: task.estimatedTime as number | ''
   })
+
+  // Debug: カテゴリの状態をログ出力
+  console.log('🔍 EditTaskCard allCategories:', allCategories)
+  console.log('🔍 EditTaskCard allCategories length:', allCategories.length)
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
@@ -346,9 +351,14 @@ function EditTaskCard({ task, onSave, onCancel }: EditTaskCardProps) {
             onChange={(e) => setFormData(prev => ({ ...prev, category: e.target.value as TaskCategory }))}
             className="px-2 py-1 border border-border rounded text-xs bg-background"
           >
-            <option value="work">仕事</option>
-            <option value="personal">個人</option>
-            <option value="custom">カスタム</option>
+            {allCategories.map((category) => {
+              console.log('🏷️ EditTaskCard rendering category option:', category)
+              return (
+                <option key={category.id} value={category.id}>
+                  {category.icon} {category.name}
+                </option>
+              )
+            })}
           </select>
 
           <input
@@ -389,6 +399,7 @@ function EditTaskCard({ task, onSave, onCancel }: EditTaskCardProps) {
 function AddTaskForm() {
   const { user } = useAuth()
   const { addTask } = useTaskStoreWithAuth()
+  const { allCategories } = useCategoryStoreWithAuth()
   const [showForm, setShowForm] = useState(false)
   const [formData, setFormData] = useState({
     title: '',
@@ -397,6 +408,11 @@ function AddTaskForm() {
     category: 'work' as TaskCategory,
     estimatedTime: 30 as number | ''
   })
+
+  // Debug: カテゴリの状態をログ出力
+  console.log('🔍 AddTaskForm allCategories:', allCategories)
+  console.log('🔍 AddTaskForm allCategories length:', allCategories.length)
+  console.log('🔍 AddTaskForm current category:', formData.category)
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -498,9 +514,14 @@ function AddTaskForm() {
               onChange={(e) => setFormData(prev => ({ ...prev, category: e.target.value as TaskCategory }))}
               className="px-2 py-1 border border-border rounded text-xs bg-background"
             >
-              <option value="work">仕事</option>
-              <option value="personal">個人</option>
-              <option value="custom">カスタム</option>
+              {allCategories.map((category) => {
+                console.log('🏷️ Rendering category option:', category)
+                return (
+                  <option key={category.id} value={category.id}>
+                    {category.icon} {category.name}
+                  </option>
+                )
+              })}
             </select>
 
             <input
@@ -565,7 +586,16 @@ export function TaskPool() {
     googleTasksSync 
   } = useCategoryStoreWithAuth()
   
+  // Debug: TaskPool カテゴリ状態
+  console.log('🔍 TaskPool allCategories:', allCategories)
+  console.log('🔍 TaskPool allCategories length:', allCategories.length)
+  console.log('🔍 TaskPool selectedCategory:', selectedCategory)
+  
   const [showDebugMenu, setShowDebugMenu] = useState(false)
+
+  // Debug: カテゴリの状態をログ出力
+  console.log('🔍 TaskPool allCategories:', allCategories)
+  console.log('🔍 TaskPool selectedCategory:', selectedCategory)
 
   const { setNodeRef, isOver } = useDroppable({
     id: 'task-pool'
