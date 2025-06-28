@@ -219,8 +219,15 @@ export function WorkspaceNew() {
     
     // スケジュール済みタスクの場合 (scheduled-taskId-slotId format)
     if (!task && activeId.startsWith('scheduled-')) {
-      const taskId = activeId.split('-')[1]
-      task = tasks.find(t => t.id === taskId)
+      // scheduled-{UUID}-{UUID} の形式からタスクIDを正しく抽出
+      const parts = activeId.split('-')
+      if (parts.length >= 6) {
+        // scheduled-[uuid-part1]-[uuid-part2]-[uuid-part3]-[uuid-part4]-[slotId...]
+        // タスクIDは parts[1] から parts[4] まで（UUIDの4つの部分）
+        const taskId = parts.slice(1, 5).join('-')
+        task = tasks.find(t => t.id === taskId)
+        console.log('Extracted task ID from scheduled:', taskId)
+      }
     }
     
     console.log('Found task:', task)
@@ -272,33 +279,52 @@ export function WorkspaceNew() {
       
       // 3. タイムライン → 別のタイムスロット (スケジュール済みタスクの移動)
       else if (overId && overId.startsWith('timeline-slot-') && activeId.startsWith('scheduled-') && user) {
-        const taskId = activeId.split('-')[1]
-        const slotId = activeId.split('-')[2]
-        const timeString = overId.replace('timeline-slot-', '')
-        
-        // 既存のスロットから現在の日付を取得
-        const existingSlot = timeSlots.find(slot => slot.id === slotId)
-        const moveDate = existingSlot?.date || new Date() // 既存の日付を保持、なければ今日
-        
-        console.log('📅🔄 Moving scheduled task to new slot:', { 
-          taskId, 
-          slotId,
-          timeString, 
-          moveDate: moveDate.toDateString(), 
-          userId: user.id,
-          existingSlot: existingSlot ? { id: existingSlot.id, time: existingSlot.startTime } : null
-        })
-        
-        moveTaskToTimeline(taskId, moveDate, timeString, user.id)
-        console.log('✅ Normal: Moved scheduled task to new slot:', taskId, 'at', timeString, 'on', moveDate.toDateString())
+        // scheduled-{UUID}-{UUID} の形式からタスクIDとスロットIDを正しく抽出
+        const parts = activeId.split('-')
+        if (parts.length >= 6) {
+          const taskId = parts.slice(1, 5).join('-') // タスクID (UUID)
+          const slotId = parts.slice(5).join('-') // スロットID (残りの部分)
+          const timeString = overId.replace('timeline-slot-', '')
+          
+          console.log('📅🔄 Parsing scheduled task ID:', { 
+            activeId, 
+            parts, 
+            extractedTaskId: taskId, 
+            extractedSlotId: slotId 
+          })
+          
+          // 既存のスロットから現在の日付を取得
+          const existingSlot = timeSlots.find(slot => slot.id === slotId)
+          const moveDate = existingSlot?.date || new Date() // 既存の日付を保持、なければ今日
+          
+          console.log('📅🔄 Moving scheduled task to new slot:', { 
+            taskId, 
+            slotId,
+            timeString, 
+            moveDate: moveDate.toDateString(), 
+            userId: user.id,
+            existingSlot: existingSlot ? { id: existingSlot.id, time: existingSlot.startTime } : null
+          })
+          
+          moveTaskToTimeline(taskId, moveDate, timeString, user.id)
+          console.log('✅ Normal: Moved scheduled task to new slot:', taskId, 'at', timeString, 'on', moveDate.toDateString())
+        } else {
+          console.error('❌ Invalid scheduled task ID format:', activeId)
+        }
       }
       
       // 4. タイムライン → タスクプール (スケジュール削除)
       else if (overId === 'task-pool' && activeId.startsWith('scheduled-')) {
-        const slotId = activeId.split('-')[2]
-        console.log('🗑️ Removing task from timeline:', { slotId, activeId })
-        removeTimeSlot(slotId)
-        console.log('✅ Normal: Removed task from timeline:', slotId)
+        // scheduled-{UUID}-{UUID} の形式からスロットIDを正しく抽出
+        const parts = activeId.split('-')
+        if (parts.length >= 6) {
+          const slotId = parts.slice(5).join('-') // スロットID (残りの部分)
+          console.log('🗑️ Removing task from timeline:', { slotId, activeId, parts })
+          removeTimeSlot(slotId)
+          console.log('✅ Normal: Removed task from timeline:', slotId)
+        } else {
+          console.error('❌ Invalid scheduled task ID format for removal:', activeId)
+        }
       }
       
       // その他の条件に該当しない場合
@@ -326,10 +352,16 @@ export function WorkspaceNew() {
       
       // タイムラインからタスクプールへのクロスビュードラッグ
       else if (dragStartView === 'timeline' && currentView === 'tasks' && activeId.startsWith('scheduled-')) {
-        const slotId = activeId.split('-')[2]
-        console.log('📱🗑️ Cross-view removing task from timeline:', { slotId, activeId })
-        removeTimeSlot(slotId)
-        console.log('✅ Cross-view: Removed task from timeline:', slotId)
+        // scheduled-{UUID}-{UUID} の形式からスロットIDを正しく抽出
+        const parts = activeId.split('-')
+        if (parts.length >= 6) {
+          const slotId = parts.slice(5).join('-') // スロットID (残りの部分)
+          console.log('📱🗑️ Cross-view removing task from timeline:', { slotId, activeId, parts })
+          removeTimeSlot(slotId)
+          console.log('✅ Cross-view: Removed task from timeline:', slotId)
+        } else {
+          console.error('❌ Invalid scheduled task ID format for cross-view removal:', activeId)
+        }
       }
       
       // その他のクロスビューケース
