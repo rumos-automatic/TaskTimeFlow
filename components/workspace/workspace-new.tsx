@@ -273,11 +273,24 @@ export function WorkspaceNew() {
       // 3. タイムライン → 別のタイムスロット (スケジュール済みタスクの移動)
       else if (overId && overId.startsWith('timeline-slot-') && activeId.startsWith('scheduled-') && user) {
         const taskId = activeId.split('-')[1]
+        const slotId = activeId.split('-')[2]
         const timeString = overId.replace('timeline-slot-', '')
-        const today = new Date()
-        console.log('📅🔄 Moving scheduled task to new slot:', { taskId, timeString, today, userId: user.id })
-        moveTaskToTimeline(taskId, today, timeString, user.id)
-        console.log('✅ Normal: Moved scheduled task to new slot:', taskId, 'at', timeString)
+        
+        // 既存のスロットから現在の日付を取得
+        const existingSlot = timeSlots.find(slot => slot.id === slotId)
+        const moveDate = existingSlot?.date || new Date() // 既存の日付を保持、なければ今日
+        
+        console.log('📅🔄 Moving scheduled task to new slot:', { 
+          taskId, 
+          slotId,
+          timeString, 
+          moveDate: moveDate.toDateString(), 
+          userId: user.id,
+          existingSlot: existingSlot ? { id: existingSlot.id, time: existingSlot.startTime } : null
+        })
+        
+        moveTaskToTimeline(taskId, moveDate, timeString, user.id)
+        console.log('✅ Normal: Moved scheduled task to new slot:', taskId, 'at', timeString, 'on', moveDate.toDateString())
       }
       
       // 4. タイムライン → タスクプール (スケジュール削除)

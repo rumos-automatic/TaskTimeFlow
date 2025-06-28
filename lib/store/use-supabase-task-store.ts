@@ -60,6 +60,7 @@ export const useSupabaseTaskStore = create<SupabaseTaskStore>()((set, get) => {
   let unsubscribeTimeSlots: (() => void) | null = null
   let isInitialized = false
   let pauseRealTimeUpdates = false // 楽観的更新の競合を防ぐ
+  let pauseTimeSlotUpdates = false // タイムスロット更新の競合を防ぐ
 
   // 非表示完了済みタスクの管理
   const getHiddenCompletedTasks = (): string[] => {
@@ -147,6 +148,12 @@ export const useSupabaseTaskStore = create<SupabaseTaskStore>()((set, get) => {
         
         if (!unsubscribeTimeSlots) {
           unsubscribeTimeSlots = TaskService.subscribeToTimeSlots(userId, (timeSlots) => {
+            // タイムスロット更新中はリアルタイム更新を一時停止
+            if (pauseTimeSlotUpdates) {
+              console.log('🕒 Pausing time slot real-time update during optimistic update')
+              return
+            }
+            
             console.log('🕒 Real-time time slots update received:', timeSlots.length)
             
             // 重複チェック：TimeSlot IDでユニーク化
@@ -348,6 +355,10 @@ export const useSupabaseTaskStore = create<SupabaseTaskStore>()((set, get) => {
         console.log('🚀 moveTaskToTimeline called:', { taskId, date, time, userId })
         set({ syncing: true, error: null })
         
+        // リアルタイム更新を一時停止
+        pauseTimeSlotUpdates = true
+        console.log('⏸️ Paused time slot real-time updates for move operation')
+        
         const task = get().tasks.find((t) => t.id === taskId)
         if (!task) {
           console.error('❌ Task not found:', taskId)
@@ -357,6 +368,10 @@ export const useSupabaseTaskStore = create<SupabaseTaskStore>()((set, get) => {
         console.log('📋 Found task to schedule:', task.title)
         const endTime = calculateEndTime(time, task.estimatedTime)
         console.log('⏰ Calculated time slot:', { time, endTime, duration: task.estimatedTime })
+        
+        // 既存のスロットを特定（楽観的更新前に）
+        const existingSlots = get().timeSlots.filter(slot => slot.taskId === taskId)
+        console.log('🔍 Existing slots before update:', existingSlots.length, existingSlots.map(s => ({ id: s.id, time: s.startTime })))
         
         // 楽観的更新：即座にUIを更新
         const tempSlotId = `temp-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
@@ -369,7 +384,10 @@ export const useSupabaseTaskStore = create<SupabaseTaskStore>()((set, get) => {
           type: 'task'
         }
         
-        console.log('⚡ Optimistic update: Adding temporary time slot')
+        console.log('⚡ Optimistic update: Replacing slots with temporary slot')
+        console.log('⚡ Old slots to remove:', existingSlots.map(s => ({ id: s.id, time: s.startTime })))
+        console.log('⚡ New temporary slot:', { id: tempSlotId, time, endTime })
+        
         set((state) => ({
           // 既存のスロットを削除してから新しいスロットを追加
           timeSlots: [
@@ -384,12 +402,15 @@ export const useSupabaseTaskStore = create<SupabaseTaskStore>()((set, get) => {
           )
         }))
         
-        // Remove existing time slot for this task
-        const existingSlots = get().timeSlots.filter(slot => 
-          slot.taskId === taskId && slot.id !== tempSlotId
-        )
-        console.log('🗑️ Removing existing slots:', existingSlots.length)
+        console.log('⚡ State after optimistic update:', {
+          timeSlotsCount: get().timeSlots.length,
+          taskSlots: get().timeSlots.filter(s => s.taskId === taskId).map(s => ({ id: s.id, time: s.startTime }))
+        })
+        
+        // データベースから既存のスロットを削除
+        console.log('🗑️ Removing existing slots from database:', existingSlots.length)
         for (const slot of existingSlots) {
+          console.log('🗑️ Deleting slot:', { id: slot.id, time: slot.startTime })
           await TaskService.deleteTimeSlot(slot.id)
         }
         
@@ -423,10 +444,21 @@ export const useSupabaseTaskStore = create<SupabaseTaskStore>()((set, get) => {
         }))
         
         console.log('🎉 Successfully moved task to timeline')
+        
+        // 少し待ってからリアルタイム更新を再開
+        setTimeout(() => {
+          pauseTimeSlotUpdates = false
+          console.log('▶️ Resumed time slot real-time updates')
+        }, 500)
+        
         set({ syncing: false })
         
       } catch (error) {
         console.error('❌ Failed to move task to timeline:', error)
+        
+        // エラー時はリアルタイム更新を即座に再開
+        pauseTimeSlotUpdates = false
+        console.log('▶️ Resumed time slot real-time updates (error case)')
         
         // エラー時は楽観的更新をロールバック
         console.log('🔄 Rolling back optimistic update')
