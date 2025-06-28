@@ -984,7 +984,7 @@ interface CalendarTaskFormProps {
 }
 
 function CalendarTaskForm({ date, onSave, onCancel }: CalendarTaskFormProps) {
-  const { categories: allCategories } = useCategoryStoreWithAuth()
+  const { allCategories } = useCategoryStoreWithAuth()
   const [formData, setFormData] = useState({
     title: '',
     category: 'personal' as TaskCategory,
