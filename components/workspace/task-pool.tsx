@@ -391,18 +391,29 @@ function EditTaskCard({ task, onSave, onCancel }: EditTaskCardProps) {
   )
 }
 
-function AddTaskForm() {
+interface AddTaskFormProps {
+  defaultCategory?: CategoryFilter
+}
+
+function AddTaskForm({ defaultCategory }: AddTaskFormProps) {
   const { user } = useAuth()
   const { addTask } = useTaskStoreWithAuth()
   const { allCategories } = useCategoryStoreWithAuth()
   const [showForm, setShowForm] = useState(false)
-  const [formData, setFormData] = useState({
-    title: '',
-    priority: 'low' as Priority,
-    urgency: 'low' as Urgency,
-    category: 'work' as TaskCategory,
-    estimatedTime: 30 as number | ''
-  })
+  
+  // フォームを開く時に現在のカテゴリを設定
+  const initializeFormData = () => {
+    const category = defaultCategory && defaultCategory !== 'all' ? defaultCategory : 'work'
+    return {
+      title: '',
+      priority: 'low' as Priority,
+      urgency: 'low' as Urgency,
+      category: category as TaskCategory,
+      estimatedTime: 30 as number | ''
+    }
+  }
+  
+  const [formData, setFormData] = useState(initializeFormData())
 
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -418,14 +429,8 @@ function AddTaskForm() {
       status: 'todo'
     }, user.id)
 
-    // Reset form
-    setFormData({
-      title: '',
-      priority: 'low',
-      urgency: 'low',
-      category: 'work',
-      estimatedTime: 30
-    })
+    // Reset form with current category
+    setFormData(initializeFormData())
     setShowForm(false)
   }
 
@@ -548,7 +553,15 @@ function AddTaskForm() {
   }
 
   return (
-    <Button className="w-full" variant="outline" onClick={() => setShowForm(true)}>
+    <Button 
+      className="w-full" 
+      variant="outline" 
+      onClick={() => {
+        // フォームを開く前にカテゴリを再設定
+        setFormData(initializeFormData())
+        setShowForm(true)
+      }}
+    >
       <Plus className="w-4 h-4 mr-2" />
       新しいタスクを追加
     </Button>
@@ -814,7 +827,7 @@ export function TaskPool() {
       )}
 
       {/* Add Task Form */}
-      <AddTaskForm />
+      <AddTaskForm defaultCategory={selectedCategory} />
 
       {/* Task List */}
       <div className="flex-1 overflow-y-auto space-y-3">
