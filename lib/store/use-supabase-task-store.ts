@@ -114,6 +114,8 @@ export const useSupabaseTaskStore = create<SupabaseTaskStore>()((set, get) => {
         ])
         
         console.log('Fetched initial data:', tasks.length, 'tasks,', timeSlots.length, 'time slots')
+        console.log('Time slots data:', timeSlots)
+        console.log('Tasks with schedule info:', tasks.filter(t => t.scheduledDate || t.scheduledTime))
         set({ tasks, timeSlots, loading: false })
         
         // Set up real-time subscriptions only if not already set up
@@ -337,15 +339,22 @@ export const useSupabaseTaskStore = create<SupabaseTaskStore>()((set, get) => {
     // Timeline operations
     moveTaskToTimeline: async (taskId, date, time, userId) => {
       try {
+        console.log('🚀 moveTaskToTimeline called:', { taskId, date, time, userId })
         set({ syncing: true, error: null })
         
         const task = get().tasks.find((t) => t.id === taskId)
-        if (!task) return
+        if (!task) {
+          console.error('❌ Task not found:', taskId)
+          return
+        }
 
+        console.log('📋 Found task to schedule:', task.title)
         const endTime = calculateEndTime(time, task.estimatedTime)
+        console.log('⏰ Calculated time slot:', { time, endTime, duration: task.estimatedTime })
         
         // Remove existing time slot for this task
         const existingSlots = get().timeSlots.filter(slot => slot.taskId === taskId)
+        console.log('🗑️ Removing existing slots:', existingSlots.length)
         for (const slot of existingSlots) {
           await TaskService.deleteTimeSlot(slot.id)
         }
@@ -359,18 +368,22 @@ export const useSupabaseTaskStore = create<SupabaseTaskStore>()((set, get) => {
           type: 'task'
         }
         
+        console.log('📅 Creating new time slot:', newSlot)
         const createdSlot = await TaskService.createTimeSlot(newSlot, userId)
+        console.log('✅ Time slot created:', createdSlot)
         
         // Update task with schedule info
+        console.log('📝 Updating task with schedule info')
         await get().updateTask(taskId, {
           scheduledDate: date,
           scheduledTime: time
         })
         
+        console.log('🎉 Successfully moved task to timeline')
         set({ syncing: false })
         
       } catch (error) {
-        console.error('Failed to move task to timeline:', error)
+        console.error('❌ Failed to move task to timeline:', error)
         set({ 
           error: 'タスクのスケジュール設定に失敗しました',
           syncing: false 

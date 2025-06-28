@@ -419,16 +419,30 @@ export function Timeline({
   const timelineContainerRef = useRef<HTMLDivElement>(null)
   const currentTimeIndicatorRef = useRef<HTMLDivElement>(null)
   
+  // 🔍 タイムライン表示のデバッグログ
+  console.log('🔍 Timeline Debug Info:')
+  console.log('📅 Selected Date:', selectedDate.toDateString())
+  console.log('📊 Total scheduledSlots from store:', scheduledSlots.length)
+  console.log('📋 Total tasks from store:', tasks.length)
+  console.log('📃 scheduledSlots data:', scheduledSlots)
+  
   // Get selected date for filtering
   const selectedDateSlots = scheduledSlots.filter(slot => {
     // Ensure slot.date is a Date object (handle deserialization)
     const slotDate = slot.date instanceof Date ? slot.date : new Date(slot.date)
-    return slotDate.toDateString() === selectedDate.toDateString()
+    const matches = slotDate.toDateString() === selectedDate.toDateString()
+    if (matches) {
+      console.log('✅ Found slot for selected date:', { slot, slotDate: slotDate.toDateString() })
+    }
+    return matches
   })
+  
+  console.log('🎯 Filtered slots for selected date:', selectedDateSlots.length)
 
   // Combine scheduled tasks with their task details
   const scheduledTasks = selectedDateSlots.map(slot => {
     const task = tasks.find(t => t.id === slot.taskId)
+    console.log('🔗 Mapping slot to task:', { slotId: slot.id, taskId: slot.taskId, foundTask: !!task })
     return { 
       task: task,
       slotId: slot.id,
@@ -440,7 +454,16 @@ export function Timeline({
         estimatedTime: task?.estimatedTime || 60
       }
     }
-  }).filter(item => item.task?.title) // Filter out items without task details
+  }).filter(item => {
+    const hasTask = !!item.task?.title
+    if (!hasTask) {
+      console.log('❌ Filtered out item without task:', item)
+    }
+    return hasTask
+  })
+  
+  console.log('📝 Final scheduledTasks for display:', scheduledTasks.length)
+  console.log('📝 scheduledTasks content:', scheduledTasks)
   
   // Create sortable IDs for scheduled tasks
   const sortableIds = scheduledTasks
@@ -666,6 +689,12 @@ interface CalendarViewProps {
 function CalendarView({ selectedDate, setSelectedDate, scheduledSlots, tasks }: CalendarViewProps) {
   const { completeTask, uncompleteTask, removeTimeSlot } = useTaskStoreWithAuth()
   
+  // 🔍 カレンダービューのデバッグログ
+  console.log('🔍 CalendarView Debug Info:')
+  console.log('📅 Selected Date:', selectedDate.toDateString())
+  console.log('📊 scheduledSlots passed to calendar:', scheduledSlots.length)
+  console.log('📋 tasks passed to calendar:', tasks.length)
+  
   // Get calendar data for the current month
   const currentMonth = selectedDate.getMonth()
   const currentYear = selectedDate.getFullYear()
@@ -689,6 +718,13 @@ function CalendarView({ selectedDate, setSelectedDate, scheduledSlots, tasks }: 
     const slotDate = slot.date instanceof Date ? slot.date : new Date(slot.date)
     const dateKey = slotDate.toDateString()
     const task = tasks.find(t => t.id === slot.taskId)
+    console.log('🔗 Calendar mapping slot to task:', { 
+      slotId: slot.id, 
+      taskId: slot.taskId, 
+      dateKey, 
+      foundTask: !!task,
+      taskTitle: task?.title 
+    })
     if (task) {
       if (!tasksByDate[dateKey]) {
         tasksByDate[dateKey] = []
@@ -697,9 +733,15 @@ function CalendarView({ selectedDate, setSelectedDate, scheduledSlots, tasks }: 
     }
   })
   
+  console.log('📊 tasksByDate result:', tasksByDate)
+  console.log('📊 Total dates with tasks:', Object.keys(tasksByDate).length)
+  
   // Get tasks for selected date
   const selectedDateKey = selectedDate.toDateString()
   const selectedDateTasks = tasksByDate[selectedDateKey] || []
+  
+  console.log('🎯 Selected date tasks:', selectedDateTasks.length)
+  console.log('🎯 Selected date tasks content:', selectedDateTasks)
   
   return (
     <div className="flex-1 overflow-y-auto p-2 md:p-4 space-y-4">

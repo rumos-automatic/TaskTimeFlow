@@ -238,7 +238,13 @@ export function WorkspaceNew() {
   }
 
   const handleDragEnd = (event: DragEndEvent) => {
-    console.log('Drag end:', event.active.id, 'over:', event.over?.id, 'view change:', dragStartView, '->', currentView)
+    console.log('🔚 Drag end started')
+    console.log('🔚 event.active.id:', event.active.id)
+    console.log('🔚 event.over?.id:', event.over?.id)
+    console.log('🔚 dragStartView:', dragStartView, '-> currentView:', currentView)
+    console.log('🔚 user:', user?.id)
+    console.log('🔚 activeTask:', activeTask?.title)
+    
     const { active, over } = event
     
     const activeId = active.id.toString()
@@ -246,12 +252,12 @@ export function WorkspaceNew() {
     
     // 通常のドラッグ&ドロップ処理（overが存在する場合）
     if (over) {
-      console.log('Normal drag & drop with over:', overId)
+      console.log('✅ Normal drag & drop with over:', overId)
       
       // 1. タスクプール内の並び替え
       if (overId && !overId.startsWith('timeline-slot-') && !overId.startsWith('scheduled-') && 
           overId !== 'task-pool' && !activeId.startsWith('scheduled-')) {
-        console.log('Task pool reorder:', activeId, 'over', overId)
+        console.log('🔄 Task pool reorder:', activeId, 'over', overId)
         reorderTasks(activeId, overId)
       }
       
@@ -259,8 +265,9 @@ export function WorkspaceNew() {
       else if (overId && overId.startsWith('timeline-slot-') && !activeId.startsWith('scheduled-') && user) {
         const timeString = overId.replace('timeline-slot-', '')
         const today = new Date()
+        console.log('📅➡️ Moving task to timeline:', { activeId, timeString, today, userId: user.id })
         moveTaskToTimeline(activeId, today, timeString, user.id)
-        console.log('Normal: Moved task to timeline slot:', activeId, 'at', timeString)
+        console.log('✅ Normal: Moved task to timeline slot:', activeId, 'at', timeString)
       }
       
       // 3. タイムライン → 別のタイムスロット (スケジュール済みタスクの移動)
@@ -268,20 +275,27 @@ export function WorkspaceNew() {
         const taskId = activeId.split('-')[1]
         const timeString = overId.replace('timeline-slot-', '')
         const today = new Date()
+        console.log('📅🔄 Moving scheduled task to new slot:', { taskId, timeString, today, userId: user.id })
         moveTaskToTimeline(taskId, today, timeString, user.id)
-        console.log('Normal: Moved scheduled task to new slot:', taskId, 'at', timeString)
+        console.log('✅ Normal: Moved scheduled task to new slot:', taskId, 'at', timeString)
       }
       
       // 4. タイムライン → タスクプール (スケジュール削除)
       else if (overId === 'task-pool' && activeId.startsWith('scheduled-')) {
         const slotId = activeId.split('-')[2]
+        console.log('🗑️ Removing task from timeline:', { slotId, activeId })
         removeTimeSlot(slotId)
-        console.log('Normal: Removed task from timeline:', slotId)
+        console.log('✅ Normal: Removed task from timeline:', slotId)
+      }
+      
+      // その他の条件に該当しない場合
+      else {
+        console.log('❓ Unhandled drag case:', { activeId, overId, user: !!user })
       }
     }
     // クロスビュードラッグ処理（overが存在せず、ビューが変わった場合）
     else if (isMobile && !over && activeTask && dragStartView && dragStartView !== currentView) {
-      console.log('Cross-view drag without drop target:', dragStartView, '->', currentView, 'activeId:', activeId)
+      console.log('📱 Cross-view drag without drop target:', dragStartView, '->', currentView, 'activeId:', activeId)
       
       // タスクプールからタイムラインへのクロスビュードラッグ
       if (dragStartView === 'tasks' && currentView === 'timeline' && !activeId.startsWith('scheduled-') && user) {
@@ -292,16 +306,40 @@ export function WorkspaceNew() {
         const roundedMinute = Math.floor(currentMinute / 15) * 15
         const timeString = `${currentHour.toString().padStart(2, '0')}:${roundedMinute.toString().padStart(2, '0')}`
         const today = new Date()
+        console.log('📱📅➡️ Cross-view moving task to current time:', { activeId, timeString, today, userId: user.id })
         moveTaskToTimeline(activeId, today, timeString, user.id)
-        console.log('Cross-view: Moved task to current time:', activeId, 'at', timeString)
+        console.log('✅ Cross-view: Moved task to current time:', activeId, 'at', timeString)
       }
       
       // タイムラインからタスクプールへのクロスビュードラッグ
       else if (dragStartView === 'timeline' && currentView === 'tasks' && activeId.startsWith('scheduled-')) {
         const slotId = activeId.split('-')[2]
+        console.log('📱🗑️ Cross-view removing task from timeline:', { slotId, activeId })
         removeTimeSlot(slotId)
-        console.log('Cross-view: Removed task from timeline:', slotId)
+        console.log('✅ Cross-view: Removed task from timeline:', slotId)
       }
+      
+      // その他のクロスビューケース
+      else {
+        console.log('❓ Unhandled cross-view drag case:', { 
+          dragStartView, 
+          currentView, 
+          activeId, 
+          startsWithScheduled: activeId.startsWith('scheduled-'),
+          user: !!user 
+        })
+      }
+    }
+    // ドロップターゲットがない場合
+    else {
+      console.log('❌ No drop target or conditions not met:', {
+        isMobile,
+        hasOver: !!over,
+        hasActiveTask: !!activeTask,
+        dragStartView,
+        currentView,
+        viewChanged: dragStartView !== currentView
+      })
     }
     
     // 状態をリセット

@@ -754,6 +754,22 @@ export function TaskPool() {
                 <h3 className="text-sm font-medium text-muted-foreground group-hover:text-foreground transition-colors">
                   完了済み ({filteredCompletedTasks.length})
                 </h3>
+                {filteredCompletedTasks.length > 0 && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      if (confirm(`完了済みタスク${filteredCompletedTasks.length}個をプールから非表示にしますか？\n（カレンダーには残ります）`)) {
+                        filteredCompletedTasks.forEach(task => hideCompletedTask(task.id))
+                      }
+                    }}
+                    className="text-xs h-6 px-2 text-muted-foreground hover:text-foreground"
+                    title="完了済みタスクを非表示"
+                  >
+                    👁️‍🗨️
+                  </Button>
+                )}
               </div>
               <motion.div
                 animate={{ rotate: isCompletedCollapsed ? 0 : 180 }}
