@@ -462,7 +462,7 @@ interface DroppableTimeSlotProps {
 
 function DroppableTimeSlot({ time, hour, minute, slotIndex, isBusinessHour, isHourStart, isHalfHour, currentHour, currentMinute, scheduledTasks }: DroppableTimeSlotProps) {
   const { user } = useAuth()
-  const { addTask, moveTaskToTimeline } = useTaskStoreWithAuth()
+  const { addTask, moveTaskToTimeline, tasks } = useTaskStoreWithAuth()
   const [showAddForm, setShowAddForm] = useState(false)
   const [isHovered, setIsHovered] = useState(false)
   
@@ -483,8 +483,8 @@ function DroppableTimeSlot({ time, hour, minute, slotIndex, isBusinessHour, isHo
     if (!user) return
     
     try {
-      // タスクを作成
-      const newTask = await addTask({
+      // タスクを作成（タスクプールに追加）
+      await addTask({
         title: taskData.title,
         priority: taskData.priority,
         urgency: taskData.urgency,
@@ -493,15 +493,29 @@ function DroppableTimeSlot({ time, hour, minute, slotIndex, isBusinessHour, isHo
         status: 'todo'
       }, user.id)
       
-      // 作成されたタスクを即座にタイムラインに移動
-      if (newTask) {
-        await moveTaskToTimeline(
-          newTask.id,
-          new Date(), // 今日の日付
-          time, // 選択された時間
-          taskData.estimatedTime
-        )
-      }
+      // 少し待ってからタスク一覧を取得して最新のタスクを見つける
+      setTimeout(async () => {
+        try {
+          // 最新のタスクを探す（タイトルで検索）
+          const allTasks = tasks
+          const latestTask = allTasks.find(task => 
+            task.title === taskData.title && 
+            task.status === 'todo' &&
+            !task.scheduledDate
+          )
+          
+          if (latestTask) {
+            await moveTaskToTimeline(
+              latestTask.id,
+              new Date(), // 今日の日付
+              time, // 選択された時間
+              taskData.estimatedTime
+            )
+          }
+        } catch (error) {
+          console.error('Failed to schedule task:', error)
+        }
+      }, 100) // 100ms待機
       
       setShowAddForm(false)
     } catch (error) {
