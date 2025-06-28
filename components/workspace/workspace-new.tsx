@@ -445,8 +445,8 @@ export function WorkspaceNew() {
 
   // モバイル版：1画面ずつ表示
   if (isMobile) {
-    // フッターの高さを定義（ボタン84px + パディング32px = 116px）
-    const MOBILE_FOOTER_HEIGHT = 116
+    // フッターの高さを定義（フッターに隠れないよう十分な余裕を確保）
+    const MOBILE_FOOTER_HEIGHT = 130
     
     return (
       <DndContext
@@ -495,7 +495,7 @@ export function WorkspaceNew() {
             )}
 
             {currentView === 'tasks' && (
-              <div ref={mobileTaskPoolRef} className={`absolute inset-0 p-4 overflow-y-auto`} style={{ paddingBottom: `${MOBILE_FOOTER_HEIGHT}px` }}>
+              <div ref={mobileTaskPoolRef} className="absolute top-0 left-0 right-0 p-4 overflow-y-auto" style={{ bottom: `${MOBILE_FOOTER_HEIGHT}px` }}>
                 <div className="flex items-center justify-between mb-6">
                   <h2 className="text-xl font-semibold text-foreground">タスクプール</h2>
                   <div className="flex items-center space-x-2">
@@ -516,7 +516,7 @@ export function WorkspaceNew() {
             )}
             
             {currentView === 'timeline' && (
-              <div ref={mobileTimelineRef} className={`absolute inset-0 p-4 overflow-y-auto`} style={{ paddingBottom: `${MOBILE_FOOTER_HEIGHT}px` }}>
+              <div ref={mobileTimelineRef} className="absolute top-0 left-0 right-0 p-4 overflow-y-auto" style={{ bottom: `${MOBILE_FOOTER_HEIGHT}px` }}>
                 <div className="flex items-center justify-between mb-6">
                   <h2 className="text-xl font-semibold text-foreground">タイムライン</h2>
                   <div className="flex items-center space-x-4">
@@ -543,7 +543,7 @@ export function WorkspaceNew() {
             )}
 
             {currentView === 'focus' && (
-              <div ref={mobileFocusRef} className={`absolute inset-0 p-4 overflow-y-auto`} style={{ paddingBottom: `${MOBILE_FOOTER_HEIGHT}px` }}>
+              <div ref={mobileFocusRef} className="absolute top-0 left-0 right-0 p-4 overflow-y-auto" style={{ bottom: `${MOBILE_FOOTER_HEIGHT}px` }}>
                 <div className="flex items-center justify-between mb-6">
                   <h2 className="text-xl font-semibold text-foreground">フォーカス</h2>
                   <div className="flex items-center space-x-2">
