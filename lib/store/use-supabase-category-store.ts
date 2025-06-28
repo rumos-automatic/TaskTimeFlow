@@ -167,7 +167,19 @@ export const useSupabaseCategoryStore = create<SupabaseCategoryStore>((set, get)
       set({ syncing: true, error: null })
       console.log('➕ Adding custom category to Supabase:', categoryData)
       
-      const insertData = customCategoryToSupabaseInsert(categoryData)
+      // Calculate next order
+      const { customCategories } = get()
+      const nextOrder = customCategories.length > 0 
+        ? Math.max(...customCategories.map(c => c.order)) + 1 
+        : 0
+      
+      const insertData = customCategoryToSupabaseInsert({
+        ...categoryData,
+        order: nextOrder
+      })
+      
+      console.log('➕ Insert data:', insertData)
+      
       const { data, error } = await supabase
         .from('custom_categories')
         .insert(insertData)

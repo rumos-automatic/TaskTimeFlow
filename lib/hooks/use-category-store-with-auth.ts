@@ -20,7 +20,9 @@ export function useCategoryStoreWithAuth() {
   const checkMigrationStatus = (userId: string): boolean => {
     try {
       const migrationKey = `category_migration_completed_${userId}`
-      return localStorage.getItem(migrationKey) === 'true'
+      const status = localStorage.getItem(migrationKey) === 'true'
+      console.log(`📦 Migration status for user ${userId}:`, status)
+      return status
     } catch (error) {
       console.warn('Failed to check category migration status:', error)
       return false
@@ -180,6 +182,17 @@ export function useCategoryStoreWithAuth() {
     // Category management (Supabase)
     addCustomCategory: async (categoryData: Omit<CustomCategory, 'id' | 'createdAt' | 'updatedAt' | 'userId'>) => {
       if (!user) throw new Error('User not authenticated')
+      
+      console.log('🚀 useCategoryStoreWithAuth.addCustomCategory called with:', categoryData)
+      console.log('🔍 Migration completed:', migrationCompleted)
+      console.log('🔍 Initialized:', initialized)
+      console.log('🔍 User:', user.id)
+      
+      if (!initialized) {
+        console.warn('⚠️ Store not initialized, initializing now...')
+        await initializeStores()
+      }
+      
       return supabaseStore.addCustomCategory({
         ...categoryData,
         userId: user.id
@@ -208,7 +221,10 @@ export function useCategoryStoreWithAuth() {
     // Migration and cleanup
     resetMigrationStatus: () => {
       if (user) {
+        console.log('🔄 Resetting migration status for user:', user.id)
         setMigrationStatus(user.id, false)
+        setInitialized(false)
+        setMigrationCompleted(false)
       }
     },
 
@@ -216,6 +232,28 @@ export function useCategoryStoreWithAuth() {
       if (user && initialized) {
         await supabaseStore.initialize(user.id)
       }
+    },
+
+    // Debug helper to fix current state
+    debugAndFix: async () => {
+      if (!user) return
+      
+      console.log('🔧 Debug and fix category store state...')
+      console.log('Current state:', {
+        user: user.id,
+        initialized,
+        migrationCompleted,
+        customCategories: supabaseStore.customCategories.length,
+        loading: supabaseStore.loading
+      })
+      
+      // Reset migration status and re-initialize
+      setMigrationStatus(user.id, false)
+      setInitialized(false)
+      setMigrationCompleted(false)
+      
+      // Force re-initialization
+      await initializeStores()
     }
   }
 }

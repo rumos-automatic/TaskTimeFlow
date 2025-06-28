@@ -42,8 +42,7 @@ function AddCategoryModal({ open, onOpenChange }: AddCategoryModalProps) {
         color: formData.color,
         icon: formData.icon,
         description: formData.description.trim() || undefined,
-        isBuiltIn: false,
-        userId: user.id
+        isBuiltIn: false
       })
       
       
