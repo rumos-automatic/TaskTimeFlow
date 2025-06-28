@@ -9,6 +9,7 @@ import { useDroppable } from '@dnd-kit/core'
 import { useSortable, SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
 import { useTaskStoreWithAuth } from '@/lib/hooks/use-task-store-with-auth'
+import { useSupabaseTaskStore } from '@/lib/store/use-supabase-task-store'
 import { useAuth } from '@/lib/auth/auth-context'
 import { useViewState } from '@/lib/hooks/use-view-state'
 import { useCategoryStoreWithAuth } from '@/lib/hooks/use-category-store-with-auth'
@@ -458,13 +459,17 @@ interface DroppableTimeSlotProps {
   currentHour: number
   currentMinute: number
   scheduledTasks: any[]
+  activeSlot: string | null
+  setActiveSlot: (slot: string | null) => void
 }
 
-function DroppableTimeSlot({ time, hour, minute, slotIndex, isBusinessHour, isHourStart, isHalfHour, currentHour, currentMinute, scheduledTasks }: DroppableTimeSlotProps) {
+function DroppableTimeSlot({ time, hour, minute, slotIndex, isBusinessHour, isHourStart, isHalfHour, currentHour, currentMinute, scheduledTasks, activeSlot, setActiveSlot }: DroppableTimeSlotProps) {
   const { user } = useAuth()
   const { addTask, moveTaskToTimeline, tasks } = useTaskStoreWithAuth()
   const [showAddForm, setShowAddForm] = useState(false)
-  const [isHovered, setIsHovered] = useState(false)
+  
+  // このスロットがアクティブかどうかを判定
+  const isActive = activeSlot === time
   
   const { setNodeRef, isOver } = useDroppable({
     id: `timeline-slot-${time}`
@@ -499,8 +504,8 @@ function DroppableTimeSlot({ time, hour, minute, slotIndex, isBusinessHour, isHo
       
       // 短い間隔で数回チェックして最新のタスクを見つける
       let attempts = 0
-      const maxAttempts = 10
-      const checkInterval = 200
+      const maxAttempts = 15
+      const checkInterval = 300
       
       const findAndScheduleTask = () => {
         setTimeout(async () => {
@@ -508,12 +513,12 @@ function DroppableTimeSlot({ time, hour, minute, slotIndex, isBusinessHour, isHo
           console.log(`🔍 Attempt ${attempts}/${maxAttempts} to find task:`, taskData.title)
           
           try {
-            // 最新のタスクを探す（より厳密な検索）
-            const allTasks = tasks
-            console.log('📋 All tasks count:', allTasks.length)
+            // ストアから最新のタスクを動的に取得
+            const { tasks: currentTasks } = useSupabaseTaskStore.getState()
+            console.log('📋 Current tasks count from store:', currentTasks.length)
             
             // タイトルとカテゴリでマッチング（より確実に特定）
-            const latestTask = allTasks
+            const latestTask = currentTasks
               .filter(task => 
                 task.title === taskData.title && 
                 task.category === taskData.category &&
@@ -540,20 +545,24 @@ function DroppableTimeSlot({ time, hour, minute, slotIndex, isBusinessHour, isHo
               )
               
               console.log('✅ Task scheduled successfully!')
+              setActiveSlot(null) // 成功したらアクティブスロットをクリア
             } else if (attempts < maxAttempts) {
               console.log('⏳ Task not found yet, retrying...')
               findAndScheduleTask() // 再試行
             } else {
               console.warn('⚠️ Failed to find task after', maxAttempts, 'attempts')
+              setActiveSlot(null) // 失敗してもアクティブスロットをクリア
             }
           } catch (error) {
             console.error('❌ Failed to schedule task:', error)
+            setActiveSlot(null) // エラー時もアクティブスロットをクリア
           }
         }, checkInterval)
       }
       
       findAndScheduleTask()
       setShowAddForm(false)
+      setActiveSlot(null) // フォーム終了時にアクティブスロットをクリア
       
     } catch (error) {
       console.error('❌ Failed to create task:', error)
@@ -580,8 +589,10 @@ function DroppableTimeSlot({ time, hour, minute, slotIndex, isBusinessHour, isHo
         className={`flex-1 min-h-full border-l border-border/20 p-2 relative transition-colors ${
           isOver ? 'bg-blue-100 dark:bg-blue-950/30 border-blue-300' : ''
         }`}
-        onMouseEnter={() => setIsHovered(true)}
-        onMouseLeave={() => setIsHovered(false)}
+        onMouseEnter={() => setActiveSlot(time)}
+        onMouseLeave={() => setActiveSlot(null)}
+        onTouchStart={() => setActiveSlot(time)}
+        onTouchEnd={() => setActiveSlot(null)}
       >
         {/* Scheduled Tasks at this time */}
         {tasksAtThisTime.map((item) => {
@@ -602,8 +613,8 @@ function DroppableTimeSlot({ time, hour, minute, slotIndex, isBusinessHour, isHo
               ? 'border-blue-400 bg-blue-50/50 dark:bg-blue-950/20' 
               : 'border-transparent hover:border-border/40'
           }`}>
-            {/* Hover text - only show when not hovered and not being dragged over */}
-            {!isHovered && !isOver && (
+            {/* Hover text - only show when not active and not being dragged over */}
+            {!isActive && !isOver && (
               <div className="flex items-center justify-center h-full text-xs text-muted-foreground opacity-0 hover:opacity-60 transition-all">
                 タスクをドロップ
               </div>
@@ -616,8 +627,8 @@ function DroppableTimeSlot({ time, hour, minute, slotIndex, isBusinessHour, isHo
               </div>
             )}
             
-            {/* Add Task Button - only show when hovered and not being dragged over */}
-            {isHovered && !isOver && (
+            {/* Add Task Button - only show when active and not being dragged over */}
+            {isActive && !isOver && (
               <div className="absolute inset-0 flex items-center justify-center">
                 <Button
                   variant="ghost"
@@ -640,7 +651,10 @@ function DroppableTimeSlot({ time, hour, minute, slotIndex, isBusinessHour, isHo
             hour={hour}
             minute={minute}
             onSave={handleAddTask}
-            onCancel={() => setShowAddForm(false)}
+            onCancel={() => {
+              setShowAddForm(false)
+              setActiveSlot(null)
+            }}
           />
         )}
       </div>
@@ -666,6 +680,9 @@ export function Timeline({
   const { isMobile } = useViewState()
   const timelineContainerRef = useRef<HTMLDivElement>(null)
   const currentTimeIndicatorRef = useRef<HTMLDivElement>(null)
+  
+  // アクティブなスロット管理（プラスボタンの重複防止）
+  const [activeSlot, setActiveSlot] = useState<string | null>(null)
   
   // 🔍 タイムライン表示のデバッグログ
   console.log('🔍 Timeline Debug Info:')
@@ -909,6 +926,8 @@ export function Timeline({
                 currentHour={currentHour}
                 currentMinute={currentMinute}
                 scheduledTasks={scheduledTasks}
+                activeSlot={activeSlot}
+                setActiveSlot={setActiveSlot}
               />
             ))}
           </div>
