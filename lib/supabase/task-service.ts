@@ -253,8 +253,11 @@ export class TaskService {
   }
 
   static subscribeToTimeSlots(userId: string, callback: (timeSlots: TimeSlot[]) => void) {
-    const channelName = `time_slots_channel_${userId}_${Date.now()}`
-    console.log('Creating time slots channel:', channelName)
+    const channelName = `time_slots_channel_${userId}_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
+    console.log('🕒 Creating time slots channel:', channelName)
+    
+    // デバウンス用のタイマー
+    let debounceTimer: NodeJS.Timeout | null = null
     
     const channel = supabase
       .channel(channelName)
@@ -266,19 +269,31 @@ export class TaskService {
           table: 'time_slots',
           filter: `user_id=eq.${userId}`
         },
-        async () => {
-          // Refetch all time slots when any change occurs
-          try {
-            const timeSlots = await TaskService.getTimeSlots(userId)
-            callback(timeSlots)
-          } catch (error) {
-            console.error('Error refetching time slots:', error)
+        async (payload) => {
+          console.log('🕒 Time slots real-time update triggered:', payload.eventType, (payload.new as any)?.id)
+          
+          // デバウンス処理：短時間内の複数更新をまとめる
+          if (debounceTimer) {
+            clearTimeout(debounceTimer)
           }
+          
+          debounceTimer = setTimeout(async () => {
+            try {
+              const timeSlots = await TaskService.getTimeSlots(userId)
+              console.log('🕒 Refetched time slots count:', timeSlots.length)
+              callback(timeSlots)
+            } catch (error) {
+              console.error('Error refetching time slots:', error)
+            }
+          }, 50) // 50ms デバウンス（反応性向上）
         }
       )
       .subscribe()
 
     return () => {
+      if (debounceTimer) {
+        clearTimeout(debounceTimer)
+      }
       supabase.removeChannel(channel)
     }
   }

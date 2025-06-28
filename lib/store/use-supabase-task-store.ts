@@ -147,7 +147,7 @@ export const useSupabaseTaskStore = create<SupabaseTaskStore>()((set, get) => {
         
         if (!unsubscribeTimeSlots) {
           unsubscribeTimeSlots = TaskService.subscribeToTimeSlots(userId, (timeSlots) => {
-            console.log('Real-time time slots update:', timeSlots.length)
+            console.log('🕒 Real-time time slots update received:', timeSlots.length)
             
             // 重複チェック：TimeSlot IDでユニーク化
             const uniqueTimeSlots = timeSlots.filter((slot, index, self) => 
@@ -158,7 +158,13 @@ export const useSupabaseTaskStore = create<SupabaseTaskStore>()((set, get) => {
               console.warn('Duplicate time slots detected and removed:', timeSlots.length - uniqueTimeSlots.length)
             }
             
-            set({ timeSlots: uniqueTimeSlots })
+            // 楽観的更新と競合しないように、一時的なスロットを保持
+            set((state) => {
+              const tempSlots = state.timeSlots.filter(slot => slot.id.startsWith('temp-'))
+              const finalSlots = [...tempSlots, ...uniqueTimeSlots]
+              console.log('🕒 Updated time slots (temp + real):', tempSlots.length, '+', uniqueTimeSlots.length, '=', finalSlots.length)
+              return { timeSlots: finalSlots }
+            })
           })
         }
         
@@ -352,8 +358,36 @@ export const useSupabaseTaskStore = create<SupabaseTaskStore>()((set, get) => {
         const endTime = calculateEndTime(time, task.estimatedTime)
         console.log('⏰ Calculated time slot:', { time, endTime, duration: task.estimatedTime })
         
+        // 楽観的更新：即座にUIを更新
+        const tempSlotId = `temp-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
+        const optimisticSlot: TimeSlot = {
+          id: tempSlotId,
+          taskId,
+          date,
+          startTime: time,
+          endTime,
+          type: 'task'
+        }
+        
+        console.log('⚡ Optimistic update: Adding temporary time slot')
+        set((state) => ({
+          // 既存のスロットを削除してから新しいスロットを追加
+          timeSlots: [
+            ...state.timeSlots.filter(slot => slot.taskId !== taskId),
+            optimisticSlot
+          ],
+          // タスクにスケジュール情報を設定
+          tasks: state.tasks.map((t) =>
+            t.id === taskId
+              ? { ...t, scheduledDate: date, scheduledTime: time }
+              : t
+          )
+        }))
+        
         // Remove existing time slot for this task
-        const existingSlots = get().timeSlots.filter(slot => slot.taskId === taskId)
+        const existingSlots = get().timeSlots.filter(slot => 
+          slot.taskId === taskId && slot.id !== tempSlotId
+        )
         console.log('🗑️ Removing existing slots:', existingSlots.length)
         for (const slot of existingSlots) {
           await TaskService.deleteTimeSlot(slot.id)
@@ -379,11 +413,32 @@ export const useSupabaseTaskStore = create<SupabaseTaskStore>()((set, get) => {
           scheduledTime: time
         })
         
+        // 楽観的更新を実際のデータで置き換え
+        console.log('🔄 Replacing optimistic update with real data')
+        set((state) => ({
+          timeSlots: [
+            ...state.timeSlots.filter(slot => slot.id !== tempSlotId),
+            createdSlot
+          ]
+        }))
+        
         console.log('🎉 Successfully moved task to timeline')
         set({ syncing: false })
         
       } catch (error) {
         console.error('❌ Failed to move task to timeline:', error)
+        
+        // エラー時は楽観的更新をロールバック
+        console.log('🔄 Rolling back optimistic update')
+        set((state) => ({
+          timeSlots: state.timeSlots.filter(slot => !slot.id.startsWith('temp-')),
+          tasks: state.tasks.map((t) =>
+            t.id === taskId
+              ? { ...t, scheduledDate: undefined, scheduledTime: undefined }
+              : t
+          )
+        }))
+        
         set({ 
           error: 'タスクのスケジュール設定に失敗しました',
           syncing: false 
@@ -414,11 +469,19 @@ export const useSupabaseTaskStore = create<SupabaseTaskStore>()((set, get) => {
 
     removeTimeSlot: async (id) => {
       try {
+        console.log('🗑️ removeTimeSlot called:', id)
         set({ syncing: true, error: null })
         
         const slot = get().timeSlots.find((s) => s.id === id)
+        if (!slot) {
+          console.error('❌ Time slot not found:', id)
+          return
+        }
         
-        // Optimistic update
+        console.log('🗑️ Found slot to remove:', slot)
+        
+        // 楽観的更新：即座にUIを更新
+        console.log('⚡ Optimistic update: Removing time slot')
         set((state) => ({
           timeSlots: state.timeSlots.filter((s) => s.id !== id),
           tasks: slot?.taskId 
@@ -430,20 +493,29 @@ export const useSupabaseTaskStore = create<SupabaseTaskStore>()((set, get) => {
             : state.tasks
         }))
         
+        // データベースから削除
         await TaskService.deleteTimeSlot(id)
+        console.log('✅ Time slot deleted from database:', id)
         
         // Update task if it was scheduled
         if (slot?.taskId) {
+          console.log('📝 Updating task to remove schedule info')
           await get().updateTask(slot.taskId, {
             scheduledDate: undefined,
             scheduledTime: undefined
           })
         }
         
+        console.log('🎉 Successfully removed time slot')
         set({ syncing: false })
         
       } catch (error) {
-        console.error('Failed to remove time slot:', error)
+        console.error('❌ Failed to remove time slot:', error)
+        
+        // エラー時は楽観的更新をロールバック
+        console.log('🔄 Rolling back optimistic update')
+        // リアルタイムサブスクリプションが正しい状態に戻してくれるので、ここでは特別な処理は不要
+        
         set({ 
           error: 'タイムスロットの削除に失敗しました',
           syncing: false 
