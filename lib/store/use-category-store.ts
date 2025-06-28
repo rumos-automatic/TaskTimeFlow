@@ -60,13 +60,11 @@ export const CATEGORY_ICONS = [
 interface CategoryStore {
   // State
   customCategories: CustomCategory[]
+  allCategories: (CustomCategory | BuiltInCategoryConfig)[]
   selectedCategory: CategoryFilter
   googleTasksSync: GoogleTasksSyncStatus
   loading: boolean
   error: string | null
-  
-  // Computed
-  allCategories: (CustomCategory | BuiltInCategoryConfig)[]
   
   // Actions
   setSelectedCategory: (category: CategoryFilter) => void
@@ -74,6 +72,7 @@ interface CategoryStore {
   updateCustomCategory: (id: string, updates: Partial<CustomCategory>) => Promise<void>
   deleteCustomCategory: (id: string) => Promise<void>
   reorderCategories: (categories: CustomCategory[]) => Promise<void>
+  updateAllCategories: () => void
   
   // Google Tasks sync
   updateGoogleTasksSync: (status: Partial<GoogleTasksSyncStatus>) => void
@@ -99,6 +98,7 @@ export const useCategoryStore = create<CategoryStore>()(
     (set, get) => ({
       // Initial state
       customCategories: [],
+      allCategories: [...BUILT_IN_CATEGORIES],
       selectedCategory: 'all',
       googleTasksSync: {
         isEnabled: false,
@@ -107,18 +107,18 @@ export const useCategoryStore = create<CategoryStore>()(
       loading: false,
       error: null,
       
-      // Computed properties
-      get allCategories() {
+      // Helper to update allCategories
+      updateAllCategories: () => {
         const { customCategories } = get()
         const sortedCustom = [...customCategories].sort((a, b) => a.order - b.order)
         const allCats = [...BUILT_IN_CATEGORIES, ...sortedCustom]
-        console.log('📂 getAllCategories called:', { 
+        console.log('🔄 updateAllCategories called:', { 
           customCategories, 
           sortedCustom, 
           builtIn: BUILT_IN_CATEGORIES,
           total: allCats 
         })
-        return allCats
+        set({ allCategories: allCats })
       },
       
       // Actions
@@ -146,10 +146,13 @@ export const useCategoryStore = create<CategoryStore>()(
           
           set((state) => {
             const updatedCategories = [...state.customCategories, newCategory]
+            const sortedCustom = [...updatedCategories].sort((a, b) => a.order - b.order)
+            const allCats = [...BUILT_IN_CATEGORIES, ...sortedCustom]
             console.log('✅ Updated customCategories:', updatedCategories)
-            console.log('✅ All categories after add:', [...BUILT_IN_CATEGORIES, ...updatedCategories])
+            console.log('✅ All categories after add:', allCats)
             return {
               customCategories: updatedCategories,
+              allCategories: allCats,
               loading: false
             }
           })
@@ -170,14 +173,20 @@ export const useCategoryStore = create<CategoryStore>()(
           // TODO: Update in Supabase when database integration is ready
           console.log('Updating custom category (local only):', id, updates)
           
-          set((state) => ({
-            customCategories: state.customCategories.map((category) =>
+          set((state) => {
+            const updatedCategories = state.customCategories.map((category) =>
               category.id === id
                 ? { ...category, ...updates, updatedAt: new Date() }
                 : category
-            ),
-            loading: false
-          }))
+            )
+            const sortedCustom = [...updatedCategories].sort((a, b) => a.order - b.order)
+            const allCats = [...BUILT_IN_CATEGORIES, ...sortedCustom]
+            return {
+              customCategories: updatedCategories,
+              allCategories: allCats,
+              loading: false
+            }
+          })
           
         } catch (error) {
           console.error('Failed to update custom category:', error)
@@ -195,10 +204,16 @@ export const useCategoryStore = create<CategoryStore>()(
           // TODO: Delete from Supabase when database integration is ready
           console.log('Deleting custom category (local only):', id)
           
-          set((state) => ({
-            customCategories: state.customCategories.filter((category) => category.id !== id),
-            loading: false
-          }))
+          set((state) => {
+            const updatedCategories = state.customCategories.filter((category) => category.id !== id)
+            const sortedCustom = [...updatedCategories].sort((a, b) => a.order - b.order)
+            const allCats = [...BUILT_IN_CATEGORIES, ...sortedCustom]
+            return {
+              customCategories: updatedCategories,
+              allCategories: allCats,
+              loading: false
+            }
+          })
           
         } catch (error) {
           console.error('Failed to delete custom category:', error)
@@ -221,7 +236,11 @@ export const useCategoryStore = create<CategoryStore>()(
           // TODO: Update order in Supabase when database integration is ready
           console.log('Reordering categories (local only):', reorderedCategories.map(c => c.name))
           
-          set({ customCategories: reorderedCategories })
+          const allCats = [...BUILT_IN_CATEGORIES, ...reorderedCategories]
+          set({ 
+            customCategories: reorderedCategories,
+            allCategories: allCats
+          })
           
         } catch (error) {
           console.error('Failed to reorder categories:', error)
@@ -275,8 +294,15 @@ export const useCategoryStore = create<CategoryStore>()(
           // TODO: Load custom categories from Supabase when database integration is ready
           console.log('Initializing category store for user:', userId)
           
-          // For now, just clear loading state
-          set({ loading: false })
+          // Update allCategories with current customCategories
+          const { customCategories } = get()
+          const sortedCustom = [...customCategories].sort((a, b) => a.order - b.order)
+          const allCats = [...BUILT_IN_CATEGORIES, ...sortedCustom]
+          
+          set({ 
+            loading: false,
+            allCategories: allCats
+          })
           
         } catch (error) {
           console.error('Failed to initialize category store:', error)
@@ -306,8 +332,9 @@ export const useCategoryStore = create<CategoryStore>()(
     {
       name: 'category-store',
       partialize: (state) => ({
-        // Only persist custom categories and settings, not built-in categories
+        // Persist custom categories, allCategories, and settings
         customCategories: state.customCategories,
+        allCategories: state.allCategories,
         selectedCategory: state.selectedCategory,
         googleTasksSync: state.googleTasksSync
       }),
@@ -318,13 +345,20 @@ export const useCategoryStore = create<CategoryStore>()(
           if (!str) return null
           const parsed = JSON.parse(str)
           
-          // Convert date strings back to Date objects
+          // Convert date strings back to Date objects and rebuild allCategories
           if (parsed.state?.customCategories) {
             parsed.state.customCategories = parsed.state.customCategories.map((category: any) => ({
               ...category,
               createdAt: category.createdAt ? new Date(category.createdAt) : new Date(),
               updatedAt: category.updatedAt ? new Date(category.updatedAt) : new Date()
             }))
+            
+            // Rebuild allCategories from customCategories
+            const sortedCustom = [...parsed.state.customCategories].sort((a, b) => a.order - b.order)
+            parsed.state.allCategories = [...BUILT_IN_CATEGORIES, ...sortedCustom]
+          } else {
+            // Ensure allCategories exists even if no custom categories
+            parsed.state.allCategories = [...BUILT_IN_CATEGORIES]
           }
           
           console.log('📖 Parsed localStorage data:', parsed)
