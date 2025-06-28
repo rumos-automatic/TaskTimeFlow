@@ -977,6 +977,149 @@ export function Timeline({
 }
 
 // Calendar View Component
+interface CalendarTaskFormProps {
+  date: Date
+  onSave: (taskData: any, time: string) => void
+  onCancel: () => void
+}
+
+function CalendarTaskForm({ date, onSave, onCancel }: CalendarTaskFormProps) {
+  const { categories: allCategories } = useCategoryStoreWithAuth()
+  const [formData, setFormData] = useState({
+    title: '',
+    category: 'personal' as TaskCategory,
+    priority: 'low' as Priority,
+    urgency: 'low' as Urgency,
+    estimatedTime: 60,
+    selectedTime: '09:00'
+  })
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault()
+    if (formData.title.trim()) {
+      const { selectedTime, ...taskData } = formData
+      onSave(taskData, selectedTime)
+      setFormData({
+        title: '',
+        category: 'personal',
+        priority: 'low',
+        urgency: 'low',
+        estimatedTime: 60,
+        selectedTime: '09:00'
+      })
+    }
+  }
+
+  // 時間選択オプション（30分間隔）
+  const timeOptions = Array.from({ length: 48 }, (_, i) => {
+    const hour = Math.floor(i / 2)
+    const minute = (i % 2) * 30
+    const timeString = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`
+    return timeString
+  })
+
+  return (
+    <div className="absolute top-0 left-0 right-0 bg-white dark:bg-gray-800 border border-border rounded-lg shadow-lg p-4 z-50">
+      <h3 className="text-sm font-medium mb-3">
+        {date.toLocaleDateString('ja-JP', { month: 'short', day: 'numeric' })} のタスクを作成
+      </h3>
+      
+      <form onSubmit={handleSubmit} className="space-y-3">
+        <input
+          type="text"
+          value={formData.title}
+          onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
+          placeholder="タスク名"
+          className="w-full px-3 py-2 border border-border rounded text-sm bg-background"
+          autoFocus
+        />
+
+        <div className="grid grid-cols-2 gap-2">
+          <select
+            value={formData.priority}
+            onChange={(e) => setFormData(prev => ({ ...prev, priority: e.target.value as Priority }))}
+            className="px-2 py-1 border border-border rounded text-xs bg-background"
+          >
+            <option value="low">優先度: 低</option>
+            <option value="high">優先度: 高</option>
+          </select>
+
+          <select
+            value={formData.urgency}
+            onChange={(e) => setFormData(prev => ({ ...prev, urgency: e.target.value as Urgency }))}
+            className="px-2 py-1 border border-border rounded text-xs bg-background"
+          >
+            <option value="low">緊急度: 低</option>
+            <option value="high">緊急度: 高</option>
+          </select>
+        </div>
+
+        <div className="grid grid-cols-2 gap-2">
+          <select
+            value={formData.category}
+            onChange={(e) => setFormData(prev => ({ ...prev, category: e.target.value as TaskCategory }))}
+            className="px-2 py-1 border border-border rounded text-xs bg-background"
+          >
+            {allCategories.map((category) => (
+              <option key={category.id} value={category.id}>
+                {category.icon} {category.name}
+              </option>
+            ))}
+          </select>
+
+          <input
+            type="number"
+            min="15"
+            max="480"
+            value={formData.estimatedTime}
+            onChange={(e) => {
+              const value = e.target.value
+              setFormData(prev => ({ 
+                ...prev, 
+                estimatedTime: value === '' ? '' : (parseInt(value) || 60)
+              }))
+            }}
+            className="px-2 py-1 border border-border rounded text-xs bg-background"
+            placeholder="分"
+          />
+        </div>
+
+        <div>
+          <label className="block text-xs font-medium text-muted-foreground mb-1">
+            開始時間
+          </label>
+          <select
+            value={formData.selectedTime}
+            onChange={(e) => setFormData(prev => ({ ...prev, selectedTime: e.target.value }))}
+            className="w-full px-2 py-1 border border-border rounded text-xs bg-background"
+          >
+            {timeOptions.map((time) => (
+              <option key={time} value={time}>
+                {time}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <div className="flex space-x-2 pt-1">
+          <Button type="submit" size="sm" className="flex-1 h-7 text-xs">
+            作成
+          </Button>
+          <Button 
+            type="button" 
+            variant="outline" 
+            size="sm" 
+            onClick={onCancel}
+            className="h-7 text-xs"
+          >
+            <X className="w-3 h-3" />
+          </Button>
+        </div>
+      </form>
+    </div>
+  )
+}
+
 interface CalendarViewProps {
   selectedDate: Date
   setSelectedDate: (date: Date) => void
@@ -985,7 +1128,96 @@ interface CalendarViewProps {
 }
 
 function CalendarView({ selectedDate, setSelectedDate, scheduledSlots, tasks }: CalendarViewProps) {
-  const { completeTask, uncompleteTask, removeTimeSlot } = useTaskStoreWithAuth()
+  const { completeTask, uncompleteTask, removeTimeSlot, addTask, moveTaskToTimeline } = useTaskStoreWithAuth()
+  const { user } = useAuth()
+  
+  // カレンダービューでのタスク作成管理
+  const [activeFormDate, setActiveFormDate] = useState<string | null>(null)
+
+  // カレンダーからのタスク作成ハンドラー
+  const handleCalendarTaskCreate = async (taskData: any, time: string, date: Date) => {
+    if (!user) return
+    
+    try {
+      console.log('📅 Creating task from calendar:', { taskData, time, date: date.toDateString() })
+      
+      // タスクを作成
+      await addTask({
+        title: taskData.title,
+        priority: taskData.priority,
+        urgency: taskData.urgency,
+        category: taskData.category,
+        estimatedTime: taskData.estimatedTime,
+        status: 'todo'
+      }, user.id)
+      
+      console.log('✅ Calendar task created, scheduling...')
+      
+      // 短い間隔で数回チェックして最新のタスクを見つけてスケジュール
+      let attempts = 0
+      const maxAttempts = 15
+      const checkInterval = 300
+      
+      const findAndScheduleTask = () => {
+        setTimeout(async () => {
+          attempts++
+          console.log(`🔍 Calendar attempt ${attempts}/${maxAttempts} to find task:`, taskData.title)
+          
+          try {
+            // ストアから最新のタスクを動的に取得
+            const { tasks: currentTasks } = useSupabaseTaskStore.getState()
+            console.log('📋 Current tasks count from store:', currentTasks.length)
+            
+            // タイトルとカテゴリでマッチング
+            const latestTask = currentTasks
+              .filter(task => 
+                task.title === taskData.title && 
+                task.category === taskData.category &&
+                task.status === 'todo' &&
+                !task.scheduledDate &&
+                !task.scheduledTime
+              )
+              .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())[0]
+            
+            console.log('🎯 Found calendar task:', latestTask?.title, latestTask?.id)
+            
+            if (latestTask) {
+              console.log('📅 Moving calendar task to timeline...', { 
+                taskId: latestTask.id, 
+                time, 
+                date: date.toDateString() 
+              })
+              
+              await moveTaskToTimeline(
+                latestTask.id,
+                date, // 選択された日付
+                time, // 選択された時間
+                user.id
+              )
+              
+              console.log('✅ Calendar task scheduled successfully!')
+              setActiveFormDate(null) // 成功したらフォームを閉じる
+            } else if (attempts < maxAttempts) {
+              console.log('⏳ Calendar task not found yet, retrying...')
+              findAndScheduleTask() // 再試行
+            } else {
+              console.warn('⚠️ Failed to find calendar task after', maxAttempts, 'attempts')
+              setActiveFormDate(null) // 失敗してもフォームを閉じる
+            }
+          } catch (error) {
+            console.error('❌ Failed to schedule calendar task:', error)
+            setActiveFormDate(null) // エラー時もフォームを閉じる
+          }
+        }, checkInterval)
+      }
+      
+      findAndScheduleTask()
+      
+    } catch (error) {
+      console.error('❌ Failed to create calendar task:', error)
+      setActiveFormDate(null)
+    }
+  }
   
   // 🔍 カレンダービューのデバッグログ
   console.log('🔍 CalendarView Debug Info:')
@@ -1069,7 +1301,7 @@ function CalendarView({ selectedDate, setSelectedDate, scheduledSlots, tasks }: 
           return (
             <Card
               key={index}
-              className={`min-h-[60px] md:min-h-[100px] p-1 md:p-2 cursor-pointer transition-colors ${
+              className={`group min-h-[60px] md:min-h-[100px] p-1 md:p-2 cursor-pointer transition-colors relative ${
                 !isCurrentMonth ? 'opacity-50' : ''
               } ${
                 isToday ? 'ring-1 md:ring-2 ring-blue-500' : ''
@@ -1079,10 +1311,25 @@ function CalendarView({ selectedDate, setSelectedDate, scheduledSlots, tasks }: 
               onClick={() => setSelectedDate(new Date(day))}
             >
               <div className="flex flex-col h-full">
-                <div className={`text-xs md:text-sm font-medium mb-0.5 md:mb-1 ${
+                <div className={`flex items-center justify-between text-xs md:text-sm font-medium mb-0.5 md:mb-1 ${
                   dayOfWeek === 0 ? 'text-red-500' : dayOfWeek === 6 ? 'text-blue-500' : ''
                 }`}>
-                  {day.getDate()}
+                  <span>{day.getDate()}</span>
+                  {/* Add Task Button */}
+                  {isCurrentMonth && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-4 w-4 p-0 opacity-0 group-hover:opacity-100 hover:opacity-100 transition-opacity"
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        setActiveFormDate(dateKey)
+                      }}
+                      title="タスクを追加"
+                    >
+                      <Plus className="w-3 h-3" />
+                    </Button>
+                  )}
                 </div>
                 <div className="flex-1 space-y-1 overflow-y-auto">
                   {/* Desktop view - show task names */}
@@ -1139,6 +1386,15 @@ function CalendarView({ selectedDate, setSelectedDate, scheduledSlots, tasks }: 
                     ))}
                   </div>
                 </div>
+                
+                {/* Task Creation Form */}
+                {activeFormDate === dateKey && (
+                  <CalendarTaskForm
+                    date={day}
+                    onSave={(taskData, time) => handleCalendarTaskCreate(taskData, time, day)}
+                    onCancel={() => setActiveFormDate(null)}
+                  />
+                )}
               </div>
             </Card>
           )
@@ -1148,13 +1404,24 @@ function CalendarView({ selectedDate, setSelectedDate, scheduledSlots, tasks }: 
       {/* Selected Date Tasks */}
       <div className="mt-4">
         <div className="mb-3">
-          <h3 className="text-sm md:text-base font-semibold text-foreground">
-            {selectedDate.toLocaleDateString('ja-JP', { 
-              month: 'long', 
-              day: 'numeric', 
-              weekday: 'long' 
-            })}のタスク
-          </h3>
+          <div className="flex items-center justify-between">
+            <h3 className="text-sm md:text-base font-semibold text-foreground">
+              {selectedDate.toLocaleDateString('ja-JP', { 
+                month: 'long', 
+                day: 'numeric', 
+                weekday: 'long' 
+              })}のタスク
+            </h3>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setActiveFormDate(selectedDate.toDateString())}
+              className="h-7 px-2 text-xs"
+            >
+              <Plus className="w-3 h-3 mr-1" />
+              タスク追加
+            </Button>
+          </div>
           <Separator className="mt-2" />
         </div>
         
@@ -1183,6 +1450,17 @@ function CalendarView({ selectedDate, setSelectedDate, scheduledSlots, tasks }: 
                 />
               ))
             }
+          </div>
+        )}
+        
+        {/* Task Creation Form for Selected Date */}
+        {activeFormDate === selectedDate.toDateString() && (
+          <div className="mt-4 relative">
+            <CalendarTaskForm
+              date={selectedDate}
+              onSave={(taskData, time) => handleCalendarTaskCreate(taskData, time, selectedDate)}
+              onCancel={() => setActiveFormDate(null)}
+            />
           </div>
         )}
       </div>
