@@ -14,7 +14,7 @@ import { useAutoScroll } from '@/lib/hooks/use-auto-scroll'
 import { useScrollLock } from '@/lib/hooks/use-scroll-lock'
 import { usePullToRefreshBlocker } from '@/lib/hooks/use-pull-to-refresh-blocker'
 import { useTaskStoreWithAuth } from '@/lib/hooks/use-task-store-with-auth'
-import { useCategoryStoreWithAuth } from '@/lib/store/use-category-store'
+import { useCategoryStoreWithAuth } from '@/lib/hooks/use-category-store-with-auth'
 import { useAuth } from '@/lib/auth/auth-context'
 import { Task } from '@/lib/types'
 import { ThemeToggle } from '@/components/theme-toggle'
@@ -60,7 +60,7 @@ export function WorkspaceNew() {
 
   const { user } = useAuth()
   const { moveTaskToTimeline, tasks, removeTimeSlot, timeSlots, reorderTasks, loading, syncing } = useTaskStoreWithAuth()
-  const { initialize: initializeCategoryStore } = useCategoryStoreWithAuth()
+  const categoryStore = useCategoryStoreWithAuth()
   
   // ドラッグ状態管理
   const [activeTask, setActiveTask] = useState<Task | null>(null)
@@ -83,12 +83,7 @@ export function WorkspaceNew() {
   // タイムラインの初回スクロール管理
   const [hasInitialTimelineScroll, setHasInitialTimelineScroll] = React.useState(false)
 
-  // カテゴリストアの初期化
-  useEffect(() => {
-    if (user?.id) {
-      initializeCategoryStore(user.id)
-    }
-  }, [user?.id, initializeCategoryStore])
+  // カテゴリストアは useCategoryStoreWithAuth で自動初期化される
 
   
   // ビュー切り替え時のスクロール位置リセット

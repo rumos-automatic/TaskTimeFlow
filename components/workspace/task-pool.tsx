@@ -14,7 +14,8 @@ import { useDroppable } from '@dnd-kit/core'
 import { CSS } from '@dnd-kit/utilities'
 import { Task, Priority, Urgency, TaskCategory, CategoryFilter } from '@/lib/types'
 import { useViewState } from '@/lib/hooks/use-view-state'
-import { useCategoryStoreWithAuth, BUILT_IN_CATEGORIES } from '@/lib/store/use-category-store'
+import { useCategoryStoreWithAuth } from '@/lib/hooks/use-category-store-with-auth'
+import { BUILT_IN_CATEGORIES } from '@/lib/store/use-category-store'
 import { CategoryManagement } from './category-management'
 
 const priorityColors: Record<Priority, string> = {
@@ -267,9 +268,6 @@ function EditTaskCard({ task, onSave, onCancel }: EditTaskCardProps) {
     estimatedTime: task.estimatedTime as number | ''
   })
 
-  // Debug: カテゴリの状態をログ出力
-  console.log('🔍 EditTaskCard allCategories:', allCategories)
-  console.log('🔍 EditTaskCard allCategories length:', allCategories.length)
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
@@ -351,14 +349,11 @@ function EditTaskCard({ task, onSave, onCancel }: EditTaskCardProps) {
             onChange={(e) => setFormData(prev => ({ ...prev, category: e.target.value as TaskCategory }))}
             className="px-2 py-1 border border-border rounded text-xs bg-background"
           >
-            {allCategories.map((category) => {
-              console.log('🏷️ EditTaskCard rendering category option:', category)
-              return (
-                <option key={category.id} value={category.id}>
-                  {category.icon} {category.name}
-                </option>
-              )
-            })}
+            {allCategories.map((category) => (
+              <option key={category.id} value={category.id}>
+                {category.icon} {category.name}
+              </option>
+            ))}
           </select>
 
           <input
@@ -409,10 +404,6 @@ function AddTaskForm() {
     estimatedTime: 30 as number | ''
   })
 
-  // Debug: カテゴリの状態をログ出力
-  console.log('🔍 AddTaskForm allCategories:', allCategories)
-  console.log('🔍 AddTaskForm allCategories length:', allCategories.length)
-  console.log('🔍 AddTaskForm current category:', formData.category)
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -514,14 +505,11 @@ function AddTaskForm() {
               onChange={(e) => setFormData(prev => ({ ...prev, category: e.target.value as TaskCategory }))}
               className="px-2 py-1 border border-border rounded text-xs bg-background"
             >
-              {allCategories.map((category) => {
-                console.log('🏷️ Rendering category option:', category)
-                return (
-                  <option key={category.id} value={category.id}>
-                    {category.icon} {category.name}
-                  </option>
-                )
-              })}
+              {allCategories.map((category) => (
+                <option key={category.id} value={category.id}>
+                  {category.icon} {category.name}
+                </option>
+              ))}
             </select>
 
             <input
@@ -586,16 +574,9 @@ export function TaskPool() {
     googleTasksSync 
   } = useCategoryStoreWithAuth()
   
-  // Debug: TaskPool カテゴリ状態
-  console.log('🔍 TaskPool allCategories:', allCategories)
-  console.log('🔍 TaskPool allCategories length:', allCategories.length)
-  console.log('🔍 TaskPool selectedCategory:', selectedCategory)
   
   const [showDebugMenu, setShowDebugMenu] = useState(false)
 
-  // Debug: カテゴリの状態をログ出力
-  console.log('🔍 TaskPool allCategories:', allCategories)
-  console.log('🔍 TaskPool selectedCategory:', selectedCategory)
 
   const { setNodeRef, isOver } = useDroppable({
     id: 'task-pool'

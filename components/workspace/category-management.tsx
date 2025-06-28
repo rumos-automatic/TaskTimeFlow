@@ -10,7 +10,8 @@ import { Label } from '@/components/ui/label'
 import { Separator } from '@/components/ui/separator'
 import { Plus, Edit2, Trash2, Check, X, Palette, Smile } from 'lucide-react'
 import { CustomCategory } from '@/lib/types'
-import { useCategoryStoreWithAuth, CATEGORY_COLORS, CATEGORY_ICONS } from '@/lib/store/use-category-store'
+import { useCategoryStoreWithAuth } from '@/lib/hooks/use-category-store-with-auth'
+import { CATEGORY_COLORS, CATEGORY_ICONS } from '@/lib/store/use-category-store'
 import { useAuth } from '@/lib/auth/auth-context'
 
 interface AddCategoryModalProps {
@@ -35,14 +36,6 @@ function AddCategoryModal({ open, onOpenChange }: AddCategoryModalProps) {
 
     setIsSubmitting(true)
     try {
-      console.log('🎯 AddCategoryModal: Starting to add category:', {
-        name: formData.name.trim(),
-        color: formData.color,
-        icon: formData.icon,
-        description: formData.description.trim() || undefined,
-        isBuiltIn: false,
-        userId: user.id
-      })
       
       await addCustomCategory({
         name: formData.name.trim(),
@@ -53,7 +46,6 @@ function AddCategoryModal({ open, onOpenChange }: AddCategoryModalProps) {
         userId: user.id
       })
       
-      console.log('✅ AddCategoryModal: Category added successfully')
       
       // Reset form
       setFormData({
