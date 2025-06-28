@@ -445,6 +445,9 @@ export function WorkspaceNew() {
 
   // モバイル版：1画面ずつ表示
   if (isMobile) {
+    // フッターの高さを定義（ボタン84px + パディング32px = 116px）
+    const MOBILE_FOOTER_HEIGHT = 116
+    
     return (
       <DndContext
         sensors={sensors}
@@ -492,7 +495,7 @@ export function WorkspaceNew() {
             )}
 
             {currentView === 'tasks' && (
-              <div ref={mobileTaskPoolRef} className="absolute inset-0 p-4 pb-24 overflow-y-auto">
+              <div ref={mobileTaskPoolRef} className={`absolute inset-0 p-4 overflow-y-auto`} style={{ paddingBottom: `${MOBILE_FOOTER_HEIGHT}px` }}>
                 <div className="flex items-center justify-between mb-6">
                   <h2 className="text-xl font-semibold text-foreground">タスクプール</h2>
                   <div className="flex items-center space-x-2">
@@ -513,7 +516,7 @@ export function WorkspaceNew() {
             )}
             
             {currentView === 'timeline' && (
-              <div ref={mobileTimelineRef} className="absolute inset-0 p-4 pb-24 overflow-y-auto">
+              <div ref={mobileTimelineRef} className={`absolute inset-0 p-4 overflow-y-auto`} style={{ paddingBottom: `${MOBILE_FOOTER_HEIGHT}px` }}>
                 <div className="flex items-center justify-between mb-6">
                   <h2 className="text-xl font-semibold text-foreground">タイムライン</h2>
                   <div className="flex items-center space-x-4">
@@ -540,7 +543,7 @@ export function WorkspaceNew() {
             )}
 
             {currentView === 'focus' && (
-              <div ref={mobileFocusRef} className="absolute inset-0 p-4 pb-24 overflow-y-auto">
+              <div ref={mobileFocusRef} className={`absolute inset-0 p-4 overflow-y-auto`} style={{ paddingBottom: `${MOBILE_FOOTER_HEIGHT}px` }}>
                 <div className="flex items-center justify-between mb-6">
                   <h2 className="text-xl font-semibold text-foreground">フォーカス</h2>
                   <div className="flex items-center space-x-2">
@@ -710,10 +713,10 @@ export function WorkspaceNew() {
           initial={{ x: -100, opacity: 0 }}
           animate={{ x: 0, opacity: 1 }}
           transition={{ duration: 0.5 }}
-          className="w-1/3 min-w-[320px] border-r border-border/40 bg-card/50 backdrop-blur-sm"
+          className="w-1/3 min-w-[320px] border-r border-border/40 bg-card/50 backdrop-blur-sm h-full overflow-hidden"
         >
-          <div className="p-6 h-full">
-            <div className="flex items-center justify-between mb-6">
+          <div className="p-6 h-full flex flex-col">
+            <div className="flex items-center justify-between mb-6 flex-shrink-0">
               <h2 className="text-xl font-semibold text-foreground">タスクプール</h2>
               <div className="flex items-center space-x-3">
                 <div className="flex items-center space-x-2">
@@ -732,7 +735,9 @@ export function WorkspaceNew() {
                 <ThemeToggle />
               </div>
             </div>
-            <TaskPool />
+            <div className="flex-1 overflow-hidden">
+              <TaskPool />
+            </div>
           </div>
         </motion.div>
 
@@ -743,9 +748,9 @@ export function WorkspaceNew() {
           initial={{ y: 100, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           transition={{ duration: 0.5, delay: 0.2 }}
-          className="flex-1 bg-background/50 backdrop-blur-sm"
+          className="flex-1 bg-background/50 backdrop-blur-sm h-full overflow-hidden"
         >
-          <div className="p-6 h-full">
+          <div className="p-6 h-full flex flex-col">
             <div className="flex items-center justify-between mb-6">
               <h2 className="text-xl font-semibold text-foreground">タイムライン</h2>
               <div className="flex items-center space-x-4">
@@ -771,10 +776,12 @@ export function WorkspaceNew() {
                 </Button>
               </div>
             </div>
-            <Timeline 
-              hasInitialScroll={hasInitialTimelineScroll} 
-              setHasInitialScroll={setHasInitialTimelineScroll}
-            />
+            <div className="flex-1 overflow-hidden">
+              <Timeline 
+                hasInitialScroll={hasInitialTimelineScroll} 
+                setHasInitialScroll={setHasInitialTimelineScroll}
+              />
+            </div>
           </div>
         </motion.div>
       </div>
