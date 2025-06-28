@@ -1333,8 +1333,9 @@ function CalendarView({ selectedDate, setSelectedDate, scheduledSlots, tasks }: 
                       className="h-4 w-4 p-0 opacity-0 group-hover:opacity-100 hover:opacity-100 transition-opacity"
                       onClick={(e) => {
                         e.stopPropagation()
+                        setSelectedDate(new Date(day))
                         setActiveFormDate(dateKey)
-                        setFormLocation('cell')
+                        setFormLocation('section')
                       }}
                       title="タスクを追加"
                     >
@@ -1398,17 +1399,6 @@ function CalendarView({ selectedDate, setSelectedDate, scheduledSlots, tasks }: 
                   </div>
                 </div>
                 
-                {/* Task Creation Form */}
-                {activeFormDate === dateKey && formLocation === 'cell' && (
-                  <CalendarTaskForm
-                    date={day}
-                    onSave={(taskData, time) => handleCalendarTaskCreate(taskData, time, day)}
-                    onCancel={() => {
-                      setActiveFormDate(null)
-                      setFormLocation(null)
-                    }}
-                  />
-                )}
               </div>
             </Card>
           )
