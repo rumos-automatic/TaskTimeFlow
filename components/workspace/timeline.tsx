@@ -483,6 +483,8 @@ function DroppableTimeSlot({ time, hour, minute, slotIndex, isBusinessHour, isHo
     if (!user) return
     
     try {
+      console.log('🚀 Creating task for timeline slot:', { time, taskData })
+      
       // タスクを作成（タスクプールに追加）
       await addTask({
         title: taskData.title,
@@ -493,33 +495,68 @@ function DroppableTimeSlot({ time, hour, minute, slotIndex, isBusinessHour, isHo
         status: 'todo'
       }, user.id)
       
-      // 少し待ってからタスク一覧を取得して最新のタスクを見つける
-      setTimeout(async () => {
-        try {
-          // 最新のタスクを探す（タイトルで検索）
-          const allTasks = tasks
-          const latestTask = allTasks.find(task => 
-            task.title === taskData.title && 
-            task.status === 'todo' &&
-            !task.scheduledDate
-          )
-          
-          if (latestTask) {
-            await moveTaskToTimeline(
-              latestTask.id,
-              new Date(), // 今日の日付
-              time, // 選択された時間
-              taskData.estimatedTime
-            )
-          }
-        } catch (error) {
-          console.error('Failed to schedule task:', error)
-        }
-      }, 100) // 100ms待機
+      console.log('✅ Task created, waiting for updates...')
       
+      // 短い間隔で数回チェックして最新のタスクを見つける
+      let attempts = 0
+      const maxAttempts = 10
+      const checkInterval = 200
+      
+      const findAndScheduleTask = () => {
+        setTimeout(async () => {
+          attempts++
+          console.log(`🔍 Attempt ${attempts}/${maxAttempts} to find task:`, taskData.title)
+          
+          try {
+            // 最新のタスクを探す（より厳密な検索）
+            const allTasks = tasks
+            console.log('📋 All tasks count:', allTasks.length)
+            
+            // タイトルとカテゴリでマッチング（より確実に特定）
+            const latestTask = allTasks
+              .filter(task => 
+                task.title === taskData.title && 
+                task.category === taskData.category &&
+                task.status === 'todo' &&
+                !task.scheduledDate &&
+                !task.scheduledTime
+              )
+              .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())[0] // 最新のものを取得
+            
+            console.log('🎯 Found matching task:', latestTask?.title, latestTask?.id)
+            
+            if (latestTask) {
+              console.log('📅 Moving task to timeline...', { 
+                taskId: latestTask.id, 
+                time, 
+                date: new Date().toDateString() 
+              })
+              
+              await moveTaskToTimeline(
+                latestTask.id,
+                new Date(), // 今日の日付
+                time, // 選択された時間
+                user.id // userIdを追加
+              )
+              
+              console.log('✅ Task scheduled successfully!')
+            } else if (attempts < maxAttempts) {
+              console.log('⏳ Task not found yet, retrying...')
+              findAndScheduleTask() // 再試行
+            } else {
+              console.warn('⚠️ Failed to find task after', maxAttempts, 'attempts')
+            }
+          } catch (error) {
+            console.error('❌ Failed to schedule task:', error)
+          }
+        }, checkInterval)
+      }
+      
+      findAndScheduleTask()
       setShowAddForm(false)
+      
     } catch (error) {
-      console.error('Failed to create task:', error)
+      console.error('❌ Failed to create task:', error)
     }
   }
 
@@ -565,15 +602,21 @@ function DroppableTimeSlot({ time, hour, minute, slotIndex, isBusinessHour, isHo
               ? 'border-blue-400 bg-blue-50/50 dark:bg-blue-950/20' 
               : 'border-transparent hover:border-border/40'
           }`}>
-            <div className={`flex items-center justify-center h-full text-xs transition-all ${
-              isOver 
-                ? 'text-blue-600 opacity-100' 
-                : 'text-muted-foreground opacity-0 hover:opacity-100'
-            }`}>
-              {isOver ? 'ここにドロップ' : 'タスクをドロップ'}
-            </div>
+            {/* Hover text - only show when not hovered and not being dragged over */}
+            {!isHovered && !isOver && (
+              <div className="flex items-center justify-center h-full text-xs text-muted-foreground opacity-0 hover:opacity-60 transition-all">
+                タスクをドロップ
+              </div>
+            )}
             
-            {/* Add Task Button */}
+            {/* Drag over text */}
+            {isOver && (
+              <div className="flex items-center justify-center h-full text-xs text-blue-600 opacity-100 transition-all">
+                ここにドロップ
+              </div>
+            )}
+            
+            {/* Add Task Button - only show when hovered and not being dragged over */}
             {isHovered && !isOver && (
               <div className="absolute inset-0 flex items-center justify-center">
                 <Button
