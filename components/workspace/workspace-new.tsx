@@ -59,7 +59,7 @@ export function WorkspaceNew() {
   } = useViewState()
 
   const { user } = useAuth()
-  const { moveTaskToTimeline, tasks, removeTimeSlot, timeSlots, reorderTasks, loading, syncing } = useTaskStoreWithAuth()
+  const { moveTaskToTimeline, tasks, removeTimeSlot, timeSlots, reorderTasks } = useTaskStoreWithAuth()
   const categoryStore = useCategoryStoreWithAuth()
   
   // ドラッグ状態管理
@@ -498,18 +498,6 @@ export function WorkspaceNew() {
               <div ref={mobileTaskPoolRef} className="absolute top-0 left-0 right-0 p-4 overflow-y-auto" style={{ bottom: `${MOBILE_FOOTER_HEIGHT}px` }}>
                 <div className="flex items-center justify-between mb-6">
                   <h2 className="text-xl font-semibold text-foreground">タスクプール</h2>
-                  <div className="flex items-center space-x-2">
-                    <div className={`w-2 h-2 rounded-full ${
-                      syncing 
-                        ? 'bg-yellow-500 animate-pulse' 
-                        : loading 
-                          ? 'bg-blue-500 animate-pulse'
-                          : 'bg-green-500'
-                    }`} />
-                    <span className="text-xs text-muted-foreground">
-                      {syncing ? '同期中...' : loading ? '読み込み中...' : '同期済み'}
-                    </span>
-                  </div>
                 </div>
                 <TaskPool />
               </div>
@@ -719,18 +707,6 @@ export function WorkspaceNew() {
             <div className="flex items-center justify-between mb-6 flex-shrink-0">
               <h2 className="text-xl font-semibold text-foreground">タスクプール</h2>
               <div className="flex items-center space-x-3">
-                <div className="flex items-center space-x-2">
-                  <div className={`w-2 h-2 rounded-full ${
-                    syncing 
-                      ? 'bg-yellow-500 animate-pulse' 
-                      : loading 
-                        ? 'bg-blue-500 animate-pulse'
-                        : 'bg-green-500'
-                  }`} />
-                  <span className="text-xs text-muted-foreground">
-                    {syncing ? '同期中...' : loading ? '読み込み中...' : '同期済み'}
-                  </span>
-                </div>
                 <UserMenu />
                 <ThemeToggle />
               </div>
