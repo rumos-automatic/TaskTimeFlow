@@ -445,8 +445,8 @@ export function WorkspaceNew() {
 
   // モバイル版：1画面ずつ表示
   if (isMobile) {
-    // フッターの高さを定義（フッターに隠れないよう十分な余裕を確保）
-    const MOBILE_FOOTER_HEIGHT = 130
+    // フッターの高さを定義（実際のフッター高さに合わせて最適化）
+    const MOBILE_FOOTER_HEIGHT = 100
     
     return (
       <DndContext
@@ -547,7 +547,7 @@ export function WorkspaceNew() {
         {/* 固定フッターナビゲーション */}
         <div 
           ref={footerRef}
-          className="fixed bottom-0 left-0 right-0 z-50 bg-card/95 backdrop-blur-md border-t border-border/40 px-4 py-2 pb-4"
+          className="fixed bottom-0 left-0 right-0 z-50 bg-card/95 backdrop-blur-md border-t border-border/40 px-4 pt-2 pb-3"
         >
           <div className="flex items-center justify-around max-w-sm mx-auto">
             <button
@@ -597,7 +597,7 @@ export function WorkspaceNew() {
           </div>
 
           {/* スワイプインジケーター */}
-          <div className="flex justify-center pt-2 space-x-2">
+          <div className="flex justify-center pt-1 space-x-2">
             {(['tasks', 'timeline', 'focus'] as const).map((view) => (
               <div
                 key={view}
