@@ -6,6 +6,7 @@ import { useSupabaseCategoryStore } from '@/lib/store/use-supabase-category-stor
 import { useCategoryStore as useLocalCategoryStore } from '@/lib/store/use-category-store'
 import { CustomCategory, BuiltInCategoryConfig, CategoryFilter } from '@/lib/types'
 import { BUILT_IN_CATEGORIES } from '@/lib/store/use-category-store'
+import { supabase } from '@/lib/supabase/client'
 
 export function useCategoryStoreWithAuth() {
   const { user, loading: authLoading } = useAuth()
@@ -66,14 +67,24 @@ export function useCategoryStoreWithAuth() {
       console.log('📤 Local custom categories to migrate:', localCustomCategories)
 
       if (localCustomCategories.length > 0) {
-        // 既存のSupabaseデータを確認
-        const existingSupabaseCategories = supabaseStore.customCategories
-        console.log('📥 Existing Supabase categories:', existingSupabaseCategories)
+        // Supabaseから最新データを直接取得して重複チェック
+        const { data: existingData, error } = await supabase
+          .from('custom_categories')
+          .select('*')
+          .eq('user_id', user.id)
 
-        // ローカルデータをSupabaseに移行（重複チェック）
+        if (error) {
+          console.error('❌ Failed to fetch existing categories:', error)
+          throw error
+        }
+
+        const existingSupabaseCategories = existingData || []
+        console.log('📥 Existing Supabase categories from DB:', existingSupabaseCategories)
+
+        // ローカルデータをSupabaseに移行（厳密な重複チェック）
         for (const localCategory of localCustomCategories) {
           const exists = existingSupabaseCategories.some(
-            (existing) => existing.name === localCategory.name && existing.userId === user.id
+            (existing) => existing.name.toLowerCase() === localCategory.name.toLowerCase()
           )
 
           if (!exists) {
@@ -234,6 +245,53 @@ export function useCategoryStoreWithAuth() {
       }
     },
 
+    // 重複カテゴリを削除する機能
+    removeDuplicateCategories: async () => {
+      if (!user) return
+      
+      console.log('🧹 Removing duplicate categories...')
+      
+      try {
+        // Supabaseから全カテゴリを取得
+        const { data: allCategories, error } = await supabase
+          .from('custom_categories')
+          .select('*')
+          .eq('user_id', user.id)
+          .order('created_at', { ascending: true })
+        
+        if (error) {
+          console.error('❌ Failed to fetch categories:', error)
+          return
+        }
+        
+        if (!allCategories) return
+        
+        const seen = new Set<string>()
+        const duplicates: string[] = []
+        
+        // 重複をチェック（名前の大文字小文字を無視）
+        for (const category of allCategories) {
+          const lowerName = category.name.toLowerCase()
+          if (seen.has(lowerName)) {
+            duplicates.push(category.id)
+            console.log('🗑️ Found duplicate category:', category.name, category.id)
+          } else {
+            seen.add(lowerName)
+          }
+        }
+        
+        // 重複を削除
+        for (const duplicateId of duplicates) {
+          await supabaseStore.deleteCustomCategory(duplicateId)
+        }
+        
+        console.log(`✅ Removed ${duplicates.length} duplicate categories`)
+        
+      } catch (error) {
+        console.error('❌ Failed to remove duplicates:', error)
+      }
+    },
+
     // Debug helper to fix current state
     debugAndFix: async () => {
       if (!user) return
@@ -246,6 +304,37 @@ export function useCategoryStoreWithAuth() {
         customCategories: supabaseStore.customCategories.length,
         loading: supabaseStore.loading
       })
+      
+      // まず重複を削除
+      try {
+        const { data: allCategories, error } = await supabase
+          .from('custom_categories')
+          .select('*')
+          .eq('user_id', user.id)
+          .order('created_at', { ascending: true })
+        
+        if (!error && allCategories) {
+          const seen = new Set<string>()
+          const duplicates: string[] = []
+          
+          for (const category of allCategories) {
+            const lowerName = category.name.toLowerCase()
+            if (seen.has(lowerName)) {
+              duplicates.push(category.id)
+            } else {
+              seen.add(lowerName)
+            }
+          }
+          
+          for (const duplicateId of duplicates) {
+            await supabaseStore.deleteCustomCategory(duplicateId)
+          }
+          
+          console.log(`✅ Removed ${duplicates.length} duplicate categories`)
+        }
+      } catch (error) {
+        console.error('❌ Failed to remove duplicates:', error)
+      }
       
       // Reset migration status and re-initialize
       setMigrationStatus(user.id, false)
