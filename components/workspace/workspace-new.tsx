@@ -220,15 +220,14 @@ export function WorkspaceNew() {
     // スケジュール済みタスクの場合 (scheduled-taskId-slotId format)
     if (!task && activeId.startsWith('scheduled-')) {
       // scheduled-{UUID}-{UUID} の形式からタスクIDを正しく抽出
-      const parts = activeId.split('-')
-      if (parts.length >= 6) {
-        // UUIDは通常5つの部分（8-4-4-4-12）に分かれる
-        // scheduled-[uuid-5parts]-[slotId-4parts] の構造を想定
-        // タスクIDの長さを動的に決定：最後の4つがスロットID、残りがタスクID
-        const taskIdParts = parts.slice(1, -4) // 最後の4つを除く全て
-        const taskId = taskIdParts.join('-')
+      // UUIDは36文字固定なので、scheduled- を除いて前から36文字がtaskId
+      const withoutPrefix = activeId.substring(10) // 'scheduled-' を除去
+      if (withoutPrefix.length >= 73) { // 36(taskId) + 1(-) + 36(slotId) = 73
+        const taskId = withoutPrefix.substring(0, 36)
+        const slotId = withoutPrefix.substring(37) // 37文字目から最後まで
         task = tasks.find(t => t.id === taskId)
-        console.log('Extracted task ID from scheduled:', taskId, 'from parts:', parts)
+        console.log('Extracted task ID from scheduled:', taskId, 'slot ID:', slotId)
+        console.log('Original activeId:', activeId)
       }
     }
     
@@ -282,21 +281,15 @@ export function WorkspaceNew() {
       // 3. タイムライン → 別のタイムスロット (スケジュール済みタスクの移動)
       else if (overId && overId.startsWith('timeline-slot-') && activeId.startsWith('scheduled-') && user) {
         // scheduled-{UUID}-{UUID} の形式からタスクIDとスロットIDを正しく抽出
-        const parts = activeId.split('-')
-        if (parts.length >= 6) {
-          // UUIDは通常5つの部分（8-4-4-4-12）に分かれる
-          // 最後の4つがスロットID、残りがタスクID
-          const taskIdParts = parts.slice(1, -4) // 最後の4つを除く全て
-          const slotIdParts = parts.slice(-4) // 最後の4つ
-          const taskId = taskIdParts.join('-')
-          const slotId = slotIdParts.join('-')
+        const withoutPrefix = activeId.substring(10) // 'scheduled-' を除去
+        if (withoutPrefix.length >= 73) { // 36(taskId) + 1(-) + 36(slotId) = 73
+          const taskId = withoutPrefix.substring(0, 36)
+          const slotId = withoutPrefix.substring(37) // 37文字目から最後まで
           const timeString = overId.replace('timeline-slot-', '')
           
           console.log('📅🔄 Parsing scheduled task ID:', { 
             activeId, 
-            parts, 
-            taskIdParts,
-            slotIdParts,
+            withoutPrefix,
             extractedTaskId: taskId, 
             extractedSlotId: slotId 
           })
@@ -324,10 +317,10 @@ export function WorkspaceNew() {
       // 4. タイムライン → タスクプール (スケジュール削除)
       else if (overId === 'task-pool' && activeId.startsWith('scheduled-')) {
         // scheduled-{UUID}-{UUID} の形式からスロットIDを正しく抽出
-        const parts = activeId.split('-')
-        if (parts.length >= 6) {
-          const slotId = parts.slice(-4).join('-') // 最後の4つがスロットID
-          console.log('🗑️ Removing task from timeline:', { slotId, activeId, parts })
+        const withoutPrefix = activeId.substring(10) // 'scheduled-' を除去
+        if (withoutPrefix.length >= 73) { // 36(taskId) + 1(-) + 36(slotId) = 73
+          const slotId = withoutPrefix.substring(37) // 37文字目から最後まで
+          console.log('🗑️ Removing task from timeline:', { slotId, activeId, withoutPrefix })
           removeTimeSlot(slotId)
           console.log('✅ Normal: Removed task from timeline:', slotId)
         } else {
@@ -361,10 +354,10 @@ export function WorkspaceNew() {
       // タイムラインからタスクプールへのクロスビュードラッグ
       else if (dragStartView === 'timeline' && currentView === 'tasks' && activeId.startsWith('scheduled-')) {
         // scheduled-{UUID}-{UUID} の形式からスロットIDを正しく抽出
-        const parts = activeId.split('-')
-        if (parts.length >= 6) {
-          const slotId = parts.slice(-4).join('-') // 最後の4つがスロットID
-          console.log('📱🗑️ Cross-view removing task from timeline:', { slotId, activeId, parts })
+        const withoutPrefix = activeId.substring(10) // 'scheduled-' を除去
+        if (withoutPrefix.length >= 73) { // 36(taskId) + 1(-) + 36(slotId) = 73
+          const slotId = withoutPrefix.substring(37) // 37文字目から最後まで
+          console.log('📱🗑️ Cross-view removing task from timeline:', { slotId, activeId, withoutPrefix })
           removeTimeSlot(slotId)
           console.log('✅ Cross-view: Removed task from timeline:', slotId)
         } else {
