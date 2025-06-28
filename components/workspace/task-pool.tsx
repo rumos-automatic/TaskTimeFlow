@@ -623,7 +623,7 @@ export function TaskPool() {
   return (
     <div 
       ref={setNodeRef}
-      className={`space-y-4 h-full flex flex-col transition-colors ${
+      className={`space-y-3 h-full flex flex-col transition-colors pb-0 ${
         isOver ? 'bg-muted/20' : ''
       }`}
     >
@@ -830,7 +830,7 @@ export function TaskPool() {
       <AddTaskForm defaultCategory={selectedCategory} />
 
       {/* Task List */}
-      <div className="flex-1 overflow-y-auto space-y-3">
+      <div className="flex-1 overflow-y-auto space-y-3 mb-0">
         <SortableContext items={filteredTasks.map(task => task.id)} strategy={verticalListSortingStrategy}>
           {filteredTasks.map((task) => (
             <DraggableTaskCard 
@@ -848,7 +848,7 @@ export function TaskPool() {
 
         {/* Completed Tasks Section */}
         {filteredCompletedTasks.length > 0 && (
-          <div className="pt-4">
+          <div className="pt-4 mb-0">
             <Separator />
             
             {/* Collapsible Header */}
@@ -912,7 +912,6 @@ export function TaskPool() {
           </div>
         )}
       </div>
-
     </div>
   )
 }
