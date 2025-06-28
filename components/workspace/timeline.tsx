@@ -461,15 +461,18 @@ interface DroppableTimeSlotProps {
   scheduledTasks: any[]
   activeSlot: string | null
   setActiveSlot: (slot: string | null) => void
+  activeFormSlot: string | null
+  setActiveFormSlot: (slot: string | null) => void
 }
 
-function DroppableTimeSlot({ time, hour, minute, slotIndex, isBusinessHour, isHourStart, isHalfHour, currentHour, currentMinute, scheduledTasks, activeSlot, setActiveSlot }: DroppableTimeSlotProps) {
+function DroppableTimeSlot({ time, hour, minute, slotIndex, isBusinessHour, isHourStart, isHalfHour, currentHour, currentMinute, scheduledTasks, activeSlot, setActiveSlot, activeFormSlot, setActiveFormSlot }: DroppableTimeSlotProps) {
   const { user } = useAuth()
   const { addTask, moveTaskToTimeline, tasks } = useTaskStoreWithAuth()
-  const [showAddForm, setShowAddForm] = useState(false)
   
   // このスロットがアクティブかどうかを判定
   const isActive = activeSlot === time
+  // このスロットのフォームが表示されているかどうかを判定
+  const showAddForm = activeFormSlot === time
   
   const { setNodeRef, isOver } = useDroppable({
     id: `timeline-slot-${time}`
@@ -545,24 +548,27 @@ function DroppableTimeSlot({ time, hour, minute, slotIndex, isBusinessHour, isHo
               )
               
               console.log('✅ Task scheduled successfully!')
-              setActiveSlot(null) // 成功したらアクティブスロットをクリア
+              setActiveFormSlot(null) // 成功したらアクティブフォームスロットをクリア
+              setActiveSlot(null) // アクティブスロットもクリア
             } else if (attempts < maxAttempts) {
               console.log('⏳ Task not found yet, retrying...')
               findAndScheduleTask() // 再試行
             } else {
               console.warn('⚠️ Failed to find task after', maxAttempts, 'attempts')
-              setActiveSlot(null) // 失敗してもアクティブスロットをクリア
+              setActiveFormSlot(null) // 失敗してもアクティブフォームスロットをクリア
+              setActiveSlot(null) // アクティブスロットもクリア
             }
           } catch (error) {
             console.error('❌ Failed to schedule task:', error)
+            setActiveFormSlot(null) // エラー時もアクティブフォームスロットをクリア
             setActiveSlot(null) // エラー時もアクティブスロットをクリア
           }
         }, checkInterval)
       }
       
       findAndScheduleTask()
-      setShowAddForm(false)
-      setActiveSlot(null) // フォーム終了時にアクティブスロットをクリア
+      setActiveFormSlot(null) // フォーム終了時にアクティブフォームスロットをクリア
+      setActiveSlot(null) // アクティブスロットもクリア
       
     } catch (error) {
       console.error('❌ Failed to create task:', error)
@@ -633,7 +639,18 @@ function DroppableTimeSlot({ time, hour, minute, slotIndex, isBusinessHour, isHo
                 <Button
                   variant="ghost"
                   size="sm"
-                  onClick={() => setShowAddForm(true)}
+                  onClick={(e) => {
+                    e.preventDefault()
+                    e.stopPropagation()
+                    console.log('🔘 Plus button clicked for slot:', time)
+                    setActiveFormSlot(time)
+                  }}
+                  onTouchEnd={(e) => {
+                    e.preventDefault()
+                    e.stopPropagation()
+                    console.log('👆 Plus button touched for slot:', time)
+                    setActiveFormSlot(time)
+                  }}
                   className="h-6 w-6 p-0 rounded-full bg-primary/10 hover:bg-primary/20 text-primary opacity-70 hover:opacity-100 transition-all"
                   title="タスクを追加"
                 >
@@ -652,7 +669,7 @@ function DroppableTimeSlot({ time, hour, minute, slotIndex, isBusinessHour, isHo
             minute={minute}
             onSave={handleAddTask}
             onCancel={() => {
-              setShowAddForm(false)
+              setActiveFormSlot(null)
               setActiveSlot(null)
             }}
           />
@@ -683,6 +700,8 @@ export function Timeline({
   
   // アクティブなスロット管理（プラスボタンの重複防止）
   const [activeSlot, setActiveSlot] = useState<string | null>(null)
+  // アクティブなフォームスロット管理（フォーム重複防止）
+  const [activeFormSlot, setActiveFormSlot] = useState<string | null>(null)
   
   // 🔍 タイムライン表示のデバッグログ
   console.log('🔍 Timeline Debug Info:')
@@ -928,6 +947,8 @@ export function Timeline({
                 scheduledTasks={scheduledTasks}
                 activeSlot={activeSlot}
                 setActiveSlot={setActiveSlot}
+                activeFormSlot={activeFormSlot}
+                setActiveFormSlot={setActiveFormSlot}
               />
             ))}
           </div>
