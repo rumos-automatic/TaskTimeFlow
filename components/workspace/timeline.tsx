@@ -1138,6 +1138,7 @@ function CalendarView({ selectedDate, setSelectedDate, scheduledSlots, tasks }: 
   
   // カレンダービューでのタスク作成管理
   const [activeFormDate, setActiveFormDate] = useState<string | null>(null)
+  const [formLocation, setFormLocation] = useState<'cell' | 'section' | null>(null)
 
   // カレンダーからのタスク作成ハンドラー
   const handleCalendarTaskCreate = async (taskData: any, time: string, date: Date) => {
@@ -1202,16 +1203,19 @@ function CalendarView({ selectedDate, setSelectedDate, scheduledSlots, tasks }: 
               
               console.log('✅ Calendar task scheduled successfully!')
               setActiveFormDate(null) // 成功したらフォームを閉じる
+              setFormLocation(null)
             } else if (attempts < maxAttempts) {
               console.log('⏳ Calendar task not found yet, retrying...')
               findAndScheduleTask() // 再試行
             } else {
               console.warn('⚠️ Failed to find calendar task after', maxAttempts, 'attempts')
               setActiveFormDate(null) // 失敗してもフォームを閉じる
+              setFormLocation(null)
             }
           } catch (error) {
             console.error('❌ Failed to schedule calendar task:', error)
             setActiveFormDate(null) // エラー時もフォームを閉じる
+            setFormLocation(null)
           }
         }, checkInterval)
       }
@@ -1221,6 +1225,7 @@ function CalendarView({ selectedDate, setSelectedDate, scheduledSlots, tasks }: 
     } catch (error) {
       console.error('❌ Failed to create calendar task:', error)
       setActiveFormDate(null)
+      setFormLocation(null)
     }
   }
   
@@ -1329,6 +1334,7 @@ function CalendarView({ selectedDate, setSelectedDate, scheduledSlots, tasks }: 
                       onClick={(e) => {
                         e.stopPropagation()
                         setActiveFormDate(dateKey)
+                        setFormLocation('cell')
                       }}
                       title="タスクを追加"
                     >
@@ -1393,11 +1399,14 @@ function CalendarView({ selectedDate, setSelectedDate, scheduledSlots, tasks }: 
                 </div>
                 
                 {/* Task Creation Form */}
-                {activeFormDate === dateKey && (
+                {activeFormDate === dateKey && formLocation === 'cell' && (
                   <CalendarTaskForm
                     date={day}
                     onSave={(taskData, time) => handleCalendarTaskCreate(taskData, time, day)}
-                    onCancel={() => setActiveFormDate(null)}
+                    onCancel={() => {
+                      setActiveFormDate(null)
+                      setFormLocation(null)
+                    }}
                   />
                 )}
               </div>
@@ -1420,7 +1429,10 @@ function CalendarView({ selectedDate, setSelectedDate, scheduledSlots, tasks }: 
             <Button
               variant="outline"
               size="sm"
-              onClick={() => setActiveFormDate(selectedDate.toDateString())}
+              onClick={() => {
+                setActiveFormDate(selectedDate.toDateString())
+                setFormLocation('section')
+              }}
               className="h-7 px-2 text-xs"
             >
               <Plus className="w-3 h-3 mr-1" />
@@ -1459,12 +1471,15 @@ function CalendarView({ selectedDate, setSelectedDate, scheduledSlots, tasks }: 
         )}
         
         {/* Task Creation Form for Selected Date */}
-        {activeFormDate === selectedDate.toDateString() && (
+        {activeFormDate === selectedDate.toDateString() && formLocation === 'section' && (
           <div className="mt-4 relative">
             <CalendarTaskForm
               date={selectedDate}
               onSave={(taskData, time) => handleCalendarTaskCreate(taskData, time, selectedDate)}
-              onCancel={() => setActiveFormDate(null)}
+              onCancel={() => {
+                setActiveFormDate(null)
+                setFormLocation(null)
+              }}
             />
           </div>
         )}
