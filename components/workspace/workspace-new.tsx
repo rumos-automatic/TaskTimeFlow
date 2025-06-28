@@ -222,11 +222,13 @@ export function WorkspaceNew() {
       // scheduled-{UUID}-{UUID} の形式からタスクIDを正しく抽出
       const parts = activeId.split('-')
       if (parts.length >= 6) {
-        // scheduled-[uuid-part1]-[uuid-part2]-[uuid-part3]-[uuid-part4]-[slotId...]
-        // タスクIDは parts[1] から parts[4] まで（UUIDの4つの部分）
-        const taskId = parts.slice(1, 5).join('-')
+        // UUIDは通常5つの部分（8-4-4-4-12）に分かれる
+        // scheduled-[uuid-5parts]-[slotId-4parts] の構造を想定
+        // タスクIDの長さを動的に決定：最後の4つがスロットID、残りがタスクID
+        const taskIdParts = parts.slice(1, -4) // 最後の4つを除く全て
+        const taskId = taskIdParts.join('-')
         task = tasks.find(t => t.id === taskId)
-        console.log('Extracted task ID from scheduled:', taskId)
+        console.log('Extracted task ID from scheduled:', taskId, 'from parts:', parts)
       }
     }
     
@@ -282,13 +284,19 @@ export function WorkspaceNew() {
         // scheduled-{UUID}-{UUID} の形式からタスクIDとスロットIDを正しく抽出
         const parts = activeId.split('-')
         if (parts.length >= 6) {
-          const taskId = parts.slice(1, 5).join('-') // タスクID (UUID)
-          const slotId = parts.slice(5).join('-') // スロットID (残りの部分)
+          // UUIDは通常5つの部分（8-4-4-4-12）に分かれる
+          // 最後の4つがスロットID、残りがタスクID
+          const taskIdParts = parts.slice(1, -4) // 最後の4つを除く全て
+          const slotIdParts = parts.slice(-4) // 最後の4つ
+          const taskId = taskIdParts.join('-')
+          const slotId = slotIdParts.join('-')
           const timeString = overId.replace('timeline-slot-', '')
           
           console.log('📅🔄 Parsing scheduled task ID:', { 
             activeId, 
             parts, 
+            taskIdParts,
+            slotIdParts,
             extractedTaskId: taskId, 
             extractedSlotId: slotId 
           })
@@ -318,7 +326,7 @@ export function WorkspaceNew() {
         // scheduled-{UUID}-{UUID} の形式からスロットIDを正しく抽出
         const parts = activeId.split('-')
         if (parts.length >= 6) {
-          const slotId = parts.slice(5).join('-') // スロットID (残りの部分)
+          const slotId = parts.slice(-4).join('-') // 最後の4つがスロットID
           console.log('🗑️ Removing task from timeline:', { slotId, activeId, parts })
           removeTimeSlot(slotId)
           console.log('✅ Normal: Removed task from timeline:', slotId)
@@ -355,7 +363,7 @@ export function WorkspaceNew() {
         // scheduled-{UUID}-{UUID} の形式からスロットIDを正しく抽出
         const parts = activeId.split('-')
         if (parts.length >= 6) {
-          const slotId = parts.slice(5).join('-') // スロットID (残りの部分)
+          const slotId = parts.slice(-4).join('-') // 最後の4つがスロットID
           console.log('📱🗑️ Cross-view removing task from timeline:', { slotId, activeId, parts })
           removeTimeSlot(slotId)
           console.log('✅ Cross-view: Removed task from timeline:', slotId)
