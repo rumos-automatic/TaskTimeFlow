@@ -6,8 +6,7 @@ import { Button } from '@/components/ui/button'
 import { RichTextEditor } from '@/components/ui/rich-text-editor'
 import { Task, Priority, Urgency, TaskCategory } from '@/lib/types'
 import { useCategoryStoreWithAuth } from '@/lib/hooks/use-category-store-with-auth'
-import { Edit2, Save, X, Clock, AlertCircle, RefreshCw } from 'lucide-react'
-import { getRecurrenceDescription } from '@/lib/utils/recurring-tasks'
+import { Edit2, Save, X, Clock, AlertCircle } from 'lucide-react'
 
 interface TaskDetailModalProps {
   task: Task | null
@@ -157,12 +156,6 @@ export function TaskDetailModal({ task, isOpen, onClose, onSave }: TaskDetailMod
                   <Clock className="w-4 h-4" />
                   {formatTime(task.estimatedTime)}
                 </div>
-                {task.isRecurring && (
-                  <div className="flex items-center gap-1 px-3 py-1 rounded-full text-sm bg-purple-100 text-purple-700">
-                    <RefreshCw className="w-4 h-4" />
-                    {getRecurrenceDescription(task)}
-                  </div>
-                )}
               </>
             )}
           </div>

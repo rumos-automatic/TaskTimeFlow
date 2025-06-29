@@ -4,7 +4,7 @@ import { useState, useEffect, useRef, useCallback } from 'react'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
-import { Calendar, ChevronLeft, ChevronRight, Clock, Edit2, Trash2, X, Check, RotateCcw, CalendarDays, Plus, Copy, RefreshCw } from 'lucide-react'
+import { Calendar, ChevronLeft, ChevronRight, Clock, Edit2, Trash2, X, Check, RotateCcw, CalendarDays, Plus, Copy } from 'lucide-react'
 import { useDroppable } from '@dnd-kit/core'
 import { useSortable, SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
@@ -14,7 +14,6 @@ import { useAuth } from '@/lib/auth/auth-context'
 import { useViewState } from '@/lib/hooks/use-view-state'
 import { useCategoryStoreWithAuth } from '@/lib/hooks/use-category-store-with-auth'
 import { Task, Priority, Urgency, TaskCategory } from '@/lib/types'
-import { getRecurrenceDescription } from '@/lib/utils/recurring-tasks'
 
 const timeSlots = Array.from({ length: 96 }, (_, i) => {
   const hour = Math.floor(i / 4)
@@ -174,13 +173,6 @@ function ScheduledTaskCard({ task, slotId, slotData }: ScheduledTaskCardProps) {
                 )}
               </div>
             </div>
-            {/* 繰り返しアイコン */}
-            {task.isRecurring && (
-              <div className="flex items-center space-x-1 text-purple-600 text-xs mt-1" title={getRecurrenceDescription(task)}>
-                <RefreshCw className="w-3 h-3" />
-                <span>{getRecurrenceDescription(task)}</span>
-              </div>
-            )}
           </div>
           
           {/* アクションボタン */}
@@ -858,10 +850,11 @@ export function Timeline({
     <div className="space-y-4 h-full flex flex-col">
       {/* View Controls */}
       <div className="flex items-center justify-between">
-        <div className="flex items-center space-x-1 md:space-x-2">
+        <div className="flex items-center space-x-0.5 md:space-x-2">
           <Button 
             variant="outline" 
             size="sm"
+            className="p-1 md:px-3 md:py-1.5"
             onClick={() => {
               const newDate = new Date(selectedDate)
               newDate.setMonth(newDate.getMonth() - 1)
@@ -869,12 +862,13 @@ export function Timeline({
             }}
             title="前の月"
           >
-            <ChevronLeft className="w-4 h-4" />
-            <ChevronLeft className="w-4 h-4 -ml-2" />
+            <ChevronLeft className="w-3 h-3 md:w-4 md:h-4" />
+            <ChevronLeft className="w-3 h-3 md:w-4 md:h-4 -ml-1.5 md:-ml-2" />
           </Button>
           <Button 
             variant="outline" 
             size="sm"
+            className="p-1 md:px-3 md:py-1.5"
             onClick={() => {
               const newDate = new Date(selectedDate)
               newDate.setDate(newDate.getDate() - 1)
@@ -882,10 +876,10 @@ export function Timeline({
             }}
             title="前の日"
           >
-            <ChevronLeft className="w-4 h-4" />
+            <ChevronLeft className="w-3 h-3 md:w-4 md:h-4" />
           </Button>
-          <div className="min-w-[140px] md:min-w-[160px] text-center">
-            <h3 className="font-medium text-sm md:text-base">
+          <div className="min-w-[120px] md:min-w-[160px] text-center px-1 md:px-2">
+            <h3 className="font-medium text-xs md:text-base">
               {selectedDate.toDateString() === new Date().toDateString() 
                 ? '本日' 
                 : ''}
@@ -899,6 +893,7 @@ export function Timeline({
           <Button 
             variant="outline" 
             size="sm"
+            className="p-1 md:px-3 md:py-1.5"
             onClick={() => {
               const newDate = new Date(selectedDate)
               newDate.setDate(newDate.getDate() + 1)
@@ -906,11 +901,12 @@ export function Timeline({
             }}
             title="次の日"
           >
-            <ChevronRight className="w-4 h-4" />
+            <ChevronRight className="w-3 h-3 md:w-4 md:h-4" />
           </Button>
           <Button 
             variant="outline" 
             size="sm"
+            className="p-1 md:px-3 md:py-1.5"
             onClick={() => {
               const newDate = new Date(selectedDate)
               newDate.setMonth(newDate.getMonth() + 1)
@@ -918,8 +914,8 @@ export function Timeline({
             }}
             title="次の月"
           >
-            <ChevronRight className="w-4 h-4 -mr-2" />
-            <ChevronRight className="w-4 h-4" />
+            <ChevronRight className="w-3 h-3 md:w-4 md:h-4 -mr-1.5 md:-mr-2" />
+            <ChevronRight className="w-3 h-3 md:w-4 md:h-4" />
           </Button>
         </div>
         <div className="flex space-x-2">
