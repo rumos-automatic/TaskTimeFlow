@@ -2,6 +2,19 @@ import { supabase } from './client'
 import { Database } from './types'
 import { Task, TimeSlot, Priority, Urgency, TaskStatus, TaskCategory } from '@/lib/types'
 
+// 日付ずれを防ぐためのヘルパー関数
+function formatDateForDatabase(date: Date): string {
+  const year = date.getFullYear()
+  const month = String(date.getMonth() + 1).padStart(2, '0')
+  const day = String(date.getDate()).padStart(2, '0')
+  return `${year}-${month}-${day}`
+}
+
+function parseDateFromDatabase(dateStr: string): Date {
+  const [year, month, day] = dateStr.split('-').map(Number)
+  return new Date(year, month - 1, day) // ローカル時間で作成
+}
+
 type DbTask = Database['public']['Tables']['tasks']['Row']
 type DbTaskInsert = Database['public']['Tables']['tasks']['Insert']
 type DbTaskUpdate = Database['public']['Tables']['tasks']['Update']
@@ -23,7 +36,7 @@ export function dbTaskToTask(dbTask: DbTask): Task {
     actualTime: dbTask.actual_time || undefined,
     status: dbTask.status as TaskStatus,
     completedAt: dbTask.completed_at ? new Date(dbTask.completed_at) : undefined,
-    scheduledDate: dbTask.scheduled_date ? new Date(dbTask.scheduled_date) : undefined,
+    scheduledDate: dbTask.scheduled_date ? parseDateFromDatabase(dbTask.scheduled_date) : undefined,
     scheduledTime: dbTask.scheduled_time || undefined,
     duration: dbTask.duration || undefined,
     createdAt: new Date(dbTask.created_at!),
@@ -43,7 +56,7 @@ export function taskToDbTaskInsert(task: Omit<Task, 'id' | 'createdAt' | 'update
     actual_time: task.actualTime,
     status: task.status,
     completed_at: task.completedAt?.toISOString(),
-    scheduled_date: task.scheduledDate?.toISOString().split('T')[0],
+    scheduled_date: task.scheduledDate ? formatDateForDatabase(task.scheduledDate) : null,
     scheduled_time: task.scheduledTime,
     duration: task.duration
   }
@@ -61,7 +74,7 @@ export function taskToDbTaskUpdate(task: Partial<Task>): DbTaskUpdate {
   if (task.actualTime !== undefined) update.actual_time = task.actualTime
   if (task.status !== undefined) update.status = task.status
   if (task.completedAt !== undefined) update.completed_at = task.completedAt?.toISOString()
-  if (task.scheduledDate !== undefined) update.scheduled_date = task.scheduledDate?.toISOString().split('T')[0]
+  if (task.scheduledDate !== undefined) update.scheduled_date = task.scheduledDate ? formatDateForDatabase(task.scheduledDate) : null
   if (task.scheduledTime !== undefined) update.scheduled_time = task.scheduledTime
   if (task.duration !== undefined) update.duration = task.duration
   
@@ -72,7 +85,7 @@ export function dbTimeSlotToTimeSlot(dbTimeSlot: DbTimeSlot): TimeSlot {
   return {
     id: dbTimeSlot.id,
     taskId: dbTimeSlot.task_id || undefined,
-    date: new Date(dbTimeSlot.date),
+    date: parseDateFromDatabase(dbTimeSlot.date),
     startTime: dbTimeSlot.start_time,
     endTime: dbTimeSlot.end_time,
     type: dbTimeSlot.type as 'task' | 'event'
@@ -83,7 +96,7 @@ export function timeSlotToDbTimeSlotInsert(timeSlot: Omit<TimeSlot, 'id'>, userI
   return {
     user_id: userId,
     task_id: timeSlot.taskId,
-    date: timeSlot.date.toISOString().split('T')[0],
+    date: formatDateForDatabase(timeSlot.date),
     start_time: timeSlot.startTime,
     end_time: timeSlot.endTime,
     type: timeSlot.type
