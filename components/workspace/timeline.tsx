@@ -1044,6 +1044,14 @@ interface CalendarTaskFormProps {
 
 function CalendarTaskForm({ date, onSave, onCancel }: CalendarTaskFormProps) {
   const { allCategories } = useCategoryStoreWithAuth()
+  // 日本時間で日付をフォーマットする関数
+  const formatDateForInput = (date: Date) => {
+    const year = date.getFullYear()
+    const month = String(date.getMonth() + 1).padStart(2, '0')
+    const day = String(date.getDate()).padStart(2, '0')
+    return `${year}-${month}-${day}`
+  }
+
   const [formData, setFormData] = useState({
     title: '',
     category: 'personal' as TaskCategory,
@@ -1051,7 +1059,7 @@ function CalendarTaskForm({ date, onSave, onCancel }: CalendarTaskFormProps) {
     urgency: 'low' as Urgency,
     estimatedTime: 60 as number | '',
     selectedTime: '09:00',
-    selectedDate: date.toISOString().split('T')[0] // YYYY-MM-DD format
+    selectedDate: formatDateForInput(date) // 日本時間でフォーマット
   })
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -1075,7 +1083,7 @@ function CalendarTaskForm({ date, onSave, onCancel }: CalendarTaskFormProps) {
         urgency: 'low',
         estimatedTime: 60 as number | '',
         selectedTime: '09:00',
-        selectedDate: date.toISOString().split('T')[0]
+        selectedDate: formatDateForInput(date) // 日本時間でフォーマット
       })
     }
   }
