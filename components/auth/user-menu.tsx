@@ -1,6 +1,6 @@
 'use client'
 
-import React from 'react'
+import React, { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import {
   DropdownMenu,
@@ -12,9 +12,11 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { LogOut, User, Settings } from 'lucide-react'
 import { useAuth } from '@/lib/auth/auth-context'
+import { UserSettingsDialog } from '@/components/settings/user-settings-dialog'
 
 export function UserMenu() {
   const { user, signOut } = useAuth()
+  const [showSettings, setShowSettings] = useState(false)
 
   if (!user) return null
 
@@ -33,6 +35,7 @@ export function UserMenu() {
   }
 
   return (
+    <>
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Button variant="ghost" className="relative h-8 w-8 rounded-full">
@@ -67,7 +70,10 @@ export function UserMenu() {
           <span>プロフィール</span>
         </DropdownMenuItem>
         
-        <DropdownMenuItem className="cursor-pointer">
+        <DropdownMenuItem 
+          className="cursor-pointer"
+          onClick={() => setShowSettings(true)}
+        >
           <Settings className="mr-2 h-4 w-4" />
           <span>設定</span>
         </DropdownMenuItem>
@@ -83,5 +89,8 @@ export function UserMenu() {
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
+    
+    <UserSettingsDialog open={showSettings} onOpenChange={setShowSettings} />
+    </>
   )
 }

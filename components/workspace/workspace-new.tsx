@@ -19,6 +19,7 @@ import { useAuth } from '@/lib/auth/auth-context'
 import { Task } from '@/lib/types'
 import { ThemeToggle } from '@/components/theme-toggle'
 import { UserMenu } from '@/components/auth/user-menu'
+import { AIChatDialog } from '@/components/ai/ai-chat-dialog'
 import { 
   DndContext,
   DragEndEvent,
@@ -45,7 +46,8 @@ import {
   Circle,
   ArrowLeft,
   ArrowRight,
-  RotateCcw
+  RotateCcw,
+  Bot
 } from 'lucide-react'
 
 export function WorkspaceNew() {
@@ -69,6 +71,9 @@ export function WorkspaceNew() {
   
   // タイムライン日付管理
   const [selectedDate, setSelectedDate] = useState(new Date())
+  
+  // AI チャット表示管理
+  const [showAIChat, setShowAIChat] = useState(false)
 
   // フッター要素のref
   const footerRef = React.useRef<HTMLDivElement>(null)
@@ -462,6 +467,14 @@ export function WorkspaceNew() {
             <ThemeToggle />
             <h1 className="text-lg font-semibold text-foreground">TaskTimeFlow</h1>
             <div className="flex items-center space-x-2">
+              {/* AIチャットボタン */}
+              <button
+                onClick={() => setShowAIChat(true)}
+                className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-muted/50 active:bg-muted transition-colors text-muted-foreground hover:text-foreground"
+                title="AI アシスタント"
+              >
+                <Bot className="w-4 h-4" />
+              </button>
               <UserMenu />
               {/* 再読み込みボタン */}
               <button
@@ -628,6 +641,9 @@ export function WorkspaceNew() {
             </div>
           )}
         </DragOverlay>
+        
+        {/* AI チャットダイアログ */}
+        <AIChatDialog open={showAIChat} onOpenChange={setShowAIChat} />
       </div>
       </DndContext>
     )
@@ -653,6 +669,15 @@ export function WorkspaceNew() {
             <div className="flex items-center justify-between mb-8">
               <h1 className="text-3xl font-bold text-foreground">フォーカスモード</h1>
               <div className="flex items-center space-x-2">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setShowAIChat(true)}
+                  className="p-2"
+                  title="AI アシスタント"
+                >
+                  <Bot className="w-4 h-4" />
+                </Button>
                 <UserMenu />
                 <ThemeToggle />
                 <Button
@@ -686,6 +711,9 @@ export function WorkspaceNew() {
             </div>
           )}
         </DragOverlay>
+        
+        {/* AI チャットダイアログ */}
+        <AIChatDialog open={showAIChat} onOpenChange={setShowAIChat} />
       </DndContext>
     )
   }
@@ -710,6 +738,15 @@ export function WorkspaceNew() {
             <div className="flex items-center justify-between mb-6 flex-shrink-0">
               <h2 className="text-xl font-semibold text-foreground">タスクプール</h2>
               <div className="flex items-center space-x-3">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setShowAIChat(true)}
+                  className="p-2"
+                  title="AI アシスタント"
+                >
+                  <Bot className="w-4 h-4" />
+                </Button>
                 <UserMenu />
                 <ThemeToggle />
               </div>
@@ -781,6 +818,9 @@ export function WorkspaceNew() {
           </div>
         )}
       </DragOverlay>
+      
+      {/* AI チャットダイアログ */}
+      <AIChatDialog open={showAIChat} onOpenChange={setShowAIChat} />
     </DndContext>
   )
 }

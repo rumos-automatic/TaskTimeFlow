@@ -51,6 +51,45 @@ export type Database = {
         }
         Relationships: []
       }
+      custom_categories: {
+        Row: {
+          color: string
+          created_at: string | null
+          description: string | null
+          icon: string | null
+          id: string
+          is_built_in: boolean | null
+          name: string
+          order: number | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          color: string
+          created_at?: string | null
+          description?: string | null
+          icon?: string | null
+          id?: string
+          is_built_in?: boolean | null
+          name: string
+          order?: number | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          color?: string
+          created_at?: string | null
+          description?: string | null
+          icon?: string | null
+          id?: string
+          is_built_in?: boolean | null
+          name?: string
+          order?: number | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -88,7 +127,14 @@ export type Database = {
           duration: number | null
           estimated_time: number
           id: string
+          is_recurring: boolean | null
+          notes: string | null
+          parent_recurring_task_id: string | null
           priority: string
+          recurrence_end_date: string | null
+          recurrence_interval: number | null
+          recurrence_type: string | null
+          recurring_pattern: Json | null
           scheduled_date: string | null
           scheduled_time: string | null
           status: string
@@ -96,14 +142,6 @@ export type Database = {
           updated_at: string | null
           urgency: string
           user_id: string
-          // 繰り返しタスクフィールド
-          is_recurring: boolean | null
-          recurrence_type: string | null
-          recurrence_interval: number | null
-          recurrence_end_date: string | null
-          parent_recurring_task_id: string | null
-          recurring_pattern: any | null
-          notes: string | null
         }
         Insert: {
           actual_time?: number | null
@@ -114,7 +152,14 @@ export type Database = {
           duration?: number | null
           estimated_time?: number
           id?: string
+          is_recurring?: boolean | null
+          notes?: string | null
+          parent_recurring_task_id?: string | null
           priority?: string
+          recurrence_end_date?: string | null
+          recurrence_interval?: number | null
+          recurrence_type?: string | null
+          recurring_pattern?: Json | null
           scheduled_date?: string | null
           scheduled_time?: string | null
           status?: string
@@ -122,14 +167,6 @@ export type Database = {
           updated_at?: string | null
           urgency?: string
           user_id: string
-          // 繰り返しタスクフィールド
-          is_recurring?: boolean | null
-          recurrence_type?: string | null
-          recurrence_interval?: number | null
-          recurrence_end_date?: string | null
-          parent_recurring_task_id?: string | null
-          recurring_pattern?: any | null
-          notes?: string | null
         }
         Update: {
           actual_time?: number | null
@@ -140,7 +177,14 @@ export type Database = {
           duration?: number | null
           estimated_time?: number
           id?: string
+          is_recurring?: boolean | null
+          notes?: string | null
+          parent_recurring_task_id?: string | null
           priority?: string
+          recurrence_end_date?: string | null
+          recurrence_interval?: number | null
+          recurrence_type?: string | null
+          recurring_pattern?: Json | null
           scheduled_date?: string | null
           scheduled_time?: string | null
           status?: string
@@ -148,16 +192,16 @@ export type Database = {
           updated_at?: string | null
           urgency?: string
           user_id?: string
-          // 繰り返しタスクフィールド
-          is_recurring?: boolean | null
-          recurrence_type?: string | null
-          recurrence_interval?: number | null
-          recurrence_end_date?: string | null
-          parent_recurring_task_id?: string | null
-          recurring_pattern?: any | null
-          notes?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "tasks_parent_recurring_task_id_fkey"
+            columns: ["parent_recurring_task_id"]
+            isOneToOne: false
+            referencedRelation: "tasks"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       time_slots: {
         Row: {
@@ -244,75 +288,36 @@ export type Database = {
           },
         ]
       }
-      custom_categories: {
-        Row: {
-          id: string
-          name: string
-          color: string
-          icon: string | null
-          description: string | null
-          is_built_in: boolean
-          user_id: string
-          order: number
-          created_at: string | null
-          updated_at: string | null
-        }
-        Insert: {
-          id?: string
-          name: string
-          color: string
-          icon?: string | null
-          description?: string | null
-          is_built_in?: boolean
-          user_id: string
-          order?: number
-          created_at?: string | null
-          updated_at?: string | null
-        }
-        Update: {
-          id?: string
-          name?: string
-          color?: string
-          icon?: string | null
-          description?: string | null
-          is_built_in?: boolean
-          user_id?: string
-          order?: number
-          created_at?: string | null
-          updated_at?: string | null
-        }
-        Relationships: []
-      }
       user_api_keys: {
         Row: {
-          id: string
-          user_id: string
-          provider: string
+          created_at: string | null
           encrypted_key: string
+          id: string
           is_active: boolean | null
           last_used_at: string | null
-          created_at: string | null
+          provider: string
           updated_at: string | null
+          user_id: string
         }
         Insert: {
-          id?: string
-          user_id: string
-          provider: string
+          created_at?: string | null
           encrypted_key: string
+          id?: string
           is_active?: boolean | null
           last_used_at?: string | null
-          created_at?: string | null
+          provider: string
           updated_at?: string | null
+          user_id: string
         }
         Update: {
-          id?: string
-          user_id?: string
-          provider?: string
+          created_at?: string | null
           encrypted_key?: string
+          id?: string
           is_active?: boolean | null
           last_used_at?: string | null
-          created_at?: string | null
+          provider?: string
           updated_at?: string | null
+          user_id?: string
         }
         Relationships: []
       }
