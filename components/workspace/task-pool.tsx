@@ -314,8 +314,7 @@ function EditTaskCard({ task, onSave, onCancel }: EditTaskCardProps) {
     priority: task.priority,
     urgency: task.urgency,
     category: task.category,
-    estimatedTime: task.estimatedTime as number | '',
-    notes: task.notes || ''
+    estimatedTime: task.estimatedTime as number | ''
   })
 
 
@@ -375,22 +374,6 @@ function EditTaskCard({ task, onSave, onCancel }: EditTaskCardProps) {
               </select>
             </div>
           </div>
-          
-          {/* プレビュー（編集） */}
-          <div className="flex items-center justify-center space-x-1 py-1 bg-muted/20 rounded">
-            <div className={`px-1.5 py-0.5 rounded text-xs font-medium ${
-              formData.priority === 'high' ? 'bg-red-100 text-red-700' :
-              'bg-green-100 text-green-700'
-            }`}>
-              優先度：{formData.priority === 'high' ? '高' : '低'}
-            </div>
-            <div className={`px-1.5 py-0.5 rounded text-xs font-medium ${
-              formData.urgency === 'high' ? 'bg-red-100 text-red-700' :
-              'bg-blue-100 text-blue-700'
-            }`}>
-              緊急度：{formData.urgency === 'high' ? '高' : '低'}
-            </div>
-          </div>
         </div>
 
         <div className="grid grid-cols-2 gap-2">
@@ -420,19 +403,6 @@ function EditTaskCard({ task, onSave, onCancel }: EditTaskCardProps) {
             }}
             className="px-2 py-1 border border-border rounded text-xs bg-background"
             placeholder="分"
-          />
-        </div>
-
-        {/* メモ欄 */}
-        <div className="space-y-2">
-          <label className="text-xs font-medium text-foreground block">
-            メモ
-          </label>
-          <RichTextEditor
-            value={formData.notes}
-            onChange={(value) => setFormData(prev => ({ ...prev, notes: value }))}
-            placeholder="タスクに関するメモを入力..."
-            className="text-sm"
           />
         </div>
 
