@@ -137,12 +137,32 @@ npm run db:studio     # Open database studio
 ## Future Features (Roadmap)
 
 ### 🤖 AI Task Assistant (Pro Feature) - PLANNED
+
+#### Core AI Features
 - **Natural Language Processing**: Convert natural language to structured tasks
   - Example: "明日の会議の準備" → Category: Work, Priority: High, Time: 30min
 - **Smart Time Estimation**: Predict task duration based on historical data
 - **Optimal Scheduling**: AI suggests best time slots for tasks
 - **Task Clustering**: Group similar tasks for batch processing
 - **Daily Planning Assistant**: Morning AI briefing with optimized schedule
+
+#### 🆕 Interactive AI Features (Future Implementation)
+- **AI Chat Interface**: Conversational task creation through chat
+  - Natural dialogue: "I need to prepare for tomorrow's presentation"
+  - AI asks clarifying questions and creates structured tasks
+  - Context-aware suggestions based on user's existing tasks and schedule
+- **Screenshot Task Generation**: Image-to-task conversion
+  - Upload screenshots (emails, documents, meeting notes, etc.)
+  - AI reads and extracts actionable items automatically
+  - Creates multiple related tasks with appropriate categorization and scheduling
+  - Supports text extraction from images, PDFs, and documents
+
+#### LLM Integration Architecture
+- **User-Configurable LLM APIs**: 
+  - Settings panel for API key management (OpenAI, Anthropic Claude, Google Gemini)
+  - Encrypted storage of API keys in database with user-level encryption
+  - Fallback model support and cost tracking per user
+- **Privacy-First Design**: User data never sent to third-party services without explicit consent
 - **Integration**: OpenAI GPT-4, Claude, Google Gemini via Edge APIs
 
 ## Important Files
