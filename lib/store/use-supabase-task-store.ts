@@ -1,5 +1,6 @@
 import { create } from 'zustand'
 import { Task, TimeSlot, Priority, Urgency, TaskStatus, TaskCategory } from '@/lib/types'
+import { shouldGenerateTaskForDate, createTaskInstance } from '@/lib/utils/recurring-tasks'
 import { TaskService } from '@/lib/supabase/task-service'
 
 interface SupabaseTaskStore {
@@ -45,6 +46,9 @@ interface SupabaseTaskStore {
   hideCompletedTask: (taskId: string) => void
   showCompletedTask: (taskId: string) => void
   clearHiddenCompletedTasks: () => void
+  
+  // Recurring task operations
+  generateRecurringTasks: (userId: string, targetDate?: Date) => Promise<void>
   
   // Internal state management
   setTasks: (tasks: Task[]) => void
@@ -668,6 +672,50 @@ export const useSupabaseTaskStore = create<SupabaseTaskStore>()((set, get) => {
     clearHiddenCompletedTasks: () => {
       setHiddenCompletedTasks([])
       console.log('Cleared all hidden completed tasks')
+    },
+
+    // 繰り返しタスクの生成
+    generateRecurringTasks: async (userId: string, targetDate: Date = new Date()) => {
+      try {
+        set((state) => ({ ...state, syncing: true }))
+        
+        const { tasks } = get()
+        const recurringTasks = tasks.filter(task => task.isRecurring)
+        
+        const tasksToGenerate: Omit<Task, 'id' | 'createdAt' | 'updatedAt'>[] = []
+        
+        for (const recurringTask of recurringTasks) {
+          if (shouldGenerateTaskForDate(recurringTask, targetDate)) {
+            // 既に同じ日付に同じ親タスクのインスタンスが存在するかチェック
+            const existingInstance = tasks.find(task => 
+              task.parentRecurringTaskId === recurringTask.id &&
+              task.scheduledDate &&
+              new Date(task.scheduledDate).toDateString() === targetDate.toDateString()
+            )
+            
+            if (!existingInstance) {
+              const taskInstance = createTaskInstance(recurringTask, targetDate, userId)
+              tasksToGenerate.push(taskInstance)
+            }
+          }
+        }
+        
+        // 生成するタスクがある場合はデータベースに追加
+        for (const taskData of tasksToGenerate) {
+          await TaskService.createTask(taskData, userId)
+        }
+        
+        console.log(`Generated ${tasksToGenerate.length} recurring tasks for ${targetDate.toDateString()}`)
+        
+      } catch (error) {
+        console.error('Error generating recurring tasks:', error)
+        set((state) => ({ 
+          ...state, 
+          error: error instanceof Error ? error.message : 'Failed to generate recurring tasks'
+        }))
+      } finally {
+        set((state) => ({ ...state, syncing: false }))
+      }
     },
 
     // Internal state management

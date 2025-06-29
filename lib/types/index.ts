@@ -1,6 +1,7 @@
 export type Priority = 'high' | 'low'
 export type Urgency = 'high' | 'low'
 export type TaskStatus = 'todo' | 'in_progress' | 'completed'
+export type RecurrenceType = 'none' | 'daily' | 'weekly' | 'monthly' | 'yearly'
 
 // Category system - supports both built-in and custom categories
 export type BuiltInCategory = 'work' | 'personal' | 'google-tasks'
@@ -23,6 +24,13 @@ export interface Task {
   scheduledDate?: Date
   scheduledTime?: string
   duration?: number // in minutes
+  // Recurring task fields
+  isRecurring?: boolean
+  recurrenceType?: RecurrenceType
+  recurrenceInterval?: number
+  recurrenceEndDate?: Date
+  parentRecurringTaskId?: string
+  recurringPattern?: RecurringPattern
 }
 
 export interface TimeSlot {
@@ -87,4 +95,12 @@ export interface GoogleTasksSyncStatus {
   lastSync?: Date
   syncStatus: 'idle' | 'syncing' | 'error'
   errorMessage?: string
+}
+
+// Recurring task pattern interface
+export interface RecurringPattern {
+  daysOfWeek?: number[] // 0=Sunday, 1=Monday, etc. for weekly recurrence
+  dayOfMonth?: number // for monthly recurrence
+  monthOfYear?: number // for yearly recurrence
+  excludeDates?: Date[] // dates to skip
 }

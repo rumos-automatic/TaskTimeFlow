@@ -140,6 +140,11 @@ export function useTaskStoreWithAuth() {
         } else {
           console.log('Migration already completed, skipping')
         }
+        
+        // 初期化後に繰り返しタスクを生成
+        supabaseStore.generateRecurringTasks(user.id).catch(error => {
+          console.error('Failed to generate recurring tasks on initialization:', error)
+        })
       }).catch((error) => {
         console.error('Failed to initialize Supabase store:', error)
         initializingRef.current = false

@@ -12,7 +12,7 @@ import { useAuth } from '@/lib/auth/auth-context'
 import { useSortable, SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable'
 import { useDroppable } from '@dnd-kit/core'
 import { CSS } from '@dnd-kit/utilities'
-import { Task, Priority, Urgency, TaskCategory, CategoryFilter } from '@/lib/types'
+import { Task, Priority, Urgency, TaskCategory, CategoryFilter, RecurrenceType, RecurringPattern } from '@/lib/types'
 import { useViewState } from '@/lib/hooks/use-view-state'
 import { useCategoryStoreWithAuth } from '@/lib/hooks/use-category-store-with-auth'
 import { BUILT_IN_CATEGORIES } from '@/lib/store/use-category-store'
@@ -434,7 +434,14 @@ function AddTaskForm({ defaultCategory }: AddTaskFormProps) {
       priority: 'low' as Priority,
       urgency: 'low' as Urgency,
       category: category as TaskCategory,
-      estimatedTime: 30 as number | ''
+      estimatedTime: 30 as number | '',
+      isRecurring: false,
+      recurrenceType: 'none' as RecurrenceType,
+      recurrenceInterval: 1,
+      recurrenceEndDate: undefined as Date | undefined,
+      recurringPattern: {
+        daysOfWeek: []
+      } as RecurringPattern
     }
   }
   
@@ -445,14 +452,23 @@ function AddTaskForm({ defaultCategory }: AddTaskFormProps) {
     e.preventDefault()
     if (!formData.title.trim() || !user) return
 
-    await addTask({
+    const taskData = {
       title: formData.title,
       priority: formData.priority,
       urgency: formData.urgency,
       category: formData.category,
       estimatedTime: formData.estimatedTime === '' ? 30 : formData.estimatedTime,
-      status: 'todo'
-    }, user.id)
+      status: 'todo' as const,
+      ...(formData.isRecurring && {
+        isRecurring: true,
+        recurrenceType: formData.recurrenceType,
+        recurrenceInterval: formData.recurrenceInterval,
+        recurrenceEndDate: formData.recurrenceEndDate,
+        recurringPattern: formData.recurringPattern
+      })
+    }
+
+    await addTask(taskData, user.id)
 
     // Reset form with current category
     setFormData(initializeFormData())
@@ -557,6 +573,106 @@ function AddTaskForm({ defaultCategory }: AddTaskFormProps) {
               className="px-2 py-1 border border-border rounded text-xs bg-background"
               placeholder="分"
             />
+          </div>
+
+          {/* 繰り返し設定 */}
+          <div className="space-y-3 pt-3 border-t border-border">
+            <div className="flex items-center space-x-2">
+              <input
+                type="checkbox"
+                id="recurring"
+                checked={formData.isRecurring}
+                onChange={(e) => setFormData(prev => ({ 
+                  ...prev, 
+                  isRecurring: e.target.checked,
+                  recurrenceType: e.target.checked ? 'daily' : 'none'
+                }))}
+                className="rounded border-border"
+              />
+              <label htmlFor="recurring" className="text-sm font-medium text-foreground">
+                繰り返しタスク
+              </label>
+            </div>
+
+            {formData.isRecurring && (
+              <div className="space-y-2 pl-6">
+                <div className="grid grid-cols-2 gap-2">
+                  <select
+                    value={formData.recurrenceType}
+                    onChange={(e) => setFormData(prev => ({ 
+                      ...prev, 
+                      recurrenceType: e.target.value as RecurrenceType 
+                    }))}
+                    className="px-2 py-1 border border-border rounded text-xs bg-background"
+                  >
+                    <option value="daily">毎日</option>
+                    <option value="weekly">毎週</option>
+                    <option value="monthly">毎月</option>
+                    <option value="yearly">毎年</option>
+                  </select>
+
+                  <input
+                    type="number"
+                    min="1"
+                    max="365"
+                    value={formData.recurrenceInterval}
+                    onChange={(e) => setFormData(prev => ({ 
+                      ...prev, 
+                      recurrenceInterval: parseInt(e.target.value) || 1 
+                    }))}
+                    className="px-2 py-1 border border-border rounded text-xs bg-background"
+                    placeholder="間隔"
+                  />
+                </div>
+
+                {formData.recurrenceType === 'weekly' && (
+                  <div className="space-y-1">
+                    <span className="text-xs text-muted-foreground">曜日選択:</span>
+                    <div className="grid grid-cols-7 gap-1">
+                      {['日', '月', '火', '水', '木', '金', '土'].map((day, index) => (
+                        <button
+                          key={index}
+                          type="button"
+                          className={`p-1 text-xs rounded ${
+                            formData.recurringPattern?.daysOfWeek?.includes(index)
+                              ? 'bg-primary text-primary-foreground'
+                              : 'bg-muted text-muted-foreground'
+                          }`}
+                          onClick={() => {
+                            const currentDays = formData.recurringPattern?.daysOfWeek || []
+                            const newDays = currentDays.includes(index)
+                              ? currentDays.filter(d => d !== index)
+                              : [...currentDays, index]
+                            setFormData(prev => ({
+                              ...prev,
+                              recurringPattern: {
+                                ...prev.recurringPattern,
+                                daysOfWeek: newDays
+                              }
+                            }))
+                          }}
+                        >
+                          {day}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                <div>
+                  <label className="text-xs text-muted-foreground">終了日（オプション）:</label>
+                  <input
+                    type="date"
+                    value={formData.recurrenceEndDate ? formData.recurrenceEndDate.toISOString().split('T')[0] : ''}
+                    onChange={(e) => setFormData(prev => ({ 
+                      ...prev, 
+                      recurrenceEndDate: e.target.value ? new Date(e.target.value) : undefined 
+                    }))}
+                    className="w-full px-2 py-1 border border-border rounded text-xs bg-background mt-1"
+                  />
+                </div>
+              </div>
+            )}
           </div>
 
           <div className="flex space-x-2">
