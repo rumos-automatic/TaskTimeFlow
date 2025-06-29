@@ -1150,6 +1150,151 @@ function CalendarTaskForm({ date, onSave, onCancel }: CalendarTaskFormProps) {
   )
 }
 
+// Calendar Task Edit Form Component
+interface CalendarTaskEditFormProps {
+  task: any
+  slot: any
+  onSave: (taskData: any, time: string) => void
+  onCancel: () => void
+}
+
+function CalendarTaskEditForm({ task, slot, onSave, onCancel }: CalendarTaskEditFormProps) {
+  const { allCategories } = useCategoryStoreWithAuth()
+  const [formData, setFormData] = useState({
+    title: task.title,
+    category: task.category,
+    priority: task.priority,
+    urgency: task.urgency,
+    estimatedTime: task.estimatedTime,
+    selectedTime: slot.startTime || '09:00'
+  })
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault()
+    if (formData.title.trim()) {
+      const { selectedTime, ...taskData } = formData
+      // estimatedTimeが空文字の場合は60に設定
+      const finalTaskData = {
+        ...taskData,
+        estimatedTime: taskData.estimatedTime === '' ? 60 : taskData.estimatedTime
+      }
+      onSave(finalTaskData, selectedTime)
+    }
+  }
+
+  // 30分間隔の時間オプションを生成
+  const timeOptions = []
+  for (let hour = 0; hour < 24; hour++) {
+    for (let minute = 0; minute < 60; minute += 30) {
+      const timeString = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`
+      timeOptions.push(timeString)
+    }
+  }
+
+  return (
+    <div className="border border-border rounded-lg p-3 md:p-4 bg-background/95 backdrop-blur-sm">
+      <div className="flex items-center justify-between mb-3">
+        <h3 className="text-sm font-semibold text-foreground">タスクを編集</h3>
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={onCancel}
+          className="h-6 w-6 p-0"
+        >
+          <X className="w-4 h-4" />
+        </Button>
+      </div>
+      
+      <form onSubmit={handleSubmit} className="space-y-3">
+        <div>
+          <input
+            type="text"
+            value={formData.title}
+            onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
+            placeholder="タスク名"
+            className="w-full px-3 py-2 border border-border rounded-md bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary text-sm"
+            required
+          />
+        </div>
+
+        <div className="grid grid-cols-2 gap-2">
+          <select
+            value={formData.category}
+            onChange={(e) => setFormData(prev => ({ ...prev, category: e.target.value }))}
+            className="px-2 py-1 border border-border rounded text-xs bg-background"
+          >
+            {allCategories.map((category) => (
+              <option key={category.id} value={category.id}>
+                {category.icon} {category.name}
+              </option>
+            ))}
+          </select>
+
+          <select
+            value={formData.selectedTime}
+            onChange={(e) => setFormData(prev => ({ ...prev, selectedTime: e.target.value }))}
+            className="px-2 py-1 border border-border rounded text-xs bg-background"
+          >
+            {timeOptions.map(time => (
+              <option key={time} value={time}>{time}</option>
+            ))}
+          </select>
+        </div>
+
+        <div className="grid grid-cols-2 gap-2">
+          <select
+            value={formData.priority}
+            onChange={(e) => setFormData(prev => ({ ...prev, priority: e.target.value }))}
+            className="px-2 py-1 border border-border rounded text-xs bg-background"
+          >
+            <option value="high">優先度：高</option>
+            <option value="low">優先度：低</option>
+          </select>
+
+          <select
+            value={formData.urgency}
+            onChange={(e) => setFormData(prev => ({ ...prev, urgency: e.target.value }))}
+            className="px-2 py-1 border border-border rounded text-xs bg-background"
+          >
+            <option value="high">緊急度：高</option>
+            <option value="low">緊急度：低</option>
+          </select>
+        </div>
+
+        <div>
+          <input
+            type="number"
+            min="5"
+            max="480"
+            value={formData.estimatedTime}
+            onChange={(e) => setFormData(prev => ({ 
+              ...prev, 
+              estimatedTime: parseInt(e.target.value) || 60
+            }))}
+            className="w-full px-2 py-1 border border-border rounded text-xs bg-background"
+            placeholder="予想時間(分)"
+          />
+        </div>
+
+        <div className="flex space-x-2">
+          <Button type="submit" size="sm" className="flex-1 h-7 text-xs">
+            保存
+          </Button>
+          <Button 
+            type="button" 
+            variant="outline" 
+            size="sm" 
+            onClick={onCancel}
+            className="h-7 text-xs"
+          >
+            <X className="w-3 h-3" />
+          </Button>
+        </div>
+      </form>
+    </div>
+  )
+}
+
 interface CalendarViewProps {
   selectedDate: Date
   setSelectedDate: (date: Date) => void
@@ -1158,12 +1303,16 @@ interface CalendarViewProps {
 }
 
 function CalendarView({ selectedDate, setSelectedDate, scheduledSlots, tasks }: CalendarViewProps) {
-  const { completeTask, uncompleteTask, removeTimeSlot, addTask, moveTaskToTimeline } = useTaskStoreWithAuth()
+  const { completeTask, uncompleteTask, removeTimeSlot, addTask, moveTaskToTimeline, updateTask } = useTaskStoreWithAuth()
   const { user } = useAuth()
   
   // カレンダービューでのタスク作成管理
   const [activeFormDate, setActiveFormDate] = useState<string | null>(null)
   const [formLocation, setFormLocation] = useState<'cell' | 'section' | null>(null)
+  
+  // カレンダービューでのタスク編集管理
+  const [editingTask, setEditingTask] = useState<any>(null)
+  const [editingSlot, setEditingSlot] = useState<any>(null)
 
   // カレンダーからのタスク作成ハンドラー
   const handleCalendarTaskCreate = async (taskData: any, time: string, date: Date) => {
@@ -1251,6 +1400,45 @@ function CalendarView({ selectedDate, setSelectedDate, scheduledSlots, tasks }: 
       console.error('❌ Failed to create calendar task:', error)
       setActiveFormDate(null)
       setFormLocation(null)
+    }
+  }
+
+  // カレンダーからのタスク編集ハンドラー
+  const handleCalendarTaskEdit = async (taskData: any, time: string) => {
+    if (!user || !editingTask || !editingSlot) return
+    
+    try {
+      console.log('📝 Editing task from calendar:', { taskData, time, taskId: editingTask.id })
+      
+      // タスクの情報を更新
+      await updateTask(editingTask.id, {
+        title: taskData.title,
+        priority: taskData.priority,
+        urgency: taskData.urgency,
+        category: taskData.category,
+        estimatedTime: taskData.estimatedTime
+      })
+      
+      // 時間が変更された場合はタイムスロットを更新
+      if (time !== editingSlot.startTime) {
+        console.log('⏰ Time changed, updating schedule...')
+        
+        // 現在のスロットを削除
+        await removeTimeSlot(editingSlot.id)
+        
+        // 新しい時間でスケジュール
+        const slotDate = editingSlot.date instanceof Date ? editingSlot.date : new Date(editingSlot.date)
+        await moveTaskToTimeline(editingTask.id, slotDate, time, user.id)
+      }
+      
+      console.log('✅ Calendar task edited successfully!')
+      setEditingTask(null)
+      setEditingSlot(null)
+      
+    } catch (error) {
+      console.error('❌ Failed to edit calendar task:', error)
+      setEditingTask(null)
+      setEditingSlot(null)
     }
   }
   
@@ -1343,7 +1531,7 @@ function CalendarView({ selectedDate, setSelectedDate, scheduledSlots, tasks }: 
               } ${
                 isSelected ? 'bg-blue-50 dark:bg-blue-950/30' : ''
               } hover:bg-gray-50 dark:hover:bg-gray-800`}
-              onClick={() => setSelectedDate(new Date(day))}
+              onClick={() => setSelectedDate(day)}
             >
               <div className="flex flex-col h-full">
                 <div className={`flex items-center justify-between text-xs md:text-sm font-medium mb-0.5 md:mb-1 ${
@@ -1358,7 +1546,7 @@ function CalendarView({ selectedDate, setSelectedDate, scheduledSlots, tasks }: 
                       className="h-4 w-4 p-0 opacity-0 group-hover:opacity-100 hover:opacity-100 transition-opacity"
                       onClick={(e) => {
                         e.stopPropagation()
-                        setSelectedDate(new Date(day))
+                        setSelectedDate(day)
                         setActiveFormDate(dateKey)
                         setFormLocation('section')
                       }}
@@ -1374,7 +1562,7 @@ function CalendarView({ selectedDate, setSelectedDate, scheduledSlots, tasks }: 
                     {dayTasks.slice(0, 3).map(({ task, slot }, taskIndex) => (
                       <div
                         key={taskIndex}
-                        className={`text-xs p-1 rounded truncate ${
+                        className={`text-xs p-1 rounded truncate cursor-pointer hover:opacity-80 transition-opacity ${
                           task.status === 'completed'
                             ? 'bg-gray-100 dark:bg-gray-700 line-through opacity-60'
                             : task.priority === 'high' && task.urgency === 'high'
@@ -1385,7 +1573,12 @@ function CalendarView({ selectedDate, setSelectedDate, scheduledSlots, tasks }: 
                             ? 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-300'
                             : 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300'
                         }`}
-                        title={task.title}
+                        title={`${task.title} (クリックで編集)`}
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          setEditingTask(task)
+                          setEditingSlot(slot)
+                        }}
                       >
                         <span className="flex items-center justify-between">
                           <span className="truncate">{task.title}</span>
@@ -1407,7 +1600,7 @@ function CalendarView({ selectedDate, setSelectedDate, scheduledSlots, tasks }: 
                     {dayTasks.map(({ task, slot }, taskIndex) => (
                       <div
                         key={taskIndex}
-                        className={`w-2 h-2 rounded-full ${
+                        className={`w-2 h-2 rounded-full cursor-pointer hover:scale-125 transition-transform ${
                           task.status === 'completed'
                             ? 'bg-gray-400 opacity-60'
                             : task.priority === 'high' && task.urgency === 'high'
@@ -1418,7 +1611,12 @@ function CalendarView({ selectedDate, setSelectedDate, scheduledSlots, tasks }: 
                             ? 'bg-yellow-500'
                             : 'bg-green-500'
                         }`}
-                        title={task.title}
+                        title={`${task.title} (タップで編集)`}
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          setEditingTask(task)
+                          setEditingSlot(slot)
+                        }}
                       />
                     ))}
                   </div>
@@ -1479,6 +1677,10 @@ function CalendarView({ selectedDate, setSelectedDate, scheduledSlots, tasks }: 
                   onComplete={() => completeTask(task.id)}
                   onUncomplete={() => uncompleteTask(task.id)}
                   onRemove={() => removeTimeSlot(slot.id)}
+                  onEdit={() => {
+                    setEditingTask(task)
+                    setEditingSlot(slot)
+                  }}
                 />
               ))
             }
@@ -1498,6 +1700,21 @@ function CalendarView({ selectedDate, setSelectedDate, scheduledSlots, tasks }: 
             />
           </div>
         )}
+        
+        {/* Task Edit Form for Selected Date */}
+        {editingTask && editingSlot && (
+          <div className="mt-4 relative">
+            <CalendarTaskEditForm
+              task={editingTask}
+              slot={editingSlot}
+              onSave={(taskData, time) => handleCalendarTaskEdit(taskData, time)}
+              onCancel={() => {
+                setEditingTask(null)
+                setEditingSlot(null)
+              }}
+            />
+          </div>
+        )}
       </div>
     </div>
   )
@@ -1510,9 +1727,10 @@ interface SelectedDateTaskCardProps {
   onComplete: () => void
   onUncomplete: () => void
   onRemove: () => void
+  onEdit: () => void
 }
 
-function SelectedDateTaskCard({ task, slot, onComplete, onUncomplete, onRemove }: SelectedDateTaskCardProps) {
+function SelectedDateTaskCard({ task, slot, onComplete, onUncomplete, onRemove, onEdit }: SelectedDateTaskCardProps) {
   const [showActions, setShowActions] = useState(false)
   const isCompleted = task.status === 'completed'
   
@@ -1587,6 +1805,15 @@ function SelectedDateTaskCard({ task, slot, onComplete, onUncomplete, onRemove }
                   title="完了"
                 >
                   <Check className="w-3 h-3" />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-6 w-6 p-0 hover:bg-blue-200 dark:hover:bg-blue-800 text-blue-600"
+                  onClick={onEdit}
+                  title="編集"
+                >
+                  <Edit2 className="w-3 h-3" />
                 </Button>
                 <Button
                   variant="ghost"
