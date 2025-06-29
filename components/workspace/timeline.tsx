@@ -858,7 +858,20 @@ export function Timeline({
     <div className="space-y-4 h-full flex flex-col">
       {/* View Controls */}
       <div className="flex items-center justify-between">
-        <div className="flex items-center space-x-2">
+        <div className="flex items-center space-x-1 md:space-x-2">
+          <Button 
+            variant="outline" 
+            size="sm"
+            onClick={() => {
+              const newDate = new Date(selectedDate)
+              newDate.setMonth(newDate.getMonth() - 1)
+              setSelectedDate(newDate)
+            }}
+            title="前の月"
+          >
+            <ChevronLeft className="w-4 h-4" />
+            <ChevronLeft className="w-4 h-4 -ml-2" />
+          </Button>
           <Button 
             variant="outline" 
             size="sm"
@@ -867,6 +880,7 @@ export function Timeline({
               newDate.setDate(newDate.getDate() - 1)
               setSelectedDate(newDate)
             }}
+            title="前の日"
           >
             <ChevronLeft className="w-4 h-4" />
           </Button>
@@ -890,7 +904,21 @@ export function Timeline({
               newDate.setDate(newDate.getDate() + 1)
               setSelectedDate(newDate)
             }}
+            title="次の日"
           >
+            <ChevronRight className="w-4 h-4" />
+          </Button>
+          <Button 
+            variant="outline" 
+            size="sm"
+            onClick={() => {
+              const newDate = new Date(selectedDate)
+              newDate.setMonth(newDate.getMonth() + 1)
+              setSelectedDate(newDate)
+            }}
+            title="次の月"
+          >
+            <ChevronRight className="w-4 h-4 -mr-2" />
             <ChevronRight className="w-4 h-4" />
           </Button>
         </div>
