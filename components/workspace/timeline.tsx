@@ -1004,7 +1004,7 @@ export function Timeline({
 // Calendar View Component
 interface CalendarTaskFormProps {
   date: Date
-  onSave: (taskData: any, time: string) => void
+  onSave: (taskData: any, time: string, date: Date) => void
   onCancel: () => void
 }
 
@@ -1016,26 +1016,32 @@ function CalendarTaskForm({ date, onSave, onCancel }: CalendarTaskFormProps) {
     priority: 'low' as Priority,
     urgency: 'low' as Urgency,
     estimatedTime: 60 as number | '',
-    selectedTime: '09:00'
+    selectedTime: '09:00',
+    selectedDate: date.toISOString().split('T')[0] // YYYY-MM-DD format
   })
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     if (formData.title.trim()) {
-      const { selectedTime, ...taskData } = formData
+      const { selectedTime, selectedDate, ...taskData } = formData
       // estimatedTimeが空文字の場合は60に設定
       const finalTaskData = {
         ...taskData,
         estimatedTime: taskData.estimatedTime === '' ? 60 : taskData.estimatedTime
       }
-      onSave(finalTaskData, selectedTime)
+      // selectedDateをDateオブジェクトに変換
+      const [year, month, day] = selectedDate.split('-').map(Number)
+      const taskDate = new Date(year, month - 1, day)
+      
+      onSave(finalTaskData, selectedTime, taskDate)
       setFormData({
         title: '',
         category: 'personal',
         priority: 'low',
         urgency: 'low',
         estimatedTime: 60 as number | '',
-        selectedTime: '09:00'
+        selectedTime: '09:00',
+        selectedDate: date.toISOString().split('T')[0]
       })
     }
   }
@@ -1116,19 +1122,27 @@ function CalendarTaskForm({ date, onSave, onCancel }: CalendarTaskFormProps) {
 
         <div>
           <label className="block text-xs font-medium text-muted-foreground mb-1">
-            開始時間
+            日付と開始時間
           </label>
-          <select
-            value={formData.selectedTime}
-            onChange={(e) => setFormData(prev => ({ ...prev, selectedTime: e.target.value }))}
-            className="w-full px-2 py-1 border border-border rounded text-xs bg-background"
-          >
-            {timeOptions.map((time) => (
-              <option key={time} value={time}>
-                {time}
-              </option>
-            ))}
-          </select>
+          <div className="grid grid-cols-2 gap-2">
+            <input
+              type="date"
+              value={formData.selectedDate}
+              onChange={(e) => setFormData(prev => ({ ...prev, selectedDate: e.target.value }))}
+              className="px-2 py-1 border border-border rounded text-xs bg-background"
+            />
+            <select
+              value={formData.selectedTime}
+              onChange={(e) => setFormData(prev => ({ ...prev, selectedTime: e.target.value }))}
+              className="px-2 py-1 border border-border rounded text-xs bg-background"
+            >
+              {timeOptions.map((time) => (
+                <option key={time} value={time}>
+                  {time}
+                </option>
+              ))}
+            </select>
+          </div>
         </div>
 
         <div className="flex space-x-2 pt-1">
@@ -1154,31 +1168,46 @@ function CalendarTaskForm({ date, onSave, onCancel }: CalendarTaskFormProps) {
 interface CalendarTaskEditFormProps {
   task: any
   slot: any
-  onSave: (taskData: any, time: string) => void
+  onSave: (taskData: any, time: string, date: Date) => void
   onCancel: () => void
 }
 
 function CalendarTaskEditForm({ task, slot, onSave, onCancel }: CalendarTaskEditFormProps) {
   const { allCategories } = useCategoryStoreWithAuth()
+  
+  // スロットの日付をYYYY-MM-DD形式に変換
+  const slotDate = slot.date instanceof Date ? slot.date : new Date(slot.date)
+  const formatDateForInput = (date: Date) => {
+    const year = date.getFullYear()
+    const month = String(date.getMonth() + 1).padStart(2, '0')
+    const day = String(date.getDate()).padStart(2, '0')
+    return `${year}-${month}-${day}`
+  }
+  
   const [formData, setFormData] = useState({
     title: task.title,
     category: task.category,
     priority: task.priority,
     urgency: task.urgency,
     estimatedTime: task.estimatedTime,
-    selectedTime: slot.startTime || '09:00'
+    selectedTime: slot.startTime || '09:00',
+    selectedDate: formatDateForInput(slotDate)
   })
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     if (formData.title.trim()) {
-      const { selectedTime, ...taskData } = formData
+      const { selectedTime, selectedDate, ...taskData } = formData
       // estimatedTimeが空文字の場合は60に設定
       const finalTaskData = {
         ...taskData,
         estimatedTime: taskData.estimatedTime === '' ? 60 : taskData.estimatedTime
       }
-      onSave(finalTaskData, selectedTime)
+      // selectedDateをDateオブジェクトに変換
+      const [year, month, day] = selectedDate.split('-').map(Number)
+      const taskDate = new Date(year, month - 1, day)
+      
+      onSave(finalTaskData, selectedTime, taskDate)
     }
   }
 
@@ -1230,10 +1259,22 @@ function CalendarTaskEditForm({ task, slot, onSave, onCancel }: CalendarTaskEdit
             ))}
           </select>
 
+          <input
+            type="date"
+            value={formData.selectedDate}
+            onChange={(e) => setFormData(prev => ({ ...prev, selectedDate: e.target.value }))}
+            className="px-2 py-1 border border-border rounded text-xs bg-background"
+          />
+        </div>
+
+        <div>
+          <label className="block text-xs font-medium text-muted-foreground mb-1">
+            開始時間
+          </label>
           <select
             value={formData.selectedTime}
             onChange={(e) => setFormData(prev => ({ ...prev, selectedTime: e.target.value }))}
-            className="px-2 py-1 border border-border rounded text-xs bg-background"
+            className="w-full px-2 py-1 border border-border rounded text-xs bg-background"
           >
             {timeOptions.map(time => (
               <option key={time} value={time}>{time}</option>
@@ -1404,11 +1445,11 @@ function CalendarView({ selectedDate, setSelectedDate, scheduledSlots, tasks }: 
   }
 
   // カレンダーからのタスク編集ハンドラー
-  const handleCalendarTaskEdit = async (taskData: any, time: string) => {
+  const handleCalendarTaskEdit = async (taskData: any, time: string, date: Date) => {
     if (!user || !editingTask || !editingSlot) return
     
     try {
-      console.log('📝 Editing task from calendar:', { taskData, time, taskId: editingTask.id })
+      console.log('📝 Editing task from calendar:', { taskData, time, date: date.toDateString(), taskId: editingTask.id })
       
       // タスクの情報を更新
       await updateTask(editingTask.id, {
@@ -1419,16 +1460,22 @@ function CalendarView({ selectedDate, setSelectedDate, scheduledSlots, tasks }: 
         estimatedTime: taskData.estimatedTime
       })
       
-      // 時間が変更された場合はタイムスロットを更新
-      if (time !== editingSlot.startTime) {
-        console.log('⏰ Time changed, updating schedule...')
+      // 現在のスロット日付
+      const currentSlotDate = editingSlot.date instanceof Date ? editingSlot.date : new Date(editingSlot.date)
+      const currentDateString = currentSlotDate.toDateString()
+      const newDateString = date.toDateString()
+      
+      // 時間または日付が変更された場合はタイムスロットを更新
+      if (time !== editingSlot.startTime || currentDateString !== newDateString) {
+        console.log('⏰ Time or date changed, updating schedule...')
+        console.log('Current:', { date: currentDateString, time: editingSlot.startTime })
+        console.log('New:', { date: newDateString, time })
         
         // 現在のスロットを削除
         await removeTimeSlot(editingSlot.id)
         
-        // 新しい時間でスケジュール
-        const slotDate = editingSlot.date instanceof Date ? editingSlot.date : new Date(editingSlot.date)
-        await moveTaskToTimeline(editingTask.id, slotDate, time, user.id)
+        // 新しい日付と時間でスケジュール
+        await moveTaskToTimeline(editingTask.id, date, time, user.id)
       }
       
       console.log('✅ Calendar task edited successfully!')
@@ -1692,7 +1739,7 @@ function CalendarView({ selectedDate, setSelectedDate, scheduledSlots, tasks }: 
           <div className="mt-4 relative">
             <CalendarTaskForm
               date={selectedDate}
-              onSave={(taskData, time) => handleCalendarTaskCreate(taskData, time, selectedDate)}
+              onSave={(taskData, time, date) => handleCalendarTaskCreate(taskData, time, date)}
               onCancel={() => {
                 setActiveFormDate(null)
                 setFormLocation(null)
@@ -1707,7 +1754,7 @@ function CalendarView({ selectedDate, setSelectedDate, scheduledSlots, tasks }: 
             <CalendarTaskEditForm
               task={editingTask}
               slot={editingSlot}
-              onSave={(taskData, time) => handleCalendarTaskEdit(taskData, time)}
+              onSave={(taskData, time, date) => handleCalendarTaskEdit(taskData, time, date)}
               onCancel={() => {
                 setEditingTask(null)
                 setEditingSlot(null)
