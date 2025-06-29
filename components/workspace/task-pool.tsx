@@ -6,7 +6,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
-import { Plus, Circle, Clock, AlertCircle, X, Edit2, Trash2, MoreVertical, Check, RotateCcw, ChevronDown, ChevronUp, Settings, ChevronLeft, ChevronRight } from 'lucide-react'
+import { Plus, Circle, Clock, AlertCircle, X, Edit2, Trash2, MoreVertical, Check, RotateCcw, ChevronDown, ChevronUp, Settings, ChevronLeft, ChevronRight, Copy } from 'lucide-react'
 import { useTaskStoreWithAuth } from '@/lib/hooks/use-task-store-with-auth'
 import { useAuth } from '@/lib/auth/auth-context'
 import { useSortable, SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable'
@@ -40,7 +40,8 @@ interface DraggableTaskCardProps {
 function DraggableTaskCard({ task }: DraggableTaskCardProps) {
   const [showActions, setShowActions] = useState(false)
   const [isEditing, setIsEditing] = useState(false)
-  const { updateTask, deleteTask, completeTask } = useTaskStoreWithAuth()
+  const { updateTask, deleteTask, completeTask, addTask } = useTaskStoreWithAuth()
+  const { user } = useAuth()
   const {
     attributes,
     listeners,
@@ -75,6 +76,21 @@ function DraggableTaskCard({ task }: DraggableTaskCardProps) {
 
   const handleComplete = () => {
     completeTask(task.id)
+    setShowActions(false)
+  }
+
+  const handleCopy = async () => {
+    if (!user) return
+    
+    await addTask({
+      title: task.title,
+      priority: task.priority,
+      urgency: task.urgency,
+      category: task.category,
+      estimatedTime: task.estimatedTime,
+      status: 'todo'
+    }, user.id)
+    
     setShowActions(false)
   }
 
@@ -141,6 +157,15 @@ function DraggableTaskCard({ task }: DraggableTaskCardProps) {
                 onClick={handleComplete}
               >
                 <Check className="w-3 h-3" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-6 w-6 p-0 hover:bg-purple-100 dark:hover:bg-purple-900 text-purple-600"
+                onClick={handleCopy}
+                title="タスクをコピー"
+              >
+                <Copy className="w-3 h-3" />
               </Button>
               <Button
                 variant="ghost"

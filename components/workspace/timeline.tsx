@@ -4,7 +4,7 @@ import { useState, useEffect, useRef, useCallback } from 'react'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
-import { Calendar, ChevronLeft, ChevronRight, Clock, Edit2, Trash2, X, Check, RotateCcw, CalendarDays, Plus } from 'lucide-react'
+import { Calendar, ChevronLeft, ChevronRight, Clock, Edit2, Trash2, X, Check, RotateCcw, CalendarDays, Plus, Copy } from 'lucide-react'
 import { useDroppable } from '@dnd-kit/core'
 import { useSortable, SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
@@ -39,7 +39,8 @@ interface ScheduledTaskCardProps {
 function ScheduledTaskCard({ task, slotId, slotData }: ScheduledTaskCardProps) {
   const [showActions, setShowActions] = useState(false)
   const [isEditing, setIsEditing] = useState(false)
-  const { updateTask, removeTimeSlot, completeTask, uncompleteTask } = useTaskStoreWithAuth()
+  const { updateTask, removeTimeSlot, completeTask, uncompleteTask, addTask } = useTaskStoreWithAuth()
+  const { user } = useAuth()
   const {
     attributes,
     listeners,
@@ -73,6 +74,21 @@ function ScheduledTaskCard({ task, slotId, slotData }: ScheduledTaskCardProps) {
 
   const handleUncomplete = () => {
     uncompleteTask(task.id)
+    setShowActions(false)
+  }
+
+  const handleCopy = async () => {
+    if (!user) return
+    
+    await addTask({
+      title: task.title,
+      priority: task.priority,
+      urgency: task.urgency,
+      category: task.category,
+      estimatedTime: task.estimatedTime,
+      status: 'todo'
+    }, user.id)
+    
     setShowActions(false)
   }
 
@@ -171,6 +187,15 @@ function ScheduledTaskCard({ task, slotId, slotData }: ScheduledTaskCardProps) {
                     onClick={handleComplete}
                   >
                     <Check className="w-2.5 h-2.5" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-5 w-5 p-0 hover:bg-purple-200 dark:hover:bg-purple-800 text-purple-600"
+                    onClick={handleCopy}
+                    title="タスクをコピー"
+                  >
+                    <Copy className="w-2.5 h-2.5" />
                   </Button>
                   <Button
                     variant="ghost"
