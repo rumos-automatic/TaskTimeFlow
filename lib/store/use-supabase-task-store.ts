@@ -351,11 +351,12 @@ export const useSupabaseTaskStore = create<SupabaseTaskStore>()((set, get) => {
             thirtyDaysFromNow.setDate(thirtyDaysFromNow.getDate() + 30)
             
             if (nextDate <= thirtyDaysFromNow) {
-              // 既に同じ日付のインスタンスが存在しないかチェック
+              // 既に同じ日付に同じタイトルのタスクが存在しないかチェック
               const existingInstance = get().tasks.find(task => 
-                task.parentRecurringTaskId === completedTask.id &&
+                task.title === completedTask.title &&
                 task.scheduledDate &&
-                task.scheduledDate.toDateString() === nextDate.toDateString()
+                task.scheduledDate.toDateString() === nextDate.toDateString() &&
+                task.status !== 'completed' // 完了済みは除外
               )
               
               if (!existingInstance) {
@@ -741,11 +742,12 @@ export const useSupabaseTaskStore = create<SupabaseTaskStore>()((set, get) => {
         
         for (const recurringTask of recurringTasks) {
           if (shouldGenerateTaskForDate(recurringTask, targetDate)) {
-            // 既に同じ日付に同じ親タスクのインスタンスが存在するかチェック
+            // 既に同じ日付に同じタイトルのタスクが存在するかチェック
             const existingInstance = tasks.find(task => 
-              task.parentRecurringTaskId === recurringTask.id &&
+              task.title === recurringTask.title &&
               task.scheduledDate &&
-              new Date(task.scheduledDate).toDateString() === targetDate.toDateString()
+              new Date(task.scheduledDate).toDateString() === targetDate.toDateString() &&
+              task.status !== 'completed' // 完了済みは除外
             )
             
             if (!existingInstance) {

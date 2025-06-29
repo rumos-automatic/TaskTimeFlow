@@ -107,8 +107,14 @@ export function createTaskInstance(
     scheduledDate,
     scheduledTime: parentTask.scheduledTime,
     duration: parentTask.duration,
-    parentRecurringTaskId: parentTask.id,
-    isRecurring: false // インスタンスは繰り返しタスクではない
+    // 繰り返し属性を引き継ぐ
+    isRecurring: parentTask.isRecurring,
+    recurrenceType: parentTask.recurrenceType,
+    recurrenceInterval: parentTask.recurrenceInterval,
+    recurrenceEndDate: parentTask.recurrenceEndDate,
+    recurringPattern: parentTask.recurringPattern,
+    // 親タスクIDは保持しない（このタスク自体が繰り返しタスクとなるため）
+    parentRecurringTaskId: undefined
   }
 }
 
