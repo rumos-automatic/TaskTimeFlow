@@ -862,16 +862,18 @@ export function Timeline({
           >
             <ChevronLeft className="w-4 h-4" />
           </Button>
-          <h3 className="font-medium text-sm md:text-base">
-            {selectedDate.toDateString() === new Date().toDateString() 
-              ? '本日' 
-              : ''}
-            {selectedDate.toLocaleDateString('ja-JP', { 
-              month: 'long', 
-              day: 'numeric', 
-              weekday: 'short' 
-            })}
-          </h3>
+          <div className="min-w-[140px] md:min-w-[160px] text-center">
+            <h3 className="font-medium text-sm md:text-base">
+              {selectedDate.toDateString() === new Date().toDateString() 
+                ? '本日' 
+                : ''}
+              {selectedDate.toLocaleDateString('ja-JP', { 
+                month: 'long', 
+                day: 'numeric', 
+                weekday: 'short' 
+              })}
+            </h3>
+          </div>
           <Button 
             variant="outline" 
             size="sm"
@@ -883,18 +885,18 @@ export function Timeline({
           >
             <ChevronRight className="w-4 h-4" />
           </Button>
+        </div>
+        <div className="flex space-x-2">
           {selectedDate.toDateString() !== new Date().toDateString() && (
             <Button
               variant="outline"
               size="sm"
               onClick={() => setSelectedDate(new Date())}
-              className="ml-1 md:ml-2 text-xs md:text-sm px-2 md:px-3"
+              className="text-xs md:text-sm px-2 md:px-3"
             >
               今日
             </Button>
           )}
-        </div>
-        <div className="flex space-x-2">
           <Button 
             variant={viewMode === 'timeline' ? 'default' : 'outline'} 
             size="sm"
