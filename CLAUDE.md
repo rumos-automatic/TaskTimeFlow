@@ -134,6 +134,17 @@ npm run db:studio     # Open database studio
 - **Task Completion Rate**: 70%+ target
 - **6-month Retention**: 60%+ target
 
+## Future Features (Roadmap)
+
+### 🤖 AI Task Assistant (Pro Feature) - PLANNED
+- **Natural Language Processing**: Convert natural language to structured tasks
+  - Example: "明日の会議の準備" → Category: Work, Priority: High, Time: 30min
+- **Smart Time Estimation**: Predict task duration based on historical data
+- **Optimal Scheduling**: AI suggests best time slots for tasks
+- **Task Clustering**: Group similar tasks for batch processing
+- **Daily Planning Assistant**: Morning AI briefing with optimized schedule
+- **Integration**: OpenAI GPT-4, Claude, Google Gemini via Edge APIs
+
 ## Important Files
 
 - `/docs/requirements.md` - Detailed requirements and specifications

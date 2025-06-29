@@ -103,6 +103,7 @@ export type Database = {
           recurrence_end_date: string | null
           parent_recurring_task_id: string | null
           recurring_pattern: any | null
+          notes: string | null
         }
         Insert: {
           actual_time?: number | null
@@ -128,6 +129,7 @@ export type Database = {
           recurrence_end_date?: string | null
           parent_recurring_task_id?: string | null
           recurring_pattern?: any | null
+          notes?: string | null
         }
         Update: {
           actual_time?: number | null
@@ -153,6 +155,7 @@ export type Database = {
           recurrence_end_date?: string | null
           parent_recurring_task_id?: string | null
           recurring_pattern?: any | null
+          notes?: string | null
         }
         Relationships: []
       }

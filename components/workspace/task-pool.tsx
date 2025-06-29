@@ -6,7 +6,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
-import { Plus, Circle, Clock, AlertCircle, X, Edit2, Trash2, MoreVertical, Check, RotateCcw, ChevronDown, ChevronUp, Settings, ChevronLeft, ChevronRight, Copy, RefreshCw } from 'lucide-react'
+import { Plus, Circle, Clock, AlertCircle, X, Edit2, Trash2, MoreVertical, Check, RotateCcw, ChevronDown, ChevronUp, Settings, ChevronLeft, ChevronRight, Copy, RefreshCw, FileText } from 'lucide-react'
 import { useTaskStoreWithAuth } from '@/lib/hooks/use-task-store-with-auth'
 import { useAuth } from '@/lib/auth/auth-context'
 import { useSortable, SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable'
@@ -18,6 +18,8 @@ import { useCategoryStoreWithAuth } from '@/lib/hooks/use-category-store-with-au
 import { BUILT_IN_CATEGORIES } from '@/lib/store/use-category-store'
 import { CategoryManagement } from './category-management'
 import { getRecurrenceDescription } from '@/lib/utils/recurring-tasks'
+import { RichTextEditor } from '@/components/ui/rich-text-editor'
+import { TaskDetailModal } from './task-detail-modal'
 
 const priorityColors: Record<Priority, string> = {
   high: 'border-red-500 bg-red-50 dark:bg-red-950/20',
@@ -41,6 +43,7 @@ interface DraggableTaskCardProps {
 function DraggableTaskCard({ task }: DraggableTaskCardProps) {
   const [showActions, setShowActions] = useState(false)
   const [isEditing, setIsEditing] = useState(false)
+  const [showDetail, setShowDetail] = useState(false)
   const { updateTask, deleteTask, completeTask, addTask } = useTaskStoreWithAuth()
   const { user } = useAuth()
   const {
@@ -124,7 +127,12 @@ function DraggableTaskCard({ task }: DraggableTaskCardProps) {
           className="flex items-start justify-between relative cursor-move w-full"
         >
           <div className="flex-1">
-            <h4 className="font-medium text-sm mb-2">{task.title}</h4>
+            <h4 
+              className="font-medium text-sm mb-2 cursor-pointer hover:text-primary transition-colors"
+              onClick={() => setShowDetail(true)}
+            >
+              {task.title}
+            </h4>
             <div className="flex items-center space-x-2 text-xs">
               {/* 優先度バッジ */}
               <div className={`px-2 py-1 rounded-full font-medium ${
@@ -150,6 +158,13 @@ function DraggableTaskCard({ task }: DraggableTaskCardProps) {
                 <div className="flex items-center space-x-1 text-purple-600" title={getRecurrenceDescription(task)}>
                   <RefreshCw className="w-3 h-3" />
                   <span className="text-xs">{getRecurrenceDescription(task)}</span>
+                </div>
+              )}
+              {/* メモアイコン */}
+              {task.notes && (
+                <div className="flex items-center space-x-1 text-amber-600" title="メモあり">
+                  <FileText className="w-3 h-3" />
+                  <span className="text-xs">メモ</span>
                 </div>
               )}
             </div>
@@ -195,6 +210,15 @@ function DraggableTaskCard({ task }: DraggableTaskCardProps) {
           )}
         </div>
       </Card>
+      <TaskDetailModal
+        task={task}
+        isOpen={showDetail}
+        onClose={() => setShowDetail(false)}
+        onSave={(taskId, updates) => {
+          updateTask(taskId, updates)
+          setShowDetail(false)
+        }}
+      />
     </div>
   )
 }
@@ -298,7 +322,8 @@ function EditTaskCard({ task, onSave, onCancel }: EditTaskCardProps) {
     priority: task.priority,
     urgency: task.urgency,
     category: task.category,
-    estimatedTime: task.estimatedTime as number | ''
+    estimatedTime: task.estimatedTime as number | '',
+    notes: task.notes || ''
   })
 
 
@@ -403,6 +428,19 @@ function EditTaskCard({ task, onSave, onCancel }: EditTaskCardProps) {
             }}
             className="px-2 py-1 border border-border rounded text-xs bg-background"
             placeholder="分"
+          />
+        </div>
+
+        {/* メモ欄 */}
+        <div className="space-y-2">
+          <label className="text-xs font-medium text-foreground block">
+            メモ
+          </label>
+          <RichTextEditor
+            value={formData.notes}
+            onChange={(value) => setFormData(prev => ({ ...prev, notes: value }))}
+            placeholder="タスクに関するメモを入力..."
+            className="text-sm"
           />
         </div>
 

@@ -31,6 +31,8 @@ export interface Task {
   recurrenceEndDate?: Date
   parentRecurringTaskId?: string
   recurringPattern?: RecurringPattern
+  // Rich text notes
+  notes?: string
 }
 
 export interface TimeSlot {

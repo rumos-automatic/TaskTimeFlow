@@ -46,6 +46,7 @@ export function dbTaskToTask(dbTask: DbTask): Task {
     recurrenceEndDate: dbTask.recurrence_end_date ? parseDateFromDatabase(dbTask.recurrence_end_date) : undefined,
     parentRecurringTaskId: dbTask.parent_recurring_task_id || undefined,
     recurringPattern: dbTask.recurring_pattern || undefined,
+    notes: dbTask.notes || undefined,
     createdAt: new Date(dbTask.created_at!),
     updatedAt: new Date(dbTask.updated_at!)
   }
@@ -72,7 +73,8 @@ export function taskToDbTaskInsert(task: Omit<Task, 'id' | 'createdAt' | 'update
     recurrence_interval: task.recurrenceInterval || null,
     recurrence_end_date: task.recurrenceEndDate ? formatDateForDatabase(task.recurrenceEndDate) : null,
     parent_recurring_task_id: task.parentRecurringTaskId || null,
-    recurring_pattern: task.recurringPattern || null
+    recurring_pattern: task.recurringPattern || null,
+    notes: task.notes || null
   }
 }
 
@@ -98,6 +100,7 @@ export function taskToDbTaskUpdate(task: Partial<Task>): DbTaskUpdate {
   if (task.recurrenceEndDate !== undefined) update.recurrence_end_date = task.recurrenceEndDate ? formatDateForDatabase(task.recurrenceEndDate) : null
   if (task.parentRecurringTaskId !== undefined) update.parent_recurring_task_id = task.parentRecurringTaskId
   if (task.recurringPattern !== undefined) update.recurring_pattern = task.recurringPattern
+  if (task.notes !== undefined) update.notes = task.notes
   
   return update
 }
