@@ -96,6 +96,13 @@ export type Database = {
           updated_at: string | null
           urgency: string
           user_id: string
+          // 繰り返しタスクフィールド
+          is_recurring: boolean | null
+          recurrence_type: string | null
+          recurrence_interval: number | null
+          recurrence_end_date: string | null
+          parent_recurring_task_id: string | null
+          recurring_pattern: any | null
         }
         Insert: {
           actual_time?: number | null
@@ -114,6 +121,13 @@ export type Database = {
           updated_at?: string | null
           urgency?: string
           user_id: string
+          // 繰り返しタスクフィールド
+          is_recurring?: boolean | null
+          recurrence_type?: string | null
+          recurrence_interval?: number | null
+          recurrence_end_date?: string | null
+          parent_recurring_task_id?: string | null
+          recurring_pattern?: any | null
         }
         Update: {
           actual_time?: number | null
@@ -132,6 +146,13 @@ export type Database = {
           updated_at?: string | null
           urgency?: string
           user_id?: string
+          // 繰り返しタスクフィールド
+          is_recurring?: boolean | null
+          recurrence_type?: string | null
+          recurrence_interval?: number | null
+          recurrence_end_date?: string | null
+          parent_recurring_task_id?: string | null
+          recurring_pattern?: any | null
         }
         Relationships: []
       }

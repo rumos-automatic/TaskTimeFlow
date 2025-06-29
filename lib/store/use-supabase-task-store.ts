@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 import { Task, TimeSlot, Priority, Urgency, TaskStatus, TaskCategory } from '@/lib/types'
-import { shouldGenerateTaskForDate, createTaskInstance } from '@/lib/utils/recurring-tasks'
+import { shouldGenerateTaskForDate, createTaskInstance, calculateNextOccurrence } from '@/lib/utils/recurring-tasks'
 import { TaskService } from '@/lib/supabase/task-service'
 
 interface SupabaseTaskStore {
@@ -10,6 +10,7 @@ interface SupabaseTaskStore {
   loading: boolean
   error: string | null
   syncing: boolean
+  currentUserId: string | null
   
   // Filters and sorting
   selectedCategory: TaskCategory | 'all'
@@ -92,6 +93,7 @@ export const useSupabaseTaskStore = create<SupabaseTaskStore>()((set, get) => {
     loading: false,
     error: null,
     syncing: false,
+    currentUserId: null,
     selectedCategory: 'all',
     searchQuery: '',
 
@@ -110,7 +112,7 @@ export const useSupabaseTaskStore = create<SupabaseTaskStore>()((set, get) => {
         
         console.log('Starting Supabase store initialization for user:', userId)
         isInitialized = true
-        set({ loading: true, error: null })
+        set({ loading: true, error: null, currentUserId: userId })
         
         // Fetch initial data
         const [tasks, timeSlots] = await Promise.all([
@@ -222,7 +224,8 @@ export const useSupabaseTaskStore = create<SupabaseTaskStore>()((set, get) => {
         timeSlots: [],
         loading: false,
         error: null,
-        syncing: false
+        syncing: false,
+        currentUserId: null
       })
     },
 
@@ -326,10 +329,62 @@ export const useSupabaseTaskStore = create<SupabaseTaskStore>()((set, get) => {
     },
 
     completeTask: async (id) => {
-      await get().updateTask(id, { 
-        status: 'completed', 
-        completedAt: new Date() 
-      })
+      try {
+        // タスクを完了状態に更新
+        await get().updateTask(id, { 
+          status: 'completed', 
+          completedAt: new Date() 
+        })
+
+        // 完了したタスクが繰り返しタスクの場合、次のインスタンスを生成
+        const completedTask = get().tasks.find(t => t.id === id)
+        if (completedTask && completedTask.isRecurring && completedTask.recurrenceType !== 'none') {
+          console.log('🔄 繰り返しタスクを完了:', completedTask.title)
+          
+          // 次の発生日を計算
+          const nextDate = calculateNextOccurrence(completedTask, new Date())
+          if (nextDate) {
+            console.log('📅 次の発生日:', nextDate.toLocaleDateString('ja-JP'))
+            
+            // 今後30日以内の場合のみ生成（無限生成を防ぐ）
+            const thirtyDaysFromNow = new Date()
+            thirtyDaysFromNow.setDate(thirtyDaysFromNow.getDate() + 30)
+            
+            if (nextDate <= thirtyDaysFromNow) {
+              // 既に同じ日付のインスタンスが存在しないかチェック
+              const existingInstance = get().tasks.find(task => 
+                task.parentRecurringTaskId === completedTask.id &&
+                task.scheduledDate &&
+                task.scheduledDate.toDateString() === nextDate.toDateString()
+              )
+              
+              if (!existingInstance) {
+                const currentUserId = get().currentUserId
+                if (!currentUserId) {
+                  console.error('User ID not found in store')
+                  return
+                }
+                
+                // 次のタスクインスタンスを作成
+                const nextTaskData = createTaskInstance(completedTask, nextDate, currentUserId)
+                
+                // addTaskメソッドを使用
+                const { addTask } = get()
+                await addTask(nextTaskData, currentUserId)
+                console.log('✅ 次の繰り返しタスクを生成しました')
+              } else {
+                console.log('⏭️ この日付のタスクは既に存在します')
+              }
+            }
+          }
+        }
+      } catch (error) {
+        console.error('Failed to complete task:', error)
+        set({ 
+          error: 'タスクの完了に失敗しました',
+          syncing: false 
+        })
+      }
     },
 
     uncompleteTask: async (id) => {

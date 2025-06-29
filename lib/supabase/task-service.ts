@@ -39,6 +39,13 @@ export function dbTaskToTask(dbTask: DbTask): Task {
     scheduledDate: dbTask.scheduled_date ? parseDateFromDatabase(dbTask.scheduled_date) : undefined,
     scheduledTime: dbTask.scheduled_time || undefined,
     duration: dbTask.duration || undefined,
+    // 繰り返しタスクフィールド
+    isRecurring: dbTask.is_recurring || false,
+    recurrenceType: (dbTask.recurrence_type as any) || 'none',
+    recurrenceInterval: dbTask.recurrence_interval || undefined,
+    recurrenceEndDate: dbTask.recurrence_end_date ? parseDateFromDatabase(dbTask.recurrence_end_date) : undefined,
+    parentRecurringTaskId: dbTask.parent_recurring_task_id || undefined,
+    recurringPattern: dbTask.recurring_pattern || undefined,
     createdAt: new Date(dbTask.created_at!),
     updatedAt: new Date(dbTask.updated_at!)
   }
@@ -58,7 +65,14 @@ export function taskToDbTaskInsert(task: Omit<Task, 'id' | 'createdAt' | 'update
     completed_at: task.completedAt?.toISOString(),
     scheduled_date: task.scheduledDate ? formatDateForDatabase(task.scheduledDate) : null,
     scheduled_time: task.scheduledTime,
-    duration: task.duration
+    duration: task.duration,
+    // 繰り返しタスクフィールド
+    is_recurring: task.isRecurring || false,
+    recurrence_type: task.recurrenceType || 'none',
+    recurrence_interval: task.recurrenceInterval || null,
+    recurrence_end_date: task.recurrenceEndDate ? formatDateForDatabase(task.recurrenceEndDate) : null,
+    parent_recurring_task_id: task.parentRecurringTaskId || null,
+    recurring_pattern: task.recurringPattern || null
   }
 }
 
@@ -77,6 +91,13 @@ export function taskToDbTaskUpdate(task: Partial<Task>): DbTaskUpdate {
   if (task.scheduledDate !== undefined) update.scheduled_date = task.scheduledDate ? formatDateForDatabase(task.scheduledDate) : null
   if (task.scheduledTime !== undefined) update.scheduled_time = task.scheduledTime
   if (task.duration !== undefined) update.duration = task.duration
+  // 繰り返しタスクフィールド
+  if (task.isRecurring !== undefined) update.is_recurring = task.isRecurring
+  if (task.recurrenceType !== undefined) update.recurrence_type = task.recurrenceType
+  if (task.recurrenceInterval !== undefined) update.recurrence_interval = task.recurrenceInterval
+  if (task.recurrenceEndDate !== undefined) update.recurrence_end_date = task.recurrenceEndDate ? formatDateForDatabase(task.recurrenceEndDate) : null
+  if (task.parentRecurringTaskId !== undefined) update.parent_recurring_task_id = task.parentRecurringTaskId
+  if (task.recurringPattern !== undefined) update.recurring_pattern = task.recurringPattern
   
   return update
 }

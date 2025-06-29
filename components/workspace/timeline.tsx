@@ -4,7 +4,7 @@ import { useState, useEffect, useRef, useCallback } from 'react'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
-import { Calendar, ChevronLeft, ChevronRight, Clock, Edit2, Trash2, X, Check, RotateCcw, CalendarDays, Plus, Copy } from 'lucide-react'
+import { Calendar, ChevronLeft, ChevronRight, Clock, Edit2, Trash2, X, Check, RotateCcw, CalendarDays, Plus, Copy, RefreshCw } from 'lucide-react'
 import { useDroppable } from '@dnd-kit/core'
 import { useSortable, SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
@@ -14,6 +14,7 @@ import { useAuth } from '@/lib/auth/auth-context'
 import { useViewState } from '@/lib/hooks/use-view-state'
 import { useCategoryStoreWithAuth } from '@/lib/hooks/use-category-store-with-auth'
 import { Task, Priority, Urgency, TaskCategory } from '@/lib/types'
+import { getRecurrenceDescription } from '@/lib/utils/recurring-tasks'
 
 const timeSlots = Array.from({ length: 96 }, (_, i) => {
   const hour = Math.floor(i / 4)
@@ -173,6 +174,13 @@ function ScheduledTaskCard({ task, slotId, slotData }: ScheduledTaskCardProps) {
                 )}
               </div>
             </div>
+            {/* 繰り返しアイコン */}
+            {task.isRecurring && (
+              <div className="flex items-center space-x-1 text-purple-600 text-xs mt-1" title={getRecurrenceDescription(task)}>
+                <RefreshCw className="w-3 h-3" />
+                <span>{getRecurrenceDescription(task)}</span>
+              </div>
+            )}
           </div>
           
           {/* アクションボタン */}

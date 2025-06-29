@@ -6,7 +6,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
-import { Plus, Circle, Clock, AlertCircle, X, Edit2, Trash2, MoreVertical, Check, RotateCcw, ChevronDown, ChevronUp, Settings, ChevronLeft, ChevronRight, Copy } from 'lucide-react'
+import { Plus, Circle, Clock, AlertCircle, X, Edit2, Trash2, MoreVertical, Check, RotateCcw, ChevronDown, ChevronUp, Settings, ChevronLeft, ChevronRight, Copy, RefreshCw } from 'lucide-react'
 import { useTaskStoreWithAuth } from '@/lib/hooks/use-task-store-with-auth'
 import { useAuth } from '@/lib/auth/auth-context'
 import { useSortable, SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable'
@@ -17,6 +17,7 @@ import { useViewState } from '@/lib/hooks/use-view-state'
 import { useCategoryStoreWithAuth } from '@/lib/hooks/use-category-store-with-auth'
 import { BUILT_IN_CATEGORIES } from '@/lib/store/use-category-store'
 import { CategoryManagement } from './category-management'
+import { getRecurrenceDescription } from '@/lib/utils/recurring-tasks'
 
 const priorityColors: Record<Priority, string> = {
   high: 'border-red-500 bg-red-50 dark:bg-red-950/20',
@@ -144,6 +145,13 @@ function DraggableTaskCard({ task }: DraggableTaskCardProps) {
                 <Clock className="w-3 h-3" />
                 <span>{formatTime(task.estimatedTime)}</span>
               </div>
+              {/* 繰り返しアイコン */}
+              {task.isRecurring && (
+                <div className="flex items-center space-x-1 text-purple-600" title={getRecurrenceDescription(task)}>
+                  <RefreshCw className="w-3 h-3" />
+                  <span className="text-xs">{getRecurrenceDescription(task)}</span>
+                </div>
+              )}
             </div>
           </div>
           
