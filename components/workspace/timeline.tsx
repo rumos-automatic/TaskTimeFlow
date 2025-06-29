@@ -850,25 +850,45 @@ export function Timeline({
     <div className="space-y-4 h-full flex flex-col">
       {/* View Controls */}
       <div className="flex items-center justify-between">
-        <div className="flex items-center space-x-0.5 md:space-x-2">
+        <div className="flex items-center space-x-1 md:space-x-2">
+          {/* 月ナビゲーション */}
+          <div className="flex items-center space-x-0.5">
+            <Button 
+              variant="ghost" 
+              size="sm"
+              className="h-7 w-7 p-0 md:h-8 md:w-8"
+              onClick={() => {
+                const newDate = new Date(selectedDate)
+                newDate.setMonth(newDate.getMonth() - 1)
+                setSelectedDate(newDate)
+              }}
+              title="前の月"
+            >
+              <ChevronLeft className="w-3 h-3 md:w-4 md:h-4" />
+            </Button>
+            <span className="text-[10px] md:text-xs text-muted-foreground">月</span>
+            <Button 
+              variant="ghost" 
+              size="sm"
+              className="h-7 w-7 p-0 md:h-8 md:w-8"
+              onClick={() => {
+                const newDate = new Date(selectedDate)
+                newDate.setMonth(newDate.getMonth() + 1)
+                setSelectedDate(newDate)
+              }}
+              title="次の月"
+            >
+              <ChevronRight className="w-3 h-3 md:w-4 md:h-4" />
+            </Button>
+          </div>
+          
+          <div className="w-px h-5 bg-border mx-1" />
+          
+          {/* 日ナビゲーション */}
           <Button 
-            variant="outline" 
+            variant="ghost" 
             size="sm"
-            className="p-0.5 w-6 md:w-auto md:px-3 md:py-1.5"
-            onClick={() => {
-              const newDate = new Date(selectedDate)
-              newDate.setMonth(newDate.getMonth() - 1)
-              setSelectedDate(newDate)
-            }}
-            title="前の月"
-          >
-            <ChevronLeft className="w-2 h-2 md:w-4 md:h-4" />
-            <ChevronLeft className="w-2 h-2 md:w-4 md:h-4 -ml-1 md:-ml-2" />
-          </Button>
-          <Button 
-            variant="outline" 
-            size="sm"
-            className="p-1 md:px-3 md:py-1.5"
+            className="h-7 w-7 p-0 md:h-8 md:w-8"
             onClick={() => {
               const newDate = new Date(selectedDate)
               newDate.setDate(newDate.getDate() - 1)
@@ -878,7 +898,8 @@ export function Timeline({
           >
             <ChevronLeft className="w-3 h-3 md:w-4 md:h-4" />
           </Button>
-          <div className="min-w-[120px] md:min-w-[160px] text-center px-1 md:px-2">
+          
+          <div className="min-w-[100px] md:min-w-[140px] text-center px-1">
             <h3 className="font-medium text-xs md:text-base">
               {selectedDate.toDateString() === new Date().toDateString() 
                 ? '本日' 
@@ -890,10 +911,11 @@ export function Timeline({
               })}
             </h3>
           </div>
+          
           <Button 
-            variant="outline" 
+            variant="ghost" 
             size="sm"
-            className="p-1 md:px-3 md:py-1.5"
+            className="h-7 w-7 p-0 md:h-8 md:w-8"
             onClick={() => {
               const newDate = new Date(selectedDate)
               newDate.setDate(newDate.getDate() + 1)
@@ -902,20 +924,6 @@ export function Timeline({
             title="次の日"
           >
             <ChevronRight className="w-3 h-3 md:w-4 md:h-4" />
-          </Button>
-          <Button 
-            variant="outline" 
-            size="sm"
-            className="p-0.5 w-6 md:w-auto md:px-3 md:py-1.5"
-            onClick={() => {
-              const newDate = new Date(selectedDate)
-              newDate.setMonth(newDate.getMonth() + 1)
-              setSelectedDate(newDate)
-            }}
-            title="次の月"
-          >
-            <ChevronRight className="w-2 h-2 md:w-4 md:h-4 -mr-1 md:-mr-2" />
-            <ChevronRight className="w-2 h-2 md:w-4 md:h-4" />
           </Button>
         </div>
         <div className="flex space-x-2">
