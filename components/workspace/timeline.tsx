@@ -854,7 +854,7 @@ export function Timeline({
           <Button 
             variant="outline" 
             size="sm"
-            className="p-1 md:px-3 md:py-1.5"
+            className="p-0.5 w-6 md:w-auto md:px-3 md:py-1.5"
             onClick={() => {
               const newDate = new Date(selectedDate)
               newDate.setMonth(newDate.getMonth() - 1)
@@ -862,8 +862,8 @@ export function Timeline({
             }}
             title="前の月"
           >
-            <ChevronLeft className="w-3 h-3 md:w-4 md:h-4" />
-            <ChevronLeft className="w-3 h-3 md:w-4 md:h-4 -ml-1.5 md:-ml-2" />
+            <ChevronLeft className="w-2 h-2 md:w-4 md:h-4" />
+            <ChevronLeft className="w-2 h-2 md:w-4 md:h-4 -ml-1 md:-ml-2" />
           </Button>
           <Button 
             variant="outline" 
@@ -906,7 +906,7 @@ export function Timeline({
           <Button 
             variant="outline" 
             size="sm"
-            className="p-1 md:px-3 md:py-1.5"
+            className="p-0.5 w-6 md:w-auto md:px-3 md:py-1.5"
             onClick={() => {
               const newDate = new Date(selectedDate)
               newDate.setMonth(newDate.getMonth() + 1)
@@ -914,8 +914,8 @@ export function Timeline({
             }}
             title="次の月"
           >
-            <ChevronRight className="w-3 h-3 md:w-4 md:h-4 -mr-1.5 md:-mr-2" />
-            <ChevronRight className="w-3 h-3 md:w-4 md:h-4" />
+            <ChevronRight className="w-2 h-2 md:w-4 md:h-4 -mr-1 md:-mr-2" />
+            <ChevronRight className="w-2 h-2 md:w-4 md:h-4" />
           </Button>
         </div>
         <div className="flex space-x-2">
