@@ -293,18 +293,32 @@ function EditScheduledTaskCard({ task, slot, onSave, onCancel }: EditScheduledTa
     category: task.category,
     estimatedTime: task.estimatedTime
   })
+  // 数値入力のための文字列状態
+  const [estimatedTimeInput, setEstimatedTimeInput] = useState(String(task.estimatedTime))
   
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     
+    // 数値に変換して検証
+    const numValue = parseInt(estimatedTimeInput)
+    const finalEstimatedTime = !isNaN(numValue) && numValue >= 5 && numValue <= 480 
+      ? numValue 
+      : 30
+    
+    const finalFormData = {
+      ...localFormData,
+      estimatedTime: finalEstimatedTime
+    }
+    
     // デバッグ用ログ
     console.log('📱 Timeline Edit Submit Direct:', {
       originalEstimatedTime: task.estimatedTime,
-      localEstimatedTime: localFormData.estimatedTime,
-      localFormData
+      estimatedTimeInput,
+      finalEstimatedTime,
+      finalFormData
     })
     
-    onSave(localFormData)
+    onSave(finalFormData)
   }
 
   return (
@@ -357,19 +371,24 @@ function EditScheduledTaskCard({ task, slot, onSave, onCancel }: EditScheduledTa
               type="number"
               min="5"
               max="480"
-              value={localFormData.estimatedTime}
+              value={estimatedTimeInput}
               onChange={(e) => {
-                const value = parseInt(e.target.value)
-                if (!isNaN(value) && value >= 5 && value <= 480) {
-                  setLocalFormData(prev => ({ ...prev, estimatedTime: value }))
-                }
+                // 文字列として保存し、入力を妨げない
+                setEstimatedTimeInput(e.target.value)
               }}
               onBlur={(e) => {
-                const value = parseInt(e.target.value)
-                if (isNaN(value) || value < 5) {
+                // フォーカスが外れたときに検証
+                const value = e.target.value
+                const numValue = parseInt(value)
+                if (!value || isNaN(numValue) || numValue < 5) {
+                  setEstimatedTimeInput('30')
                   setLocalFormData(prev => ({ ...prev, estimatedTime: 30 }))
-                } else if (value > 480) {
+                } else if (numValue > 480) {
+                  setEstimatedTimeInput('480')
                   setLocalFormData(prev => ({ ...prev, estimatedTime: 480 }))
+                } else {
+                  setEstimatedTimeInput(String(numValue))
+                  setLocalFormData(prev => ({ ...prev, estimatedTime: numValue }))
                 }
               }}
               className="px-2 py-1 border border-border rounded text-xs bg-background"

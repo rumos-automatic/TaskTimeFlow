@@ -270,16 +270,8 @@ export function BaseTaskForm({
           max="480"
           value={estimatedTimeValue}
           onChange={(e) => {
-            const value = e.target.value
-            setEstimatedTimeValue(value)
-            // 値が有効な数値の場合のみ更新
-            const numValue = parseInt(value)
-            if (!isNaN(numValue) && numValue >= 5 && numValue <= 480) {
-              setFormData(prev => ({ 
-                ...prev, 
-                estimatedTime: numValue
-              }))
-            }
+            // 文字列として保存し、入力を妨げない
+            setEstimatedTimeValue(e.target.value)
           }}
           onBlur={(e) => {
             // フォーカスが外れたときに値を確実に設定
