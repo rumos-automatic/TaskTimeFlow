@@ -14,6 +14,7 @@ import { useAuth } from '@/lib/auth/auth-context'
 import { useViewState } from '@/lib/hooks/use-view-state'
 import { useCategoryStoreWithAuth } from '@/lib/hooks/use-category-store-with-auth'
 import { Task, Priority, Urgency, TaskCategory } from '@/lib/types'
+import { TimelineAddForm, BaseTaskForm, CalendarAddForm, TaskFormData } from '@/components/ui/task-form'
 
 const timeSlots = Array.from({ length: 96 }, (_, i) => {
   const hour = Math.floor(i / 4)
@@ -241,20 +242,14 @@ interface EditScheduledTaskCardProps {
 }
 
 function EditScheduledTaskCard({ task, slot, onSave, onCancel }: EditScheduledTaskCardProps) {
-  const [formData, setFormData] = useState({
-    title: task.title,
-    priority: task.priority,
-    urgency: task.urgency,
-    category: task.category,
-    estimatedTime: task.estimatedTime as number | ''
-  })
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!formData.title.trim()) return
-    // 空文字列の場合はデフォルト値を設定
+  const { allCategories } = useCategoryStoreWithAuth()
+  
+  const handleSubmit = (formData: TaskFormData) => {
     const finalData = {
-      ...formData,
+      title: formData.title,
+      priority: formData.priority,
+      urgency: formData.urgency,
+      category: formData.category,
       estimatedTime: formData.estimatedTime === '' ? 30 : formData.estimatedTime
     }
     onSave(finalData)
@@ -262,87 +257,21 @@ function EditScheduledTaskCard({ task, slot, onSave, onCancel }: EditScheduledTa
 
   return (
     <div className="absolute left-2 right-2 z-50" style={{ top: '0px' }}>
-      <Card className="p-3 border-primary bg-white dark:bg-gray-800 shadow-lg">
-        <form onSubmit={handleSubmit} className="space-y-2 pointer-events-auto">
-          <input
-            type="text"
-            value={formData.title}
-            onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
-            className="w-full px-2 py-1 border border-border rounded text-xs bg-background text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
-            autoFocus
-            required
-          />
-
-          {/* 優先度と緊急度 */}
-          <div className="grid grid-cols-2 gap-1 mb-2">
-            <div>
-              <label className="text-xs text-muted-foreground mb-1 block">優先度</label>
-              <select
-                value={formData.priority}
-                onChange={(e) => setFormData(prev => ({ ...prev, priority: e.target.value }))}
-                className="w-full px-1 py-1 border border-border rounded text-xs bg-background"
-              >
-                <option value="high">高</option>
-                <option value="low">低</option>
-              </select>
-            </div>
-            <div>
-              <label className="text-xs text-muted-foreground mb-1 block">緊急度</label>
-              <select
-                value={formData.urgency}
-                onChange={(e) => setFormData(prev => ({ ...prev, urgency: e.target.value }))}
-                className="w-full px-1 py-1 border border-border rounded text-xs bg-background"
-              >
-                <option value="high">高</option>
-                <option value="low">低</option>
-              </select>
-            </div>
-          </div>
-
-          {/* カテゴリと時間 */}
-          <div className="grid grid-cols-2 gap-1">
-            <select
-              value={formData.category}
-              onChange={(e) => setFormData(prev => ({ ...prev, category: e.target.value }))}
-              className="px-1 py-1 border border-border rounded text-xs bg-background"
-            >
-              <option value="work">仕事</option>
-              <option value="personal">個人</option>
-              <option value="custom">カスタム</option>
-            </select>
-
-            <input
-              type="number"
-              min="5"
-              max="480"
-              value={formData.estimatedTime}
-              onChange={(e) => {
-                const value = e.target.value
-                setFormData(prev => ({ 
-                  ...prev, 
-                  estimatedTime: value === '' ? '' : (parseInt(value) || 30)
-                }))
-              }}
-              className="px-1 py-1 border border-border rounded text-xs bg-background"
-              placeholder="分"
-            />
-          </div>
-
-          <div className="flex space-x-1 pointer-events-auto">
-            <Button type="submit" size="sm" className="flex-1 h-6 text-xs pointer-events-auto">
-              保存
-            </Button>
-            <Button 
-              type="button" 
-              variant="outline" 
-              size="sm" 
-              className="h-6 w-6 p-0 pointer-events-auto"
-              onClick={onCancel}
-            >
-              <X className="w-3 h-3" />
-            </Button>
-          </div>
-        </form>
+      <Card className="border-primary bg-white dark:bg-gray-800 shadow-lg">
+        <TimelineAddForm
+          defaultValues={{
+            title: task.title,
+            priority: task.priority,
+            urgency: task.urgency,
+            category: task.category,
+            estimatedTime: task.estimatedTime
+          }}
+          onSubmit={handleSubmit}
+          onCancel={onCancel}
+          categories={allCategories}
+          submitLabel="保存"
+          className="pointer-events-auto"
+        />
       </Card>
     </div>
   )
@@ -358,20 +287,13 @@ interface AddTimeSlotTaskFormProps {
 
 function AddTimeSlotTaskForm({ time, hour, minute, onSave, onCancel }: AddTimeSlotTaskFormProps) {
   const { allCategories } = useCategoryStoreWithAuth()
-  const [formData, setFormData] = useState({
-    title: '',
-    priority: 'low' as Priority,
-    urgency: 'low' as Urgency,
-    category: 'work' as TaskCategory,
-    estimatedTime: 60 as number | ''
-  })
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!formData.title.trim()) return
-    
+  const handleSubmit = (formData: TaskFormData) => {
     const finalData = {
-      ...formData,
+      title: formData.title,
+      priority: formData.priority,
+      urgency: formData.urgency,
+      category: formData.category,
       estimatedTime: formData.estimatedTime === '' ? 60 : formData.estimatedTime,
       scheduledTime: time
     }
@@ -380,95 +302,30 @@ function AddTimeSlotTaskForm({ time, hour, minute, onSave, onCancel }: AddTimeSl
 
   return (
     <div className="absolute left-0 right-0 top-0 z-50 bg-white dark:bg-gray-800 border border-border rounded-md shadow-lg">
-      <form onSubmit={handleSubmit} className="p-3 space-y-2">
-        <div className="flex items-center justify-between mb-2">
-          <span className="text-xs font-medium text-muted-foreground">{time} のタスク</span>
-          <Button
-            type="button"
-            variant="ghost"
-            size="sm"
-            onClick={onCancel}
-            className="h-6 w-6 p-0"
-          >
-            <X className="w-3 h-3" />
-          </Button>
-        </div>
-
-        <input
-          type="text"
-          value={formData.title}
-          onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
-          className="w-full px-2 py-1 border border-border rounded text-sm bg-background text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
-          placeholder="タスク名を入力"
-          autoFocus
-          required
-        />
-
-        <div className="grid grid-cols-2 gap-2">
-          <select
-            value={formData.priority}
-            onChange={(e) => setFormData(prev => ({ ...prev, priority: e.target.value as Priority }))}
-            className="px-2 py-1 border border-border rounded text-xs bg-background"
-          >
-            <option value="high">優先度：高</option>
-            <option value="low">優先度：低</option>
-          </select>
-
-          <select
-            value={formData.urgency}
-            onChange={(e) => setFormData(prev => ({ ...prev, urgency: e.target.value as Urgency }))}
-            className="px-2 py-1 border border-border rounded text-xs bg-background"
-          >
-            <option value="high">緊急度：高</option>
-            <option value="low">緊急度：低</option>
-          </select>
-        </div>
-
-        <div className="grid grid-cols-2 gap-2">
-          <select
-            value={formData.category}
-            onChange={(e) => setFormData(prev => ({ ...prev, category: e.target.value as TaskCategory }))}
-            className="px-2 py-1 border border-border rounded text-xs bg-background"
-          >
-            {allCategories.map((category) => (
-              <option key={category.id} value={category.id}>
-                {category.icon} {category.name}
-              </option>
-            ))}
-          </select>
-
-          <input
-            type="number"
-            min="15"
-            max="480"
-            value={formData.estimatedTime}
-            onChange={(e) => {
-              const value = e.target.value
-              setFormData(prev => ({ 
-                ...prev, 
-                estimatedTime: value === '' ? '' : (parseInt(value) || 60)
-              }))
-            }}
-            className="px-2 py-1 border border-border rounded text-xs bg-background"
-            placeholder="分"
-          />
-        </div>
-
-        <div className="flex space-x-2 pt-1">
-          <Button type="submit" size="sm" className="flex-1 h-7 text-xs">
-            作成
-          </Button>
-          <Button 
-            type="button" 
-            variant="outline" 
-            size="sm" 
-            onClick={onCancel}
-            className="h-7 text-xs"
-          >
-            <X className="w-3 h-3" />
-          </Button>
-        </div>
-      </form>
+      <TimelineAddForm
+        defaultValues={{
+          category: 'work',
+          estimatedTime: 60
+        }}
+        onSubmit={handleSubmit}
+        onCancel={onCancel}
+        categories={allCategories}
+        submitLabel="作成"
+        header={
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-xs font-medium text-muted-foreground">{time} のタスク</span>
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={onCancel}
+              className="h-6 w-6 p-0"
+            >
+              <X className="w-3 h-3" />
+            </Button>
+          </div>
+        }
+      />
     </div>
   )
 }
@@ -1052,6 +909,7 @@ interface CalendarTaskFormProps {
 
 function CalendarTaskForm({ date, onSave, onCancel }: CalendarTaskFormProps) {
   const { allCategories } = useCategoryStoreWithAuth()
+  
   // 日本時間で日付をフォーマットする関数
   const formatDateForInput = (date: Date) => {
     const year = date.getFullYear()
@@ -1060,49 +918,19 @@ function CalendarTaskForm({ date, onSave, onCancel }: CalendarTaskFormProps) {
     return `${year}-${month}-${day}`
   }
 
-  const [formData, setFormData] = useState({
-    title: '',
-    category: 'personal' as TaskCategory,
-    priority: 'low' as Priority,
-    urgency: 'low' as Urgency,
-    estimatedTime: 60 as number | '',
-    selectedTime: '09:00',
-    selectedDate: formatDateForInput(date) // 日本時間でフォーマット
-  })
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
-    if (formData.title.trim()) {
-      const { selectedTime, selectedDate, ...taskData } = formData
-      // estimatedTimeが空文字の場合は60に設定
-      const finalTaskData = {
-        ...taskData,
-        estimatedTime: taskData.estimatedTime === '' ? 60 : taskData.estimatedTime
-      }
-      // selectedDateをDateオブジェクトに変換
-      const [year, month, day] = selectedDate.split('-').map(Number)
-      const taskDate = new Date(year, month - 1, day)
-      
-      onSave(finalTaskData, selectedTime, taskDate)
-      setFormData({
-        title: '',
-        category: 'personal',
-        priority: 'low',
-        urgency: 'low',
-        estimatedTime: 60 as number | '',
-        selectedTime: '09:00',
-        selectedDate: formatDateForInput(date) // 日本時間でフォーマット
-      })
+  const handleSubmit = (formData: TaskFormData) => {
+    const { scheduledTime, scheduledDate, ...taskData } = formData
+    const finalTaskData = {
+      ...taskData,
+      estimatedTime: taskData.estimatedTime === '' ? 60 : taskData.estimatedTime
     }
+    
+    // scheduledDateをDateオブジェクトに変換
+    const [year, month, day] = (scheduledDate || formatDateForInput(date)).split('-').map(Number)
+    const taskDate = new Date(year, month - 1, day)
+    
+    onSave(finalTaskData, scheduledTime || '09:00', taskDate)
   }
-
-  // 時間選択オプション（30分間隔）
-  const timeOptions = Array.from({ length: 48 }, (_, i) => {
-    const hour = Math.floor(i / 2)
-    const minute = (i % 2) * 30
-    const timeString = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`
-    return timeString
-  })
 
   return (
     <div className="absolute top-0 left-0 right-0 bg-white dark:bg-gray-800 border border-border rounded-lg shadow-lg p-4 z-50">
@@ -1110,106 +938,18 @@ function CalendarTaskForm({ date, onSave, onCancel }: CalendarTaskFormProps) {
         {date.toLocaleDateString('ja-JP', { month: 'short', day: 'numeric' })} のタスクを作成
       </h3>
       
-      <form onSubmit={handleSubmit} className="space-y-3">
-        <input
-          type="text"
-          value={formData.title}
-          onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
-          placeholder="タスク名"
-          className="w-full px-3 py-2 border border-border rounded text-sm bg-background"
-          autoFocus
-        />
-
-        <div className="grid grid-cols-2 gap-2">
-          <select
-            value={formData.priority}
-            onChange={(e) => setFormData(prev => ({ ...prev, priority: e.target.value as Priority }))}
-            className="px-2 py-1 border border-border rounded text-xs bg-background"
-          >
-            <option value="low">優先度: 低</option>
-            <option value="high">優先度: 高</option>
-          </select>
-
-          <select
-            value={formData.urgency}
-            onChange={(e) => setFormData(prev => ({ ...prev, urgency: e.target.value as Urgency }))}
-            className="px-2 py-1 border border-border rounded text-xs bg-background"
-          >
-            <option value="low">緊急度: 低</option>
-            <option value="high">緊急度: 高</option>
-          </select>
-        </div>
-
-        <div className="grid grid-cols-2 gap-2">
-          <select
-            value={formData.category}
-            onChange={(e) => setFormData(prev => ({ ...prev, category: e.target.value as TaskCategory }))}
-            className="px-2 py-1 border border-border rounded text-xs bg-background"
-          >
-            {allCategories.map((category) => (
-              <option key={category.id} value={category.id}>
-                {category.icon} {category.name}
-              </option>
-            ))}
-          </select>
-
-          <input
-            type="number"
-            min="15"
-            max="480"
-            value={formData.estimatedTime === '' ? '' : formData.estimatedTime}
-            onChange={(e) => {
-              const value = e.target.value
-              setFormData(prev => ({ 
-                ...prev, 
-                estimatedTime: value === '' ? '' as '' : (parseInt(value) || 60)
-              }))
-            }}
-            className="px-2 py-1 border border-border rounded text-xs bg-background"
-            placeholder="分"
-          />
-        </div>
-
-        <div>
-          <label className="block text-xs font-medium text-muted-foreground mb-1">
-            日付と開始時間
-          </label>
-          <div className="grid grid-cols-2 gap-2">
-            <input
-              type="date"
-              value={formData.selectedDate}
-              onChange={(e) => setFormData(prev => ({ ...prev, selectedDate: e.target.value }))}
-              className="px-2 py-1 border border-border rounded text-xs bg-background"
-            />
-            <select
-              value={formData.selectedTime}
-              onChange={(e) => setFormData(prev => ({ ...prev, selectedTime: e.target.value }))}
-              className="px-2 py-1 border border-border rounded text-xs bg-background"
-            >
-              {timeOptions.map((time) => (
-                <option key={time} value={time}>
-                  {time}
-                </option>
-              ))}
-            </select>
-          </div>
-        </div>
-
-        <div className="flex space-x-2 pt-1">
-          <Button type="submit" size="sm" className="flex-1 h-7 text-xs">
-            作成
-          </Button>
-          <Button 
-            type="button" 
-            variant="outline" 
-            size="sm" 
-            onClick={onCancel}
-            className="h-7 text-xs"
-          >
-            <X className="w-3 h-3" />
-          </Button>
-        </div>
-      </form>
+      <CalendarAddForm
+        defaultValues={{
+          category: 'personal',
+          estimatedTime: 60,
+          scheduledTime: '09:00',
+          scheduledDate: formatDateForInput(date)
+        }}
+        onSubmit={handleSubmit}
+        onCancel={onCancel}
+        categories={allCategories}
+        submitLabel="作成"
+      />
     </div>
   )
 }
@@ -1234,40 +974,18 @@ function CalendarTaskEditForm({ task, slot, onSave, onCancel }: CalendarTaskEdit
     return `${year}-${month}-${day}`
   }
   
-  const [formData, setFormData] = useState({
-    title: task.title,
-    category: task.category,
-    priority: task.priority,
-    urgency: task.urgency,
-    estimatedTime: task.estimatedTime,
-    selectedTime: slot.startTime || '09:00',
-    selectedDate: formatDateForInput(slotDate)
-  })
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
-    if (formData.title.trim()) {
-      const { selectedTime, selectedDate, ...taskData } = formData
-      // estimatedTimeが空文字の場合は60に設定
-      const finalTaskData = {
-        ...taskData,
-        estimatedTime: taskData.estimatedTime === '' ? 60 : taskData.estimatedTime
-      }
-      // selectedDateをDateオブジェクトに変換
-      const [year, month, day] = selectedDate.split('-').map(Number)
-      const taskDate = new Date(year, month - 1, day)
-      
-      onSave(finalTaskData, selectedTime, taskDate)
+  const handleSubmit = (formData: TaskFormData) => {
+    const { scheduledTime, scheduledDate, ...taskData } = formData
+    const finalTaskData = {
+      ...taskData,
+      estimatedTime: taskData.estimatedTime === '' ? 60 : taskData.estimatedTime
     }
-  }
-
-  // 30分間隔の時間オプションを生成
-  const timeOptions = []
-  for (let hour = 0; hour < 24; hour++) {
-    for (let minute = 0; minute < 60; minute += 30) {
-      const timeString = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`
-      timeOptions.push(timeString)
-    }
+    
+    // scheduledDateをDateオブジェクトに変換
+    const [year, month, day] = (scheduledDate || formatDateForInput(slotDate)).split('-').map(Number)
+    const taskDate = new Date(year, month - 1, day)
+    
+    onSave(finalTaskData, scheduledTime || slot.startTime || '09:00', taskDate)
   }
 
   return (
@@ -1284,104 +1002,21 @@ function CalendarTaskEditForm({ task, slot, onSave, onCancel }: CalendarTaskEdit
         </Button>
       </div>
       
-      <form onSubmit={handleSubmit} className="space-y-3">
-        <div>
-          <input
-            type="text"
-            value={formData.title}
-            onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
-            placeholder="タスク名"
-            className="w-full px-3 py-2 border border-border rounded-md bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary text-sm"
-            required
-          />
-        </div>
-
-        <div className="grid grid-cols-2 gap-2">
-          <select
-            value={formData.category}
-            onChange={(e) => setFormData(prev => ({ ...prev, category: e.target.value }))}
-            className="px-2 py-1 border border-border rounded text-xs bg-background"
-          >
-            {allCategories.map((category) => (
-              <option key={category.id} value={category.id}>
-                {category.icon} {category.name}
-              </option>
-            ))}
-          </select>
-
-          <input
-            type="date"
-            value={formData.selectedDate}
-            onChange={(e) => setFormData(prev => ({ ...prev, selectedDate: e.target.value }))}
-            className="px-2 py-1 border border-border rounded text-xs bg-background"
-          />
-        </div>
-
-        <div>
-          <label className="block text-xs font-medium text-muted-foreground mb-1">
-            開始時間
-          </label>
-          <select
-            value={formData.selectedTime}
-            onChange={(e) => setFormData(prev => ({ ...prev, selectedTime: e.target.value }))}
-            className="w-full px-2 py-1 border border-border rounded text-xs bg-background"
-          >
-            {timeOptions.map(time => (
-              <option key={time} value={time}>{time}</option>
-            ))}
-          </select>
-        </div>
-
-        <div className="grid grid-cols-2 gap-2">
-          <select
-            value={formData.priority}
-            onChange={(e) => setFormData(prev => ({ ...prev, priority: e.target.value }))}
-            className="px-2 py-1 border border-border rounded text-xs bg-background"
-          >
-            <option value="high">優先度：高</option>
-            <option value="low">優先度：低</option>
-          </select>
-
-          <select
-            value={formData.urgency}
-            onChange={(e) => setFormData(prev => ({ ...prev, urgency: e.target.value }))}
-            className="px-2 py-1 border border-border rounded text-xs bg-background"
-          >
-            <option value="high">緊急度：高</option>
-            <option value="low">緊急度：低</option>
-          </select>
-        </div>
-
-        <div>
-          <input
-            type="number"
-            min="5"
-            max="480"
-            value={formData.estimatedTime}
-            onChange={(e) => setFormData(prev => ({ 
-              ...prev, 
-              estimatedTime: parseInt(e.target.value) || 60
-            }))}
-            className="w-full px-2 py-1 border border-border rounded text-xs bg-background"
-            placeholder="予想時間(分)"
-          />
-        </div>
-
-        <div className="flex space-x-2">
-          <Button type="submit" size="sm" className="flex-1 h-7 text-xs">
-            保存
-          </Button>
-          <Button 
-            type="button" 
-            variant="outline" 
-            size="sm" 
-            onClick={onCancel}
-            className="h-7 text-xs"
-          >
-            <X className="w-3 h-3" />
-          </Button>
-        </div>
-      </form>
+      <CalendarAddForm
+        defaultValues={{
+          title: task.title,
+          category: task.category,
+          priority: task.priority,
+          urgency: task.urgency,
+          estimatedTime: task.estimatedTime,
+          scheduledTime: slot.startTime || '09:00',
+          scheduledDate: formatDateForInput(slotDate)
+        }}
+        onSubmit={handleSubmit}
+        onCancel={onCancel}
+        categories={allCategories}
+        submitLabel="保存"
+      />
     </div>
   )
 }

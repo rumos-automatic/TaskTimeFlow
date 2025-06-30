@@ -19,6 +19,7 @@ import { BUILT_IN_CATEGORIES } from '@/lib/store/use-category-store'
 import { CategoryManagement } from './category-management'
 import { RichTextEditor } from '@/components/ui/rich-text-editor'
 import { TaskDetailModal } from './task-detail-modal'
+import { TaskPoolAddForm, BaseTaskForm, TaskFormData } from '@/components/ui/task-form'
 
 const priorityColors: Record<Priority, string> = {
   high: 'border-red-500 bg-red-50 dark:bg-red-950/20',
@@ -309,117 +310,35 @@ interface EditTaskCardProps {
 
 function EditTaskCard({ task, onSave, onCancel }: EditTaskCardProps) {
   const { allCategories } = useCategoryStoreWithAuth()
-  const [formData, setFormData] = useState({
-    title: task.title,
-    priority: task.priority,
-    urgency: task.urgency,
-    category: task.category,
-    estimatedTime: task.estimatedTime as number | ''
-  })
 
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!formData.title.trim()) return
-    // 空文字列の場合はデフォルト値を設定
+  const handleSubmit = (formData: TaskFormData) => {
     const finalData = {
-      ...formData,
+      title: formData.title,
+      priority: formData.priority,
+      urgency: formData.urgency,
+      category: formData.category,
       estimatedTime: formData.estimatedTime === '' ? 30 : formData.estimatedTime
     }
     onSave(finalData)
   }
 
   return (
-    <Card className="p-4 border-primary">
-      <form onSubmit={handleSubmit} className="space-y-3">
-        <input
-          type="text"
-          value={formData.title}
-          onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
-          className="w-full px-3 py-2 border border-border rounded-md bg-background text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary"
-          autoFocus
-          required
-        />
-
-        {/* 優先度と緊急度の設定（編集） */}
-        <div className="space-y-3">
-          <div className="grid grid-cols-2 gap-3">
-            <div className="border border-border rounded p-2 bg-background">
-              <label className="text-xs font-medium text-foreground mb-1 block flex items-center">
-                <AlertCircle className="w-3 h-3 mr-1 text-red-500" />
-                優先度
-              </label>
-              <select
-                value={formData.priority}
-                onChange={(e) => setFormData(prev => ({ ...prev, priority: e.target.value as Priority }))}
-                className="w-full px-2 py-1 border border-border rounded text-xs bg-background focus:outline-none focus:ring-1 focus:ring-red-500"
-              >
-                <option value="high">高 - 重要</option>
-                <option value="low">低 - 軽微</option>
-              </select>
-            </div>
-
-            <div className="border border-border rounded p-2 bg-background">
-              <label className="text-xs font-medium text-foreground mb-1 block flex items-center">
-                <Clock className="w-3 h-3 mr-1 text-purple-600" />
-                緊急度
-              </label>
-              <select
-                value={formData.urgency}
-                onChange={(e) => setFormData(prev => ({ ...prev, urgency: e.target.value as Urgency }))}
-                className="w-full px-2 py-1 border border-border rounded text-xs bg-background focus:outline-none focus:ring-1 focus:ring-purple-500"
-              >
-                <option value="high">高 - 早急</option>
-                <option value="low">低 - 余裕</option>
-              </select>
-            </div>
-          </div>
-        </div>
-
-        <div className="grid grid-cols-2 gap-2">
-          <select
-            value={formData.category}
-            onChange={(e) => setFormData(prev => ({ ...prev, category: e.target.value as TaskCategory }))}
-            className="px-2 py-1 border border-border rounded text-xs bg-background"
-          >
-            {allCategories.map((category) => (
-              <option key={category.id} value={category.id}>
-                {category.icon} {category.name}
-              </option>
-            ))}
-          </select>
-
-          <input
-            type="number"
-            min="5"
-            max="480"
-            value={formData.estimatedTime}
-            onChange={(e) => {
-              const value = e.target.value
-              setFormData(prev => ({ 
-                ...prev, 
-                estimatedTime: value === '' ? '' : (parseInt(value) || 30)
-              }))
-            }}
-            className="px-2 py-1 border border-border rounded text-xs bg-background"
-            placeholder="分"
-          />
-        </div>
-
-        <div className="flex space-x-2">
-          <Button type="submit" size="sm" className="flex-1">
-            保存
-          </Button>
-          <Button 
-            type="button" 
-            variant="outline" 
-            size="sm" 
-            onClick={onCancel}
-          >
-            <X className="w-4 h-4" />
-          </Button>
-        </div>
-      </form>
+    <Card className="border-primary">
+      <BaseTaskForm
+        defaultValues={{
+          title: task.title,
+          priority: task.priority,
+          urgency: task.urgency,
+          category: task.category,
+          estimatedTime: task.estimatedTime
+        }}
+        onSubmit={handleSubmit}
+        onCancel={onCancel}
+        categories={allCategories}
+        variant="compact"
+        size="sm"
+        submitLabel="保存"
+      />
     </Card>
   )
 }
@@ -433,25 +352,9 @@ function AddTaskForm({ defaultCategory }: AddTaskFormProps) {
   const { addTask } = useTaskStoreWithAuth()
   const { allCategories } = useCategoryStoreWithAuth()
   const [showForm, setShowForm] = useState(false)
-  
-  // フォームを開く時に現在のカテゴリを設定
-  const initializeFormData = () => {
-    const category = defaultCategory && defaultCategory !== 'all' ? defaultCategory : 'work'
-    return {
-      title: '',
-      priority: 'low' as Priority,
-      urgency: 'low' as Urgency,
-      category: category as TaskCategory,
-      estimatedTime: 30 as number | ''
-    }
-  }
-  
-  const [formData, setFormData] = useState(initializeFormData())
 
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!formData.title.trim() || !user) return
+  const handleSubmit = async (formData: TaskFormData) => {
+    if (!user) return
 
     const taskData = {
       title: formData.title,
@@ -463,126 +366,21 @@ function AddTaskForm({ defaultCategory }: AddTaskFormProps) {
     }
 
     await addTask(taskData, user.id)
-
-    // Reset form with current category
-    setFormData(initializeFormData())
     setShowForm(false)
   }
 
   if (showForm) {
     return (
-      <Card className="p-4 border-dashed border-primary">
-        <form onSubmit={handleSubmit} className="space-y-3">
-          <div>
-            <input
-              type="text"
-              value={formData.title}
-              onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
-              placeholder="タスク名を入力..."
-              className="w-full px-3 py-2 border border-border rounded-md bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary"
-              autoFocus
-              required
-            />
-          </div>
-
-          {/* 優先度と緊急度の設定 */}
-          <div className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div className="border border-border rounded-lg p-3 bg-background">
-                <label className="text-sm font-medium text-foreground mb-2 block flex items-center">
-                  <AlertCircle className="w-4 h-4 mr-2 text-red-500" />
-                  優先度
-                </label>
-                <p className="text-xs text-muted-foreground mb-2">重要度・価値の高さ</p>
-                <select
-                  value={formData.priority}
-                  onChange={(e) => setFormData(prev => ({ ...prev, priority: e.target.value as Priority }))}
-                  className="w-full px-3 py-2 border border-border rounded text-sm bg-background focus:outline-none focus:ring-2 focus:ring-red-500"
-                >
-                  <option value="high">高 - 非常に重要</option>
-                  <option value="low">低 - あまり重要でない</option>
-                </select>
-              </div>
-
-              <div className="border border-border rounded-lg p-3 bg-background">
-                <label className="text-sm font-medium text-foreground mb-2 block flex items-center">
-                  <Clock className="w-4 h-4 mr-2 text-purple-600" />
-                  緊急度
-                </label>
-                <p className="text-xs text-muted-foreground mb-2">時間的な切迫性</p>
-                <select
-                  value={formData.urgency}
-                  onChange={(e) => setFormData(prev => ({ ...prev, urgency: e.target.value as Urgency }))}
-                  className="w-full px-3 py-2 border border-border rounded text-sm bg-background focus:outline-none focus:ring-2 focus:ring-purple-500"
-                >
-                  <option value="high">高 - 早めに対応</option>
-                  <option value="low">低 - 時間に余裕あり</option>
-                </select>
-              </div>
-            </div>
-            
-            {/* プレビュー */}
-            <div className="flex items-center justify-center space-x-2 py-2 bg-muted/30 rounded-lg">
-              <span className="text-xs text-muted-foreground">プレビュー:</span>
-              <div className={`px-2 py-1 rounded-full text-xs font-medium ${
-                formData.priority === 'high' ? 'bg-red-100 text-red-700' :
-                'bg-green-100 text-green-700'
-              }`}>
-                優先度：{formData.priority === 'high' ? '高' : '低'}
-              </div>
-              <div className={`px-2 py-1 rounded-full text-xs font-medium ${
-                formData.urgency === 'high' ? 'bg-red-100 text-red-700' :
-                'bg-blue-100 text-blue-700'
-              }`}>
-                緊急度：{formData.urgency === 'high' ? '高' : '低'}
-              </div>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-2 gap-2">
-            <select
-              value={formData.category}
-              onChange={(e) => setFormData(prev => ({ ...prev, category: e.target.value as TaskCategory }))}
-              className="px-2 py-1 border border-border rounded text-xs bg-background"
-            >
-              {allCategories.map((category) => (
-                <option key={category.id} value={category.id}>
-                  {category.icon} {category.name}
-                </option>
-              ))}
-            </select>
-
-            <input
-              type="number"
-              min="5"
-              max="480"
-              value={formData.estimatedTime}
-              onChange={(e) => {
-                const value = e.target.value
-                setFormData(prev => ({ 
-                  ...prev, 
-                  estimatedTime: value === '' ? '' : (parseInt(value) || 30)
-                }))
-              }}
-              className="px-2 py-1 border border-border rounded text-xs bg-background"
-              placeholder="分"
-            />
-          </div>
-
-          <div className="flex space-x-2">
-            <Button type="submit" size="sm" className="flex-1">
-              追加
-            </Button>
-            <Button 
-              type="button" 
-              variant="outline" 
-              size="sm" 
-              onClick={() => setShowForm(false)}
-            >
-              <X className="w-4 h-4" />
-            </Button>
-          </div>
-        </form>
+      <Card className="border-dashed border-primary">
+        <TaskPoolAddForm
+          defaultValues={{
+            category: defaultCategory && defaultCategory !== 'all' ? defaultCategory : 'work'
+          }}
+          onSubmit={handleSubmit}
+          onCancel={() => setShowForm(false)}
+          categories={allCategories}
+          submitLabel="追加"
+        />
       </Card>
     )
   }
@@ -591,11 +389,7 @@ function AddTaskForm({ defaultCategory }: AddTaskFormProps) {
     <Button 
       className="w-full" 
       variant="outline" 
-      onClick={() => {
-        // フォームを開く前にカテゴリを再設定
-        setFormData(initializeFormData())
-        setShowForm(true)
-      }}
+      onClick={() => setShowForm(true)}
     >
       <Plus className="w-4 h-4 mr-2" />
       新しいタスクを追加
