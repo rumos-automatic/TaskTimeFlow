@@ -59,44 +59,7 @@ export function useViewState() {
     setCurrentView(views[prevIndex])
   }, [viewState.currentView, setCurrentView])
 
-  // キーボードショートカット
-  useEffect(() => {
-    const handleKeyPress = (event: KeyboardEvent) => {
-      if (event.ctrlKey || event.metaKey) {
-        switch (event.key) {
-          case '1':
-            event.preventDefault()
-            setCurrentView('tasks')
-            break
-          case '2':
-            event.preventDefault()
-            setCurrentView('timeline')
-            break
-          case '3':
-            event.preventDefault()
-            setCurrentView('focus')
-            break
-        }
-      }
-      
-      // 矢印キーでの切り替え（フォーカスモード以外）
-      if (!viewState.isMobile && viewState.currentView !== 'focus') {
-        switch (event.key) {
-          case 'ArrowLeft':
-            event.preventDefault()
-            prevView()
-            break
-          case 'ArrowRight':
-            event.preventDefault()
-            nextView()
-            break
-        }
-      }
-    }
-
-    window.addEventListener('keydown', handleKeyPress)
-    return () => window.removeEventListener('keydown', handleKeyPress)
-  }, [viewState.isMobile, viewState.currentView, nextView, prevView, setCurrentView])
+  // キーボードショートカットは削除（メモ機能との競合を避けるため）
 
   return {
     ...viewState,

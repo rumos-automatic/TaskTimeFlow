@@ -71,12 +71,9 @@ npm run db:studio     # Open database studio
 ## Advanced Operation Experience
 
 ### PC Version
-- Full keyboard shortcuts support
-  - `Ctrl/Cmd + 1,2,3`: Screen switching
-  - `Space`: Timer start/stop
-  - `Ctrl/Cmd + N`: New task
 - Tab/Split view mode switching
 - 3-finger trackpad swipe support
+- Mouse wheel support for smooth scrolling
 
 ### Mobile Version
 - Horizontal swipe for screen switching
