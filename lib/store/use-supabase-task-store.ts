@@ -450,13 +450,6 @@ export const useSupabaseTaskStore = create<SupabaseTaskStore>()((set, get) => {
         const createdSlot = await TaskService.createTimeSlot(newSlot, userId)
         console.log('✅ Time slot created:', createdSlot)
         
-        // Update task with schedule info
-        console.log('📝 Updating task with schedule info')
-        await get().updateTask(taskId, {
-          scheduledDate: date,
-          scheduledTime: time
-        })
-        
         // 楽観的更新を実際のデータで置き換え
         console.log('🔄 Replacing optimistic update with real data')
         set((state) => ({

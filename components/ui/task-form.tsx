@@ -94,6 +94,11 @@ export function BaseTaskForm({
     estimatedTime: 30,
     ...defaultValues
   })
+  
+  // モバイルでのestimatedTimeの値を確実に扱うための変数
+  const [estimatedTimeValue, setEstimatedTimeValue] = useState<string>(
+    String(defaultValues?.estimatedTime || 30)
+  )
 
   const [isSubmitting, setIsSubmitting] = useState(false)
 
@@ -101,6 +106,10 @@ export function BaseTaskForm({
   useEffect(() => {
     if (defaultValues) {
       setFormData(prev => ({ ...prev, ...defaultValues }))
+      // estimatedTimeの値も同期
+      if (defaultValues.estimatedTime !== undefined) {
+        setEstimatedTimeValue(String(defaultValues.estimatedTime))
+      }
     }
   }, [defaultValues])
 
@@ -110,10 +119,23 @@ export function BaseTaskForm({
 
     setIsSubmitting(true)
     try {
+      // モバイルでも確実にestimatedTimeを取得
+      const numValue = parseInt(estimatedTimeValue)
+      const finalEstimatedTime = !isNaN(numValue) && numValue >= 5 && numValue <= 480 
+        ? numValue 
+        : 30
+      
       const submitData = {
         ...formData,
-        estimatedTime: formData.estimatedTime === '' ? 30 : formData.estimatedTime
+        estimatedTime: finalEstimatedTime
       }
+      
+      console.log('📱 Form Submit Data:', {
+        estimatedTimeValue,
+        finalEstimatedTime,
+        submitData
+      })
+      
       await onSubmit(submitData)
     } finally {
       setIsSubmitting(false)
@@ -246,13 +268,33 @@ export function BaseTaskForm({
           type="number"
           min="5"
           max="480"
-          value={formData.estimatedTime}
+          value={estimatedTimeValue}
           onChange={(e) => {
             const value = e.target.value
-            setFormData(prev => ({ 
-              ...prev, 
-              estimatedTime: value === '' ? '' : (parseInt(value) || 30)
-            }))
+            setEstimatedTimeValue(value)
+            // 値が有効な数値の場合のみ更新
+            const numValue = parseInt(value)
+            if (!isNaN(numValue) && numValue >= 5 && numValue <= 480) {
+              setFormData(prev => ({ 
+                ...prev, 
+                estimatedTime: numValue
+              }))
+            }
+          }}
+          onBlur={(e) => {
+            // フォーカスが外れたときに値を確実に設定
+            const value = e.target.value
+            const numValue = parseInt(value)
+            if (!value || isNaN(numValue) || numValue < 5) {
+              setEstimatedTimeValue('30')
+              setFormData(prev => ({ ...prev, estimatedTime: 30 }))
+            } else if (numValue > 480) {
+              setEstimatedTimeValue('480')
+              setFormData(prev => ({ ...prev, estimatedTime: 480 }))
+            } else {
+              setEstimatedTimeValue(String(numValue))
+              setFormData(prev => ({ ...prev, estimatedTime: numValue }))
+            }
           }}
           className={cn(inputSize, selectSize)}
           placeholder="分"

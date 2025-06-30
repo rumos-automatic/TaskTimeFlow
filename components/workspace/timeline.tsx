@@ -99,31 +99,39 @@ function ScheduledTaskCard({ task, slotId, slotData }: ScheduledTaskCardProps) {
         task={task}
         slot={slotData}
         onSave={async (updatedTask) => {
+          // デバッグ用ログ
+          console.log('📱 Timeline onSave:', {
+            taskId: task.id,
+            originalEstimatedTime: task.estimatedTime,
+            updatedEstimatedTime: updatedTask.estimatedTime,
+            timeChanged: updatedTask.estimatedTime !== task.estimatedTime
+          })
+          
           // estimatedTimeが変更された場合はタイムスロットを再作成
           const timeChanged = updatedTask.estimatedTime !== task.estimatedTime
           
           if (timeChanged) {
-            // まずタスク情報を更新
+            // スロットの日付を取得
+            const slotDate = slotData.date instanceof Date ? slotData.date : new Date(slotData.date)
+            
+            // まずタスク情報を更新（scheduledDateとscheduledTimeも含む）
             await updateTask(task.id, {
               title: updatedTask.title,
               priority: updatedTask.priority,
               urgency: updatedTask.urgency,
               category: updatedTask.category,
-              estimatedTime: updatedTask.estimatedTime
+              estimatedTime: updatedTask.estimatedTime,
+              scheduledDate: slotDate,
+              scheduledTime: slotData.startTime
             })
-            
-            // スロットの日付を取得
-            const slotDate = slotData.date instanceof Date ? slotData.date : new Date(slotData.date)
             
             // 現在のスロットを削除
             await removeTimeSlot(slotId)
             
-            // 少し待ってから新しいスロットを作成（更新が反映されるため）
-            setTimeout(async () => {
-              if (user) {
-                await moveTaskToTimeline(task.id, slotDate, slotData.startTime, user.id)
-              }
-            }, 600)  // リアルタイム更新の一時停止より後に実行
+            // 直接新しいスロットを作成（moveTaskToTimelineを使用）
+            if (user) {
+              await moveTaskToTimeline(task.id, slotDate, slotData.startTime, user.id)
+            }
           } else {
             // estimatedTimeが変更されていない場合は通常の更新
             await updateTask(task.id, {
@@ -278,35 +286,112 @@ interface EditScheduledTaskCardProps {
 
 function EditScheduledTaskCard({ task, slot, onSave, onCancel }: EditScheduledTaskCardProps) {
   const { allCategories } = useCategoryStoreWithAuth()
+  const [localFormData, setLocalFormData] = useState({
+    title: task.title,
+    priority: task.priority,
+    urgency: task.urgency,
+    category: task.category,
+    estimatedTime: task.estimatedTime
+  })
   
-  const handleSubmit = (formData: TaskFormData) => {
-    const finalData = {
-      title: formData.title,
-      priority: formData.priority,
-      urgency: formData.urgency,
-      category: formData.category,
-      estimatedTime: formData.estimatedTime === '' ? 30 : formData.estimatedTime
-    }
-    onSave(finalData)
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault()
+    
+    // デバッグ用ログ
+    console.log('📱 Timeline Edit Submit Direct:', {
+      originalEstimatedTime: task.estimatedTime,
+      localEstimatedTime: localFormData.estimatedTime,
+      localFormData
+    })
+    
+    onSave(localFormData)
   }
 
   return (
     <div className="absolute left-2 right-2 z-50" style={{ top: '0px' }}>
-      <Card className="border-primary bg-white dark:bg-gray-800 shadow-lg">
-        <TimelineAddForm
-          defaultValues={{
-            title: task.title,
-            priority: task.priority,
-            urgency: task.urgency,
-            category: task.category,
-            estimatedTime: task.estimatedTime
-          }}
-          onSubmit={handleSubmit}
-          onCancel={onCancel}
-          categories={allCategories}
-          submitLabel="保存"
-          className="pointer-events-auto"
-        />
+      <Card className="border-primary bg-white dark:bg-gray-800 shadow-lg p-3">
+        <form onSubmit={handleSubmit} className="space-y-2">
+          <input
+            type="text"
+            value={localFormData.title}
+            onChange={(e) => setLocalFormData(prev => ({ ...prev, title: e.target.value }))}
+            className="w-full px-2 py-1 border border-border rounded text-xs bg-background text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+            autoFocus
+            required
+          />
+          
+          <div className="grid grid-cols-2 gap-2">
+            <select
+              value={localFormData.priority}
+              onChange={(e) => setLocalFormData(prev => ({ ...prev, priority: e.target.value as Priority }))}
+              className="px-2 py-1 border border-border rounded text-xs bg-background"
+            >
+              <option value="high">優先度：高</option>
+              <option value="low">優先度：低</option>
+            </select>
+            
+            <select
+              value={localFormData.urgency}
+              onChange={(e) => setLocalFormData(prev => ({ ...prev, urgency: e.target.value as Urgency }))}
+              className="px-2 py-1 border border-border rounded text-xs bg-background"
+            >
+              <option value="high">緊急度：高</option>
+              <option value="low">緊急度：低</option>
+            </select>
+          </div>
+          
+          <div className="grid grid-cols-2 gap-2">
+            <select
+              value={localFormData.category}
+              onChange={(e) => setLocalFormData(prev => ({ ...prev, category: e.target.value }))}
+              className="px-2 py-1 border border-border rounded text-xs bg-background"
+            >
+              {allCategories.map((category) => (
+                <option key={category.id} value={category.id}>
+                  {category.icon || ''} {category.name}
+                </option>
+              ))}
+            </select>
+            
+            <input
+              type="number"
+              min="5"
+              max="480"
+              value={localFormData.estimatedTime}
+              onChange={(e) => {
+                const value = parseInt(e.target.value)
+                if (!isNaN(value) && value >= 5 && value <= 480) {
+                  setLocalFormData(prev => ({ ...prev, estimatedTime: value }))
+                }
+              }}
+              onBlur={(e) => {
+                const value = parseInt(e.target.value)
+                if (isNaN(value) || value < 5) {
+                  setLocalFormData(prev => ({ ...prev, estimatedTime: 30 }))
+                } else if (value > 480) {
+                  setLocalFormData(prev => ({ ...prev, estimatedTime: 480 }))
+                }
+              }}
+              className="px-2 py-1 border border-border rounded text-xs bg-background"
+              placeholder="分"
+            />
+          </div>
+          
+          <div className="flex space-x-2 pt-1">
+            <Button type="submit" size="sm" className="flex-1 h-7 text-xs">
+              保存
+            </Button>
+            <Button 
+              type="button" 
+              variant="outline" 
+              size="sm" 
+              onClick={onCancel}
+              className="h-7 text-xs"
+            >
+              <X className="w-3 h-3" />
+            </Button>
+          </div>
+        </form>
       </Card>
     </div>
   )
