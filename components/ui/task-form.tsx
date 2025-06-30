@@ -52,7 +52,6 @@ export interface BaseTaskFormProps extends VariantProps<typeof taskFormVariants>
   onSubmit: (data: TaskFormData) => void | Promise<void>
   onCancel?: () => void
   categories: Array<{ id: string; name: string; icon?: string }>
-  showPreview?: boolean
   showDateTimePicker?: boolean
   submitLabel?: string
   cancelLabel?: string
@@ -78,7 +77,6 @@ export function BaseTaskForm({
   onSubmit,
   onCancel,
   categories,
-  showPreview = false,
   showDateTimePicker = false,
   submitLabel = '作成',
   cancelLabel = 'キャンセル',
@@ -223,25 +221,6 @@ export function BaseTaskForm({
         </div>
       </div>
 
-      {/* Preview (for standard variant) */}
-      {showPreview && variant === 'standard' && (
-        <div className="flex items-center justify-center space-x-2 py-2 bg-muted/30 rounded-lg">
-          <span className="text-xs text-muted-foreground">プレビュー:</span>
-          <div className={cn(
-            'px-2 py-1 rounded-full text-xs font-medium',
-            formData.priority === 'high' ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'
-          )}>
-            優先度：{formData.priority === 'high' ? '高' : '低'}
-          </div>
-          <div className={cn(
-            'px-2 py-1 rounded-full text-xs font-medium',
-            formData.urgency === 'high' ? 'bg-red-100 text-red-700' : 'bg-blue-100 text-blue-700'
-          )}>
-            緊急度：{formData.urgency === 'high' ? '高' : '低'}
-          </div>
-        </div>
-      )}
-
       {/* Category and Estimated Time */}
       <div className="grid grid-cols-2 gap-2">
         <Select
@@ -343,8 +322,8 @@ export function BaseTaskForm({
 }
 
 // Wrapper components for specific contexts
-export function TaskPoolAddForm(props: Omit<BaseTaskFormProps, 'variant' | 'showPreview'>) {
-  return <BaseTaskForm {...props} variant="standard" showPreview={true} />
+export function TaskPoolAddForm(props: Omit<BaseTaskFormProps, 'variant'>) {
+  return <BaseTaskForm {...props} variant="standard" />
 }
 
 export function TimelineAddForm(props: Omit<BaseTaskFormProps, 'variant' | 'size'>) {
