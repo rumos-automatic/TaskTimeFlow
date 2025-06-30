@@ -15,6 +15,7 @@ import { useViewState } from '@/lib/hooks/use-view-state'
 import { useCategoryStoreWithAuth } from '@/lib/hooks/use-category-store-with-auth'
 import { Task, Priority, Urgency, TaskCategory } from '@/lib/types'
 import { TimelineAddForm, BaseTaskForm, CalendarAddForm, TaskFormData } from '@/components/ui/task-form'
+import { TimelineEditForm } from '@/components/ui/task-form-timeline-edit'
 
 const timeSlots = Array.from({ length: 96 }, (_, i) => {
   const hour = Math.floor(i / 4)
@@ -40,7 +41,7 @@ interface ScheduledTaskCardProps {
 function ScheduledTaskCard({ task, slotId, slotData }: ScheduledTaskCardProps) {
   const [showActions, setShowActions] = useState(false)
   const [isEditing, setIsEditing] = useState(false)
-  const { updateTask, removeTimeSlot, completeTask, uncompleteTask, addTask } = useTaskStoreWithAuth()
+  const { updateTask, removeTimeSlot, completeTask, uncompleteTask, addTask, moveTaskToTimeline } = useTaskStoreWithAuth()
   const { user } = useAuth()
   const {
     attributes,
@@ -98,8 +99,27 @@ function ScheduledTaskCard({ task, slotId, slotData }: ScheduledTaskCardProps) {
       <EditScheduledTaskCard 
         task={task}
         slot={slotData}
-        onSave={(updatedTask) => {
-          updateTask(task.id, updatedTask)
+        onSave={async (updatedTask) => {
+          // タスク情報を更新
+          await updateTask(task.id, {
+            title: updatedTask.title,
+            priority: updatedTask.priority,
+            urgency: updatedTask.urgency,
+            category: updatedTask.category,
+            estimatedTime: updatedTask.estimatedTime
+          })
+          
+          // 時間が変更された場合はタイムスロットを更新
+          if (updatedTask.scheduledTime && updatedTask.scheduledTime !== slotData.startTime) {
+            // 現在のスロットを削除
+            await removeTimeSlot(slotId)
+            
+            // 新しい時間でスケジュール
+            const { moveTaskToTimeline } = useTaskStoreWithAuth.getState()
+            const slotDate = slotData.date instanceof Date ? slotData.date : new Date(slotData.date)
+            await moveTaskToTimeline(task.id, slotDate, updatedTask.scheduledTime, user?.id)
+          }
+          
           setIsEditing(false)
         }}
         onCancel={() => setIsEditing(false)}
@@ -237,12 +257,13 @@ function ScheduledTaskCard({ task, slotId, slotData }: ScheduledTaskCardProps) {
 interface EditScheduledTaskCardProps {
   task: any
   slot: any
-  onSave: (task: any) => void
+  onSave: (task: any) => void | Promise<void>
   onCancel: () => void
 }
 
 function EditScheduledTaskCard({ task, slot, onSave, onCancel }: EditScheduledTaskCardProps) {
   const { allCategories } = useCategoryStoreWithAuth()
+  const [selectedTime, setSelectedTime] = useState(slot.startTime || '09:00')
   
   const handleSubmit = (formData: TaskFormData) => {
     const finalData = {
@@ -250,15 +271,16 @@ function EditScheduledTaskCard({ task, slot, onSave, onCancel }: EditScheduledTa
       priority: formData.priority,
       urgency: formData.urgency,
       category: formData.category,
-      estimatedTime: formData.estimatedTime === '' ? 30 : formData.estimatedTime
+      estimatedTime: formData.estimatedTime === '' ? 30 : formData.estimatedTime,
+      scheduledTime: selectedTime // 時間情報を含める
     }
     onSave(finalData)
   }
 
   return (
     <div className="absolute left-2 right-2 z-50" style={{ top: '0px' }}>
-      <Card className="border-primary bg-white dark:bg-gray-800 shadow-lg">
-        <TimelineAddForm
+      <Card className="border-primary bg-white dark:bg-gray-800 shadow-lg p-3">
+        <TimelineEditForm
           defaultValues={{
             title: task.title,
             priority: task.priority,
@@ -270,6 +292,8 @@ function EditScheduledTaskCard({ task, slot, onSave, onCancel }: EditScheduledTa
           onCancel={onCancel}
           categories={allCategories}
           submitLabel="保存"
+          selectedTime={selectedTime}
+          onTimeChange={setSelectedTime}
           className="pointer-events-auto"
         />
       </Card>
