@@ -251,6 +251,10 @@ export const useSupabaseTaskStore = create<SupabaseTaskStore>()((set, get) => {
       try {
         set({ syncing: true, error: null })
         
+        // リアルタイム更新を一時停止
+        pauseRealTimeUpdates = true
+        console.log('⏸️ Paused real-time updates for update operation')
+        
         // Optimistic update
         set((state) => ({
           tasks: state.tasks.map((task) =>
@@ -263,8 +267,15 @@ export const useSupabaseTaskStore = create<SupabaseTaskStore>()((set, get) => {
         await TaskService.updateTask(id, updates)
         set({ syncing: false })
         
+        // 少し待ってからリアルタイム更新を再開
+        setTimeout(() => {
+          pauseRealTimeUpdates = false
+          console.log('▶️ Resumed real-time updates')
+        }, 500)
+        
       } catch (error) {
         console.error('Failed to update task:', error)
+        pauseRealTimeUpdates = false // エラー時は即座に再開
         set({ 
           error: 'タスクの更新に失敗しました',
           syncing: false 

@@ -123,7 +123,7 @@ function ScheduledTaskCard({ task, slotId, slotData }: ScheduledTaskCardProps) {
               if (user) {
                 await moveTaskToTimeline(task.id, slotDate, slotData.startTime, user.id)
               }
-            }, 300)
+            }, 600)  // リアルタイム更新の一時停止より後に実行
           } else {
             // estimatedTimeが変更されていない場合は通常の更新
             await updateTask(task.id, {
