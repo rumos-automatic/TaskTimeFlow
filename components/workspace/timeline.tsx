@@ -99,32 +99,40 @@ function ScheduledTaskCard({ task, slotId, slotData }: ScheduledTaskCardProps) {
         task={task}
         slot={slotData}
         onSave={async (updatedTask) => {
-          // タスク情報を更新
-          await updateTask(task.id, {
-            title: updatedTask.title,
-            priority: updatedTask.priority,
-            urgency: updatedTask.urgency,
-            category: updatedTask.category,
-            estimatedTime: updatedTask.estimatedTime
-          })
+          // estimatedTimeが変更された場合はタイムスロットを再作成
+          const timeChanged = updatedTask.estimatedTime !== task.estimatedTime
           
-          // estimatedTimeが変更された場合はタイムスロットを更新
-          if (updatedTask.estimatedTime !== task.estimatedTime) {
-            // 新しいendTimeを計算
-            const [hours, minutes] = slotData.startTime.split(':').map(Number)
-            const totalMinutes = hours * 60 + minutes + updatedTask.estimatedTime
-            const endHours = Math.floor(totalMinutes / 60) % 24
-            const endMinutes = totalMinutes % 60
-            const newEndTime = `${endHours.toString().padStart(2, '0')}:${endMinutes.toString().padStart(2, '0')}`
+          if (timeChanged) {
+            // まずタスク情報を更新
+            await updateTask(task.id, {
+              title: updatedTask.title,
+              priority: updatedTask.priority,
+              urgency: updatedTask.urgency,
+              category: updatedTask.category,
+              estimatedTime: updatedTask.estimatedTime
+            })
+            
+            // スロットの日付を取得
+            const slotDate = slotData.date instanceof Date ? slotData.date : new Date(slotData.date)
             
             // 現在のスロットを削除
             await removeTimeSlot(slotId)
             
-            // 新しい期間で再スケジュール
-            const slotDate = slotData.date instanceof Date ? slotData.date : new Date(slotData.date)
-            if (user) {
-              await moveTaskToTimeline(task.id, slotDate, slotData.startTime, user.id)
-            }
+            // 少し待ってから新しいスロットを作成（更新が反映されるため）
+            setTimeout(async () => {
+              if (user) {
+                await moveTaskToTimeline(task.id, slotDate, slotData.startTime, user.id)
+              }
+            }, 300)
+          } else {
+            // estimatedTimeが変更されていない場合は通常の更新
+            await updateTask(task.id, {
+              title: updatedTask.title,
+              priority: updatedTask.priority,
+              urgency: updatedTask.urgency,
+              category: updatedTask.category,
+              estimatedTime: updatedTask.estimatedTime
+            })
           }
           
           setIsEditing(false)
