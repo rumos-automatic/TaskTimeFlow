@@ -3,11 +3,27 @@
 import { create } from 'zustand'
 import { supabase } from '@/lib/supabase/client'
 import { CustomCategory, GoogleTasksSyncStatus } from '@/lib/types'
-import { Database } from '@/lib/supabase/types'
+import { Database } from '@/lib/database.types'
 
 type CustomCategoryRow = Database['public']['Tables']['custom_categories']['Row']
 type CustomCategoryInsert = Database['public']['Tables']['custom_categories']['Insert']
 type CustomCategoryUpdate = Database['public']['Tables']['custom_categories']['Update']
+
+// Convert DB row to CustomCategory
+function dbCategoryToCustomCategory(row: CustomCategoryRow): CustomCategory {
+  return {
+    id: row.id,
+    name: row.name,
+    color: row.color,
+    icon: row.icon || '',
+    description: row.description || '',
+    isBuiltIn: row.is_built_in ?? false,
+    userId: row.user_id,
+    order: row.order ?? 0,
+    createdAt: row.created_at ? new Date(row.created_at) : new Date(),
+    updatedAt: row.updated_at ? new Date(row.updated_at) : new Date()
+  }
+}
 
 interface SupabaseCategoryStore {
   // State
@@ -38,19 +54,6 @@ interface SupabaseCategoryStore {
   setError: (error: string | null) => void
 }
 
-// Convert Supabase row to CustomCategory
-const supabaseRowToCustomCategory = (row: CustomCategoryRow): CustomCategory => ({
-  id: row.id,
-  name: row.name,
-  color: row.color,
-  icon: row.icon || undefined,
-  description: row.description || undefined,
-  isBuiltIn: row.is_built_in,
-  userId: row.user_id,
-  order: row.order,
-  createdAt: new Date(row.created_at || ''),
-  updatedAt: new Date(row.updated_at || '')
-})
 
 // Convert CustomCategory to Supabase insert
 const customCategoryToSupabaseInsert = (category: Omit<CustomCategory, 'id' | 'createdAt' | 'updatedAt'>): CustomCategoryInsert => ({
@@ -107,7 +110,7 @@ export const useSupabaseCategoryStore = create<SupabaseCategoryStore>((set, get)
         throw categoriesError
       }
       
-      const customCategories = (categoriesData || []).map(supabaseRowToCustomCategory)
+      const customCategories = (categoriesData || []).map(dbCategoryToCustomCategory)
       console.log('✅ Fetched custom categories:', customCategories)
       
       // Set up realtime subscription for custom_categories
@@ -191,7 +194,7 @@ export const useSupabaseCategoryStore = create<SupabaseCategoryStore>((set, get)
         throw error
       }
       
-      const newCategory = supabaseRowToCustomCategory(data)
+      const newCategory = dbCategoryToCustomCategory(data)
       console.log('✅ Custom category added successfully:', newCategory)
       
       // Update local state
@@ -357,7 +360,7 @@ const handleRealtimeChange = (payload: any) => {
   switch (eventType) {
     case 'INSERT':
       if (newRecord) {
-        const newCategory = supabaseRowToCustomCategory(newRecord)
+        const newCategory = dbCategoryToCustomCategory(newRecord)
         store.setCustomCategories([...store.customCategories, newCategory].sort((a, b) => a.order - b.order))
         console.log('📡 Realtime: Category added', newCategory)
       }
@@ -365,7 +368,7 @@ const handleRealtimeChange = (payload: any) => {
       
     case 'UPDATE':
       if (newRecord) {
-        const updatedCategory = supabaseRowToCustomCategory(newRecord)
+        const updatedCategory = dbCategoryToCustomCategory(newRecord)
         store.setCustomCategories(
           store.customCategories.map(category =>
             category.id === updatedCategory.id ? updatedCategory : category

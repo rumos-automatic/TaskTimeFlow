@@ -1,5 +1,5 @@
 import { supabase } from './client'
-import { Database } from './types'
+import { Database } from '@/lib/database.types'
 import { Task, TimeSlot, Priority, Urgency, TaskStatus, TaskCategory } from '@/lib/types'
 
 // 日付ずれを防ぐためのヘルパー関数
@@ -22,6 +22,10 @@ type DbTaskUpdate = Database['public']['Tables']['tasks']['Update']
 type DbTimeSlot = Database['public']['Tables']['time_slots']['Row']
 type DbTimeSlotInsert = Database['public']['Tables']['time_slots']['Insert']
 type DbTimeSlotUpdate = Database['public']['Tables']['time_slots']['Update']
+
+type DbTaskTimeLog = Database['public']['Tables']['task_time_logs']['Row']
+type DbTaskTimeLogInsert = Database['public']['Tables']['task_time_logs']['Insert']
+type DbTaskTimeLogUpdate = Database['public']['Tables']['task_time_logs']['Update']
 
 // Database models to App models conversion
 export function dbTaskToTask(dbTask: DbTask): Task {
@@ -310,6 +314,135 @@ export class TaskService {
       if (debounceTimer) {
         clearTimeout(debounceTimer)
       }
+      supabase.removeChannel(channel)
+    }
+  }
+  
+  // Task Time Log operations for Stopwatch feature
+  static async getTaskTimeLogs(userId: string, date?: Date): Promise<DbTaskTimeLog[]> {
+    let query = supabase
+      .from('task_time_logs')
+      .select('*')
+      .eq('user_id', userId)
+      
+    if (date) {
+      const dateStr = formatDateForDatabase(date)
+      query = query.eq('date', dateStr)
+    }
+    
+    const { data, error } = await query.order('date', { ascending: false })
+    
+    if (error) {
+      console.error('Error fetching task time logs:', error)
+      throw error
+    }
+    
+    return data || []
+  }
+  
+  static async getDailyTimeLog(userId: string, date: Date): Promise<number> {
+    const dateStr = formatDateForDatabase(date)
+    
+    const { data, error } = await supabase
+      .from('task_time_logs')
+      .select('duration')
+      .eq('user_id', userId)
+      .eq('date', dateStr)
+      
+    if (error) {
+      console.error('Error fetching daily time log:', error)
+      throw error
+    }
+    
+    return (data || []).reduce((total, log) => total + (log.duration || 0), 0)
+  }
+  
+  static async getTaskTimeLog(userId: string, taskId: string): Promise<number> {
+    const { data, error } = await supabase
+      .from('task_time_logs')
+      .select('duration')
+      .eq('user_id', userId)
+      .eq('task_id', taskId)
+      
+    if (error) {
+      console.error('Error fetching task time log:', error)
+      throw error
+    }
+    
+    return (data || []).reduce((total, log) => total + (log.duration || 0), 0)
+  }
+  
+  static async updateTimeLog(userId: string, taskId: string | null, duration: number, date?: Date): Promise<void> {
+    const targetDate = date || new Date()
+    const dateStr = formatDateForDatabase(targetDate)
+    
+    // Build query conditionally based on whether taskId is null
+    let query = supabase
+      .from('task_time_logs')
+      .select('*')
+      .eq('user_id', userId)
+      .eq('date', dateStr)
+    
+    if (taskId === null) {
+      query = query.is('task_id', null)
+    } else {
+      query = query.eq('task_id', taskId)
+    }
+    
+    const { data: existingLog } = await query.single()
+      
+    if (existingLog) {
+      // Update existing log - add to duration
+      const { error } = await supabase
+        .from('task_time_logs')
+        .update({ 
+          duration: existingLog.duration + duration,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', existingLog.id)
+        
+      if (error) {
+        console.error('Error updating time log:', error)
+        throw error
+      }
+    } else {
+      // Create new log
+      const { error } = await supabase
+        .from('task_time_logs')
+        .insert({
+          user_id: userId,
+          task_id: taskId,
+          date: dateStr,
+          duration: duration
+        })
+        
+      if (error) {
+        console.error('Error creating time log:', error)
+        throw error
+      }
+    }
+  }
+  
+  static subscribeToTaskTimeLogs(userId: string, callback: () => void) {
+    const channelName = `task_time_logs_channel_${userId}_${Date.now()}`
+    
+    const channel = supabase
+      .channel(channelName)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'task_time_logs',
+          filter: `user_id=eq.${userId}`
+        },
+        () => {
+          callback()
+        }
+      )
+      .subscribe()
+      
+    return () => {
       supabase.removeChannel(channel)
     }
   }

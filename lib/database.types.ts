@@ -117,6 +117,44 @@ export type Database = {
         }
         Relationships: []
       }
+      task_time_logs: {
+        Row: {
+          created_at: string | null
+          date: string
+          duration: number
+          id: string
+          task_id: string | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          date: string
+          duration?: number
+          id?: string
+          task_id?: string | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          date?: string
+          duration?: number
+          id?: string
+          task_id?: string | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "task_time_logs_task_id_fkey"
+            columns: ["task_id"]
+            isOneToOne: false
+            referencedRelation: "tasks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       tasks: {
         Row: {
           actual_time: number | null
@@ -323,7 +361,15 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      daily_time_summaries: {
+        Row: {
+          date: string | null
+          tasks_worked_on: number | null
+          total_duration: number | null
+          user_id: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       [_ in never]: never

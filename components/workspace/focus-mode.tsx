@@ -3,21 +3,30 @@
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
-import { Play, Pause, SkipForward, Settings, TrendingUp, CheckCircle, Square } from 'lucide-react'
-import { useEffect } from 'react'
+import { Switch } from '@/components/ui/switch'
+import { Label } from '@/components/ui/label'
+import { Play, Pause, SkipForward, Settings, TrendingUp, CheckCircle, Square, Clock, Timer } from 'lucide-react'
+import { useEffect, useState } from 'react'
 import { useTheme } from 'next-themes'
 import { useTimerStore } from '@/lib/store/use-timer-store'
 import { useTaskStoreWithAuth } from '@/lib/hooks/use-task-store-with-auth'
 import { TimerSettings } from './timer-settings'
+import { useAuth } from '@/lib/auth/auth-context'
 import './fluid-animations.css'
 
 export function FocusMode() {
   const { theme } = useTheme()
+  const { user } = useAuth()
+  const [todayTotalTime, setTodayTotalTime] = useState(0)
+  const [currentTaskTime, setCurrentTaskTime] = useState(0)
+  
   const {
+    timerMode,
     isRunning,
     isPaused,
     timeRemaining,
     totalTime,
+    stopwatchTime,
     currentTaskId,
     completedPomodoros,
     timerColor,
@@ -29,7 +38,14 @@ export function FocusMode() {
     pauseTimer,
     resumeTimer,
     stopTimer,
-    tick
+    tick,
+    startStopwatch,
+    stopStopwatch,
+    resetStopwatch,
+    setTimerMode,
+    getTodayTotalTime,
+    getTaskTotalTime,
+    setUserId
   } = useTimerStore()
 
   const { tasks, updateTask, timeSlots } = useTaskStoreWithAuth()
@@ -115,8 +131,21 @@ export function FocusMode() {
     const secs = seconds % 60
     return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`
   }
+  
+  const formatStopwatchTime = (seconds: number) => {
+    const hours = Math.floor(seconds / 3600)
+    const mins = Math.floor((seconds % 3600) / 60)
+    const secs = seconds % 60
+    
+    if (hours > 0) {
+      return `${hours}:${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`
+    }
+    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`
+  }
 
-  const progress = totalTime > 0 ? ((totalTime - timeRemaining) / totalTime) * 100 : 0
+  const progress = timerMode === 'pomodoro' && totalTime > 0 
+    ? ((totalTime - timeRemaining) / totalTime) * 100 
+    : 0
 
   // 🎨 Dynamic color calculation based on time remaining
   const getTimerColor = () => {
@@ -154,20 +183,37 @@ export function FocusMode() {
   const progressColor = getTimerColor()
 
   const handleStartPause = () => {
-    if (!isRunning && !isPaused) {
-      // Start timer with current task ID if available, otherwise start without task
-      startTimer(currentTask?.id)
-    } else if (isRunning) {
-      // Pause timer
-      pauseTimer()
-    } else if (isPaused) {
-      // Resume timer
-      resumeTimer()
+    if (timerMode === 'stopwatch') {
+      if (!isRunning && !isPaused) {
+        startStopwatch(currentTask?.id)
+      } else if (isRunning) {
+        pauseTimer()
+      } else if (isPaused) {
+        resumeTimer()
+      }
+    } else {
+      if (!isRunning && !isPaused) {
+        startTimer(currentTask?.id)
+      } else if (isRunning) {
+        pauseTimer()
+      } else if (isPaused) {
+        resumeTimer()
+      }
     }
   }
 
   const handleStop = () => {
-    stopTimer()
+    if (timerMode === 'stopwatch') {
+      stopStopwatch()
+    } else {
+      stopTimer()
+    }
+  }
+  
+  const handleReset = () => {
+    if (timerMode === 'stopwatch') {
+      resetStopwatch()
+    }
   }
 
   const handleCompleteTask = () => {
@@ -183,10 +229,60 @@ export function FocusMode() {
   // Calculate daily statistics
   const completedTasks = tasks.filter(t => t.status === 'completed').length
   const inProgressTasks = tasks.filter(t => t.status === 'in_progress').length
+  
+  // Set user ID when user changes
+  useEffect(() => {
+    if (user?.id) {
+      setUserId(user.id)
+    }
+  }, [user, setUserId])
+  
+  // Fetch time data
+  useEffect(() => {
+    const fetchTimeData = async () => {
+      if (user?.id) {
+        const todayTime = await getTodayTotalTime()
+        setTodayTotalTime(todayTime)
+        
+        if (currentTask) {
+          const taskTime = await getTaskTotalTime(currentTask.id)
+          setCurrentTaskTime(taskTime)
+        } else {
+          setCurrentTaskTime(0)
+        }
+      }
+    }
+    
+    fetchTimeData()
+    const interval = setInterval(fetchTimeData, 5000) // Update every 5 seconds
+    
+    return () => clearInterval(interval)
+  }, [user, currentTask, getTodayTotalTime, getTaskTotalTime])
 
   return (
     <div className="space-y-6 h-full flex flex-col">
-      {/* Pomodoro Timer */}
+      {/* Timer Mode Toggle */}
+      <div className="flex items-center justify-between px-2">
+        <div className="flex items-center space-x-2">
+          <Clock className="w-4 h-4 text-muted-foreground" />
+          <Label htmlFor="timer-mode" className="text-sm font-medium">
+            ストップウォッチ
+          </Label>
+        </div>
+        <Switch
+          id="timer-mode"
+          checked={timerMode === 'stopwatch'}
+          onCheckedChange={(checked) => setTimerMode(checked ? 'stopwatch' : 'pomodoro')}
+        />
+        <div className="flex items-center space-x-2">
+          <Label htmlFor="timer-mode" className="text-sm font-medium">
+            ポモドーロ
+          </Label>
+          <Timer className="w-4 h-4 text-muted-foreground" />
+        </div>
+      </div>
+      
+      {/* Timer Display */}
       <Card className={`p-6 text-center transition-all duration-1000 h-auto min-h-fit ${
         gradientAnimation
           ? 'shadow-lg' 
@@ -206,8 +302,9 @@ export function FocusMode() {
         animation: waveAnimation ? 'gradient-shift 8s ease infinite, pulse 2s ease-in-out infinite alternate' : 'gradient-shift 8s ease infinite'
       } : {}}>
         <div className="relative w-32 h-32 mx-auto mb-4 overflow-visible">
-          {/* Progress Ring with Magic Effects */}
-          <svg className={`w-32 h-32 transform -rotate-90 ${waveAnimationClass}`} viewBox="0 0 100 100" style={{ overflow: 'visible' }}>
+          {/* Progress Ring with Magic Effects - Only for Pomodoro */}
+          {timerMode === 'pomodoro' ? (
+            <svg className={`w-32 h-32 transform -rotate-90 ${waveAnimationClass}`} viewBox="0 0 100 100" style={{ overflow: 'visible' }}>
             {/* 🌊 Dynamic Fluid Gradient Definitions */}
             <defs>
               {gradientAnimation && (
@@ -483,40 +580,69 @@ export function FocusMode() {
               </g>
             )}
           </svg>
+          ) : (
+            /* Stopwatch Simple Display */
+            <div className="w-32 h-32 rounded-full border-4 border-purple-200 dark:border-purple-800 flex items-center justify-center">
+              <Clock className="w-12 h-12 text-purple-500" />
+            </div>
+          )}
           
           {/* Time Display */}
           <div className="absolute inset-0 flex items-center justify-center">
-            {displayMode === 'digital' ? (
-              <div className={`text-2xl font-mono font-bold ${
-                gradientAnimation && theme === 'dark' 
-                  ? 'text-white drop-shadow-md' 
-                  : gradientAnimation 
-                    ? 'text-slate-700 drop-shadow-sm'
-                    : 'text-foreground'
-              }`}>
-                {formatTime(timeRemaining)}
-              </div>
-            ) : (
+            {timerMode === 'stopwatch' ? (
               <div className="text-center">
-                <div className={`text-lg font-bold ${
+                <div className={`text-2xl font-mono font-bold ${
                   gradientAnimation && theme === 'dark' 
                     ? 'text-white drop-shadow-md' 
                     : gradientAnimation 
                       ? 'text-slate-700 drop-shadow-sm'
                       : 'text-foreground'
                 }`}>
-                  {Math.floor(timeRemaining / 60)}
+                  {formatStopwatchTime(stopwatchTime)}
                 </div>
-                <div className={`text-xs ${
+                <div className={`text-xs mt-1 ${
                   gradientAnimation && theme === 'dark' 
                     ? 'text-white/80 drop-shadow-md' 
                     : gradientAnimation 
                       ? 'text-slate-600 drop-shadow-sm'
                       : 'text-muted-foreground'
                 }`}>
-                  分
+                  経過時間
                 </div>
               </div>
+            ) : (
+              displayMode === 'digital' ? (
+                <div className={`text-2xl font-mono font-bold ${
+                  gradientAnimation && theme === 'dark' 
+                    ? 'text-white drop-shadow-md' 
+                    : gradientAnimation 
+                      ? 'text-slate-700 drop-shadow-sm'
+                      : 'text-foreground'
+                }`}>
+                  {formatTime(timeRemaining)}
+                </div>
+              ) : (
+                <div className="text-center">
+                  <div className={`text-lg font-bold ${
+                    gradientAnimation && theme === 'dark' 
+                      ? 'text-white drop-shadow-md' 
+                      : gradientAnimation 
+                        ? 'text-slate-700 drop-shadow-sm'
+                        : 'text-foreground'
+                  }`}>
+                    {Math.floor(timeRemaining / 60)}
+                  </div>
+                  <div className={`text-xs ${
+                    gradientAnimation && theme === 'dark' 
+                      ? 'text-white/80 drop-shadow-md' 
+                      : gradientAnimation 
+                        ? 'text-slate-600 drop-shadow-sm'
+                        : 'text-muted-foreground'
+                  }`}>
+                    分
+                  </div>
+                </div>
+              )
             )}
           </div>
         </div>
@@ -535,16 +661,23 @@ export function FocusMode() {
               <Square className="w-4 h-4" />
             </Button>
           )}
-          <TimerSettings>
-            <Button variant="outline" size="sm">
-              <Settings className="w-4 h-4" />
+          {timerMode === 'stopwatch' && stopwatchTime > 0 && !isRunning && (
+            <Button variant="outline" size="sm" onClick={handleReset}>
+              <SkipForward className="w-4 h-4" />
             </Button>
-          </TimerSettings>
+          )}
+          {timerMode === 'pomodoro' && (
+            <TimerSettings>
+              <Button variant="outline" size="sm">
+                <Settings className="w-4 h-4" />
+              </Button>
+            </TimerSettings>
+          )}
         </div>
 
         {/* Timer Status */}
         <div className="text-center text-xs text-muted-foreground">
-          {isRunning && "タイマー実行中"}
+          {isRunning && (timerMode === 'stopwatch' ? "計測中" : "タイマー実行中")}
           {isPaused && "一時停止中"}
           {!isRunning && !isPaused && "開始準備完了"}
         </div>
@@ -673,6 +806,26 @@ export function FocusMode() {
             <div className="text-xs text-muted-foreground">進行中</div>
           </Card>
         </div>
+
+        {/* Work Time Summary */}
+        <Card className="p-3">
+          <div className="space-y-2">
+            <div className="flex justify-between items-center">
+              <span className="text-xs font-medium">今日の作業時間</span>
+              <span className="text-lg font-bold text-purple-600">
+                {formatStopwatchTime(todayTotalTime)}
+              </span>
+            </div>
+            {currentTask && currentTaskTime > 0 && (
+              <div className="flex justify-between items-center">
+                <span className="text-xs text-muted-foreground">現在のタスク</span>
+                <span className="text-sm font-medium">
+                  {formatStopwatchTime(currentTaskTime)}
+                </span>
+              </div>
+            )}
+          </div>
+        </Card>
 
         <div className="space-y-2">
           <div className="flex justify-between text-xs">
