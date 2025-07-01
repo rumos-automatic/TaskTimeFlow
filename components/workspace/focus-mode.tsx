@@ -263,11 +263,15 @@ export function FocusMode() {
       }
     }
     
+    // Initial fetch
     fetchTimeData()
-    const interval = setInterval(fetchTimeData, 1000) // Update every second for better UX
+    
+    // Only update every 5 seconds when stopwatch is running, otherwise every 30 seconds
+    const updateInterval = timerMode === 'stopwatch' && isRunning ? 5000 : 30000
+    const interval = setInterval(fetchTimeData, updateInterval)
     
     return () => clearInterval(interval)
-  }, [user, currentTask, getTodayTotalTime, getTaskTotalTime])
+  }, [user, currentTask, getTodayTotalTime, getTaskTotalTime, timerMode, isRunning])
 
   return (
     <div className="space-y-6 h-full flex flex-col">
@@ -823,14 +827,22 @@ export function FocusMode() {
             <div className="flex justify-between items-center">
               <span className="text-xs font-medium">今日の作業時間</span>
               <span className="text-lg font-bold text-purple-600">
-                {formatStopwatchTime(todayTotalTime)}
+                {formatStopwatchTime(
+                  timerMode === 'stopwatch' && isRunning 
+                    ? todayTotalTime + stopwatchTime 
+                    : todayTotalTime
+                )}
               </span>
             </div>
-            {currentTask && currentTaskTime > 0 && (
+            {currentTask && (currentTaskTime > 0 || (timerMode === 'stopwatch' && isRunning && currentTaskId === currentTask.id)) && (
               <div className="flex justify-between items-center">
                 <span className="text-xs text-muted-foreground">現在のタスク</span>
                 <span className="text-sm font-medium">
-                  {formatStopwatchTime(currentTaskTime)}
+                  {formatStopwatchTime(
+                    timerMode === 'stopwatch' && isRunning && currentTaskId === currentTask.id
+                      ? currentTaskTime + stopwatchTime
+                      : currentTaskTime
+                  )}
                 </span>
               </div>
             )}
