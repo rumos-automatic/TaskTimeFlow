@@ -68,7 +68,7 @@ export function ApiKeySettings() {
   // 初回読み込み
   useEffect(() => {
     loadApiKeys()
-  }, [user])
+  }, [user, loadApiKeys])
 
   // APIキーを保存
   const saveApiKeys = async () => {
