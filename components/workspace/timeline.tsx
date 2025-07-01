@@ -589,8 +589,7 @@ function DroppableTimeSlot({ time, hour, minute, slotIndex, isBusinessHour, isHo
       }
       
       findAndScheduleTask()
-      setActiveFormSlot(null) // フォーム終了時にアクティブフォームスロットをクリア
-      setActiveSlot(null) // アクティブスロットもクリア
+      // フォームクリアは成功/失敗/エラー時の各ケースで実行されるため、ここでは削除
       
     } catch (error) {
       console.error('❌ Failed to create task:', error)
