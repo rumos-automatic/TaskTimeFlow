@@ -279,6 +279,13 @@ export const useSupabaseTimerStore = create<SupabaseTimerStore>((set, get) => ({
     
     // Update every second
     const interval = setInterval(async () => {
+      // Check if still running before updating
+      const currentState = get()
+      if (!currentState.isRunning) {
+        clearInterval(interval)
+        return
+      }
+      
       const elapsed = Math.floor((Date.now() - startTime) / 1000)
       set({ stopwatchTime: initialTime + elapsed })
       
@@ -311,6 +318,7 @@ export const useSupabaseTimerStore = create<SupabaseTimerStore>((set, get) => ({
     
     if (stopwatchInterval) {
       clearInterval(stopwatchInterval)
+      console.log('Stopwatch interval cleared')
     }
     
     // Save any remaining time since last update
@@ -330,7 +338,7 @@ export const useSupabaseTimerStore = create<SupabaseTimerStore>((set, get) => ({
       }
     }
     
-    // 停止時に stopwatchTime を0にリセット（次回は新しいセッションとして開始）
+    // 停止時の状態を更新
     set({
       isRunning: false,
       isPaused: false,
@@ -339,6 +347,9 @@ export const useSupabaseTimerStore = create<SupabaseTimerStore>((set, get) => ({
       lastUpdateTime: null,
       stopwatchTime: 0  // リセットする
     })
+    
+    // データ更新のトリガー
+    console.log('Stopwatch stopped, data saved')
   },
   
   resetStopwatch: () => {

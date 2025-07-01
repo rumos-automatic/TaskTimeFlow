@@ -205,16 +205,19 @@ export function FocusMode() {
   const handleStop = async () => {
     if (timerMode === 'stopwatch') {
       await stopStopwatch()
-      // 停止後に時間データを再取得
-      if (user?.id) {
-        const todayTime = await getTodayTotalTime()
-        setTodayTotalTime(todayTime)
-        
-        if (currentTask) {
-          const taskTime = await getTaskTotalTime(currentTask.id)
-          setCurrentTaskTime(taskTime)
+      // 停止後に時間データを再取得（少し遅延を入れてデータベースの更新を待つ）
+      setTimeout(async () => {
+        if (user?.id) {
+          const todayTime = await getTodayTotalTime()
+          setTodayTotalTime(todayTime)
+          console.log('Updated today total time after stop:', todayTime)
+          
+          if (currentTask) {
+            const taskTime = await getTaskTotalTime(currentTask.id)
+            setCurrentTaskTime(taskTime)
+          }
         }
-      }
+      }, 100)
     } else {
       stopTimer()
     }
@@ -266,12 +269,11 @@ export function FocusMode() {
     // Initial fetch
     fetchTimeData()
     
-    // Only update every 5 seconds when stopwatch is running, otherwise every 30 seconds
-    const updateInterval = timerMode === 'stopwatch' && isRunning ? 5000 : 30000
-    const interval = setInterval(fetchTimeData, updateInterval)
+    // Update every 10 seconds
+    const interval = setInterval(fetchTimeData, 10000)
     
     return () => clearInterval(interval)
-  }, [user, currentTask, getTodayTotalTime, getTaskTotalTime, timerMode, isRunning])
+  }, [user, currentTask, getTodayTotalTime, getTaskTotalTime])
 
   return (
     <div className="space-y-6 h-full flex flex-col">
@@ -827,22 +829,14 @@ export function FocusMode() {
             <div className="flex justify-between items-center">
               <span className="text-xs font-medium">今日の作業時間</span>
               <span className="text-lg font-bold text-purple-600">
-                {formatStopwatchTime(
-                  timerMode === 'stopwatch' && isRunning 
-                    ? todayTotalTime + stopwatchTime 
-                    : todayTotalTime
-                )}
+                {formatStopwatchTime(todayTotalTime)}
               </span>
             </div>
             {currentTask && (currentTaskTime > 0 || (timerMode === 'stopwatch' && isRunning && currentTaskId === currentTask.id)) && (
               <div className="flex justify-between items-center">
                 <span className="text-xs text-muted-foreground">現在のタスク</span>
                 <span className="text-sm font-medium">
-                  {formatStopwatchTime(
-                    timerMode === 'stopwatch' && isRunning && currentTaskId === currentTask.id
-                      ? currentTaskTime + stopwatchTime
-                      : currentTaskTime
-                  )}
+                  {formatStopwatchTime(currentTaskTime)}
                 </span>
               </div>
             )}
