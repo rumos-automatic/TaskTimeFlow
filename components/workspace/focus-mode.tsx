@@ -34,6 +34,7 @@ export function FocusMode() {
     gradientAnimation,
     waveAnimation,
     colorTransition,
+    lastSavedSeconds,
     startTimer,
     pauseTimer,
     resumeTimer,
@@ -828,7 +829,7 @@ export function FocusMode() {
               <span className="text-xs font-medium">今日の作業時間</span>
               <span className="text-lg font-bold text-purple-600">
                 {formatStopwatchTime(
-                  todayTotalTime + (timerMode === 'stopwatch' ? stopwatchTime : 0)
+                  todayTotalTime + (timerMode === 'stopwatch' ? (stopwatchTime - lastSavedSeconds) : 0)
                 )}
               </span>
             </div>
@@ -838,7 +839,7 @@ export function FocusMode() {
                 <span className="text-sm font-medium">
                   {formatStopwatchTime(
                     timerMode === 'stopwatch' && isRunning && currentTaskId === currentTask.id
-                      ? currentTaskTime + stopwatchTime
+                      ? currentTaskTime + (stopwatchTime - lastSavedSeconds)
                       : currentTaskTime
                   )}
                 </span>

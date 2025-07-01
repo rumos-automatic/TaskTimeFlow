@@ -20,6 +20,7 @@ interface SupabaseTimerStore {
   // Stopwatch interval tracking
   stopwatchInterval: number | null
   lastUpdateTime: number | null
+  lastSavedSeconds: number  // 最後にDBに保存した秒数
   
   // Basic timer settings
   pomodoroTime: number // in minutes
@@ -109,6 +110,7 @@ export const useSupabaseTimerStore = create<SupabaseTimerStore>((set, get) => ({
   // Stopwatch tracking
   stopwatchInterval: null,
   lastUpdateTime: null,
+  lastSavedSeconds: 0,
   
   // Basic timer settings
   pomodoroTime: 25,
@@ -309,8 +311,11 @@ export const useSupabaseTimerStore = create<SupabaseTimerStore>((set, get) => ({
         try {
           console.log(`Saving 5 seconds to Supabase for ${taskId ? `task ${taskId}` : 'general time'}`)
           await TaskService.updateTimeLog(userId, taskId || null, 5)
-          // Update lastUpdateTime after successful save
-          set({ lastUpdateTime: Date.now() })
+          // Update lastUpdateTime and lastSavedSeconds after successful save
+          set({ 
+            lastUpdateTime: Date.now(),
+            lastSavedSeconds: elapsed  // 保存済みの秒数を記録
+          })
           console.log('Time log updated successfully')
         } catch (error) {
           console.error('Error updating time log:', error)
@@ -324,7 +329,8 @@ export const useSupabaseTimerStore = create<SupabaseTimerStore>((set, get) => ({
       isPaused: false,
       currentTaskId: taskId || null,
       stopwatchInterval: interval as any,
-      lastUpdateTime: Date.now()
+      lastUpdateTime: Date.now(),
+      lastSavedSeconds: isPaused ? get().lastSavedSeconds : 0  // 新規開始時は0、再開時は保持
     })
   },
   
@@ -380,7 +386,8 @@ export const useSupabaseTimerStore = create<SupabaseTimerStore>((set, get) => ({
       isPaused: false,
       currentTaskId: null,
       stopwatchInterval: null,
-      lastUpdateTime: null
+      lastUpdateTime: null,
+      lastSavedSeconds: 0  // リセット時に保存済み秒数もクリア
     })
   },
   
