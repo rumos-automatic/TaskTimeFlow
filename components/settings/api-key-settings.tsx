@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -36,7 +36,7 @@ export function ApiKeySettings() {
   const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null)
 
   // APIキーを読み込む
-  const loadApiKeys = async () => {
+  const loadApiKeys = useCallback(async () => {
     if (!user) return
     
     setLoading(true)
@@ -63,7 +63,7 @@ export function ApiKeySettings() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [user])
 
   // 初回読み込み
   useEffect(() => {
