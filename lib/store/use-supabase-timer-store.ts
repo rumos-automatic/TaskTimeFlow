@@ -260,7 +260,7 @@ export const useSupabaseTimerStore = create<SupabaseTimerStore>((set, get) => ({
   
   // Stopwatch actions
   startStopwatch: (taskId) => {
-    const { userId, stopwatchInterval } = get()
+    const { userId, stopwatchInterval, isRunning } = get()
     if (!userId) {
       console.error('No user ID found, cannot start stopwatch')
       return
@@ -274,7 +274,8 @@ export const useSupabaseTimerStore = create<SupabaseTimerStore>((set, get) => ({
     }
     
     const startTime = Date.now()
-    const initialTime = get().stopwatchTime
+    // Reset stopwatch time when starting fresh (not resuming)
+    const initialTime = isRunning ? get().stopwatchTime : 0
     
     // Update every second
     const interval = setInterval(async () => {
@@ -329,14 +330,14 @@ export const useSupabaseTimerStore = create<SupabaseTimerStore>((set, get) => ({
       }
     }
     
-    // 停止時に stopwatchTime は保持する（リセットしない）
+    // 停止時に stopwatchTime を0にリセット（次回は新しいセッションとして開始）
     set({
       isRunning: false,
       isPaused: false,
       currentTaskId: null,
       stopwatchInterval: null,
       lastUpdateTime: null,
-      // stopwatchTime はリセットしない
+      stopwatchTime: 0  // リセットする
     })
   },
   
