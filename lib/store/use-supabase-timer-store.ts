@@ -297,7 +297,7 @@ export const useSupabaseTimerStore = create<SupabaseTimerStore>((set, get) => ({
   },
   
   stopStopwatch: async () => {
-    const { stopwatchInterval, userId, currentTaskId, lastUpdateTime } = get()
+    const { stopwatchInterval, userId, currentTaskId, lastUpdateTime, stopwatchTime } = get()
     
     if (stopwatchInterval) {
       clearInterval(stopwatchInterval)
@@ -315,12 +315,14 @@ export const useSupabaseTimerStore = create<SupabaseTimerStore>((set, get) => ({
       }
     }
     
+    // 停止時に stopwatchTime は保持する（リセットしない）
     set({
       isRunning: false,
       isPaused: false,
       currentTaskId: null,
       stopwatchInterval: null,
-      lastUpdateTime: null
+      lastUpdateTime: null,
+      // stopwatchTime はリセットしない
     })
   },
   

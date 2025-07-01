@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
 import { Switch } from '@/components/ui/switch'
 import { Label } from '@/components/ui/label'
-import { Play, Pause, SkipForward, Settings, TrendingUp, CheckCircle, Square, Clock, Timer } from 'lucide-react'
+import { Play, Pause, RotateCcw, Settings, TrendingUp, CheckCircle, Square, Clock, Timer } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { useTheme } from 'next-themes'
 import { useTimerStore } from '@/lib/store/use-timer-store'
@@ -202,9 +202,19 @@ export function FocusMode() {
     }
   }
 
-  const handleStop = () => {
+  const handleStop = async () => {
     if (timerMode === 'stopwatch') {
-      stopStopwatch()
+      await stopStopwatch()
+      // 停止後に時間データを再取得
+      if (user?.id) {
+        const todayTime = await getTodayTotalTime()
+        setTodayTotalTime(todayTime)
+        
+        if (currentTask) {
+          const taskTime = await getTaskTotalTime(currentTask.id)
+          setCurrentTaskTime(taskTime)
+        }
+      }
     } else {
       stopTimer()
     }
@@ -254,7 +264,7 @@ export function FocusMode() {
     }
     
     fetchTimeData()
-    const interval = setInterval(fetchTimeData, 5000) // Update every 5 seconds
+    const interval = setInterval(fetchTimeData, 1000) // Update every second for better UX
     
     return () => clearInterval(interval)
   }, [user, currentTask, getTodayTotalTime, getTaskTotalTime])
@@ -262,25 +272,27 @@ export function FocusMode() {
   return (
     <div className="space-y-6 h-full flex flex-col">
       {/* Timer Mode Toggle */}
-      <div className="flex items-center justify-between px-2">
-        <div className="flex items-center space-x-2">
-          <Clock className="w-4 h-4 text-muted-foreground" />
-          <Label htmlFor="timer-mode" className="text-sm font-medium">
-            ストップウォッチ
-          </Label>
+      <Card className="p-3">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center space-x-2">
+            <Clock className="w-4 h-4 text-purple-500" />
+            <Label htmlFor="timer-mode" className="text-sm font-medium">
+              ストップウォッチ
+            </Label>
+          </div>
+          <Switch
+            id="timer-mode"
+            checked={timerMode === 'stopwatch'}
+            onCheckedChange={(checked) => setTimerMode(checked ? 'stopwatch' : 'pomodoro')}
+          />
+          <div className="flex items-center space-x-2">
+            <Label htmlFor="timer-mode" className="text-sm font-medium">
+              ポモドーロ
+            </Label>
+            <Timer className="w-4 h-4 text-orange-500" />
+          </div>
         </div>
-        <Switch
-          id="timer-mode"
-          checked={timerMode === 'stopwatch'}
-          onCheckedChange={(checked) => setTimerMode(checked ? 'stopwatch' : 'pomodoro')}
-        />
-        <div className="flex items-center space-x-2">
-          <Label htmlFor="timer-mode" className="text-sm font-medium">
-            ポモドーロ
-          </Label>
-          <Timer className="w-4 h-4 text-muted-foreground" />
-        </div>
-      </div>
+      </Card>
       
       {/* Timer Display */}
       <Card className={`p-6 text-center transition-all duration-1000 h-auto min-h-fit ${
@@ -582,9 +594,7 @@ export function FocusMode() {
           </svg>
           ) : (
             /* Stopwatch Simple Display */
-            <div className="w-32 h-32 rounded-full border-4 border-purple-200 dark:border-purple-800 flex items-center justify-center">
-              <Clock className="w-12 h-12 text-purple-500" />
-            </div>
+            <div className="w-32 h-32 rounded-full border-4 border-purple-200 dark:border-purple-800" />
           )}
           
           {/* Time Display */}
@@ -662,8 +672,8 @@ export function FocusMode() {
             </Button>
           )}
           {timerMode === 'stopwatch' && stopwatchTime > 0 && !isRunning && (
-            <Button variant="outline" size="sm" onClick={handleReset}>
-              <SkipForward className="w-4 h-4" />
+            <Button variant="outline" size="sm" onClick={handleReset} title="リセット">
+              <RotateCcw className="w-4 h-4" />
             </Button>
           )}
           {timerMode === 'pomodoro' && (
