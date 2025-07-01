@@ -173,7 +173,7 @@ export const useSupabaseTimerStore = create<SupabaseTimerStore>((set, get) => ({
     
     if (timerMode === 'stopwatch') {
       // ストップウォッチの場合、再開処理
-      get().startStopwatch(currentTaskId)
+      get().startStopwatch(currentTaskId || undefined)
     } else {
       set({ isPaused: false, isRunning: true })
     }
