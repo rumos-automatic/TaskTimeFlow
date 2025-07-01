@@ -208,7 +208,6 @@ export function FocusMode() {
         if (user?.id) {
           const todayTime = await getTodayTotalTime()
           setTodayTotalTime(todayTime)
-          console.log('Updated today total time after stop:', todayTime)
           
           if (currentTask) {
             const taskTime = await getTaskTotalTime(currentTask.id)
@@ -252,9 +251,7 @@ export function FocusMode() {
   useEffect(() => {
     const fetchTimeData = async () => {
       if (user?.id) {
-        console.log('Fetching time data...')
         const todayTime = await getTodayTotalTime()
-        console.log('Today total time from DB:', todayTime)
         setTodayTotalTime(todayTime)
         
         if (currentTask) {
