@@ -157,11 +157,26 @@ export const useSupabaseTimerStore = create<SupabaseTimerStore>((set, get) => ({
   },
   
   pauseTimer: () => {
+    const { timerMode, stopwatchInterval } = get()
+    
+    if (timerMode === 'stopwatch' && stopwatchInterval) {
+      // ストップウォッチの場合、intervalをクリア
+      clearInterval(stopwatchInterval)
+      set({ stopwatchInterval: null })
+    }
+    
     set({ isPaused: true, isRunning: false })
   },
   
   resumeTimer: () => {
-    set({ isPaused: false, isRunning: true })
+    const { timerMode, currentTaskId } = get()
+    
+    if (timerMode === 'stopwatch') {
+      // ストップウォッチの場合、再開処理
+      get().startStopwatch(currentTaskId)
+    } else {
+      set({ isPaused: false, isRunning: true })
+    }
   },
   
   stopTimer: () => {
@@ -260,13 +275,13 @@ export const useSupabaseTimerStore = create<SupabaseTimerStore>((set, get) => ({
   
   // Stopwatch actions
   startStopwatch: (taskId) => {
-    const { userId, stopwatchInterval, isRunning } = get()
+    const { userId, stopwatchInterval, isPaused, stopwatchTime } = get()
     if (!userId) {
       console.error('No user ID found, cannot start stopwatch')
       return
     }
     
-    console.log(`Starting stopwatch for ${taskId ? `task ${taskId}` : 'general time'}`)
+    console.log(`${isPaused ? 'Resuming' : 'Starting'} stopwatch for ${taskId ? `task ${taskId}` : 'general time'}`)
     
     // Clear any existing interval
     if (stopwatchInterval) {
@@ -274,8 +289,8 @@ export const useSupabaseTimerStore = create<SupabaseTimerStore>((set, get) => ({
     }
     
     const startTime = Date.now()
-    // Reset stopwatch time when starting fresh (not resuming)
-    const initialTime = isRunning ? get().stopwatchTime : 0
+    // 一時停止から再開する場合は現在の時間を保持
+    const initialTime = isPaused ? stopwatchTime : 0
     
     // Update every second
     const interval = setInterval(async () => {
@@ -338,18 +353,18 @@ export const useSupabaseTimerStore = create<SupabaseTimerStore>((set, get) => ({
       }
     }
     
-    // 停止時の状態を更新
+    // 停止時の状態を更新（stopwatchTimeは保持して一時停止に対応）
     set({
       isRunning: false,
-      isPaused: false,
-      currentTaskId: null,
+      isPaused: true,  // 一時停止状態にする
+      currentTaskId,   // currentTaskIdは保持
       stopwatchInterval: null,
-      lastUpdateTime: null,
-      stopwatchTime: 0  // リセットする
+      lastUpdateTime: null
+      // stopwatchTimeは保持（リセットしない）
     })
     
     // データ更新のトリガー
-    console.log('Stopwatch stopped, data saved')
+    console.log('Stopwatch paused, data saved')
   },
   
   resetStopwatch: () => {
