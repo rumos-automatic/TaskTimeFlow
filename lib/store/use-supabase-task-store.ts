@@ -455,7 +455,7 @@ export const useSupabaseTaskStore = create<SupabaseTaskStore>()((set, get) => {
         await TaskService.updateTask(taskId, {
           scheduledDate: date,
           scheduledTime: time
-        }, userId)
+        })
         console.log('✅ Task updated in database with schedule info')
         
         // 楽観的更新を実際のデータで置き換え
