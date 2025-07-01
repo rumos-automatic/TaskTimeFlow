@@ -279,9 +279,9 @@ export function FocusMode() {
       <Card className="p-3">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-2">
-            <Clock className="w-4 h-4 text-purple-500" />
+            <Timer className="w-4 h-4 text-orange-500" />
             <Label htmlFor="timer-mode" className="text-sm font-medium">
-              ストップウォッチ
+              ポモドーロ
             </Label>
           </div>
           <Switch
@@ -291,9 +291,9 @@ export function FocusMode() {
           />
           <div className="flex items-center space-x-2">
             <Label htmlFor="timer-mode" className="text-sm font-medium">
-              ポモドーロ
+              ストップウォッチ
             </Label>
-            <Timer className="w-4 h-4 text-orange-500" />
+            <Clock className="w-4 h-4 text-purple-500" />
           </div>
         </div>
       </Card>
