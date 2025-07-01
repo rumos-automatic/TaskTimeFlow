@@ -215,7 +215,7 @@ export function FocusMode() {
             setCurrentTaskTime(taskTime)
           }
         }
-      }, 500)  // 500msに増やして確実にデータベースが更新されるのを待つ
+      }, 1000)  // 1秒待機して確実にデータベースが更新されるのを待つ
     } else {
       stopTimer()
     }
@@ -252,7 +252,9 @@ export function FocusMode() {
   useEffect(() => {
     const fetchTimeData = async () => {
       if (user?.id) {
+        console.log('Fetching time data...')
         const todayTime = await getTodayTotalTime()
+        console.log('Today total time from DB:', todayTime)
         setTodayTotalTime(todayTime)
         
         if (currentTask) {
@@ -829,9 +831,7 @@ export function FocusMode() {
               <span className="text-xs font-medium">今日の作業時間</span>
               <span className="text-lg font-bold text-purple-600">
                 {formatStopwatchTime(
-                  timerMode === 'stopwatch' && isRunning
-                    ? todayTotalTime + stopwatchTime
-                    : todayTotalTime
+                  todayTotalTime + (timerMode === 'stopwatch' ? stopwatchTime : 0)
                 )}
               </span>
             </div>

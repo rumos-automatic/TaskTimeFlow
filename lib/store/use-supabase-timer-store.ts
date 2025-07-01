@@ -289,8 +289,8 @@ export const useSupabaseTimerStore = create<SupabaseTimerStore>((set, get) => ({
     }
     
     const startTime = Date.now()
-    // 一時停止から再開する場合は現在の時間を保持
-    const initialTime = isPaused ? stopwatchTime : 0
+    // 常に現在のstopwatchTimeから継続（新規開始時は0）
+    const initialTime = stopwatchTime
     
     // Update every second
     const interval = setInterval(async () => {
@@ -353,14 +353,14 @@ export const useSupabaseTimerStore = create<SupabaseTimerStore>((set, get) => ({
       }
     }
     
-    // 停止時の状態を更新（stopwatchTimeは保持して一時停止に対応）
+    // 停止時の状態を更新（一時停止として扱う）
     set({
       isRunning: false,
-      isPaused: true,  // 一時停止状態にする
-      currentTaskId,   // currentTaskIdは保持
+      isPaused: true,  // 一時停止状態
+      currentTaskId,   // タスクIDは保持
       stopwatchInterval: null,
       lastUpdateTime: null
-      // stopwatchTimeは保持（リセットしない）
+      // stopwatchTimeは保持（一時停止）
     })
     
     // データ更新のトリガー

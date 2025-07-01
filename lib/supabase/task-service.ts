@@ -342,6 +342,7 @@ export class TaskService {
   
   static async getDailyTimeLog(userId: string, date: Date): Promise<number> {
     const dateStr = formatDateForDatabase(date)
+    console.log(`Fetching daily time log for user ${userId} on date ${dateStr}`)
     
     const { data, error } = await supabase
       .from('task_time_logs')
@@ -355,6 +356,7 @@ export class TaskService {
     }
     
     const total = (data || []).reduce((total, log) => total + (log.duration || 0), 0)
+    console.log(`Found ${data?.length || 0} logs with total duration: ${total} seconds`)
     return total
   }
   
