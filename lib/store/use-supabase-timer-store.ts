@@ -261,7 +261,12 @@ export const useSupabaseTimerStore = create<SupabaseTimerStore>((set, get) => ({
   // Stopwatch actions
   startStopwatch: (taskId) => {
     const { userId, stopwatchInterval } = get()
-    if (!userId) return
+    if (!userId) {
+      console.error('No user ID found, cannot start stopwatch')
+      return
+    }
+    
+    console.log(`Starting stopwatch for ${taskId ? `task ${taskId}` : 'general time'}`)
     
     // Clear any existing interval
     if (stopwatchInterval) {
@@ -279,7 +284,11 @@ export const useSupabaseTimerStore = create<SupabaseTimerStore>((set, get) => ({
       // Update Supabase every 5 seconds
       if (elapsed > 0 && elapsed % 5 === 0) {
         try {
+          console.log(`Saving 5 seconds to Supabase for ${taskId ? `task ${taskId}` : 'general time'}`)
           await TaskService.updateTimeLog(userId, taskId || null, 5)
+          // Update lastUpdateTime after successful save
+          set({ lastUpdateTime: Date.now() })
+          console.log('Time log updated successfully')
         } catch (error) {
           console.error('Error updating time log:', error)
         }
@@ -303,12 +312,17 @@ export const useSupabaseTimerStore = create<SupabaseTimerStore>((set, get) => ({
       clearInterval(stopwatchInterval)
     }
     
-    // Save any remaining time
-    if (userId && lastUpdateTime) {
-      const remainingSeconds = Math.floor((Date.now() - lastUpdateTime) / 1000)
+    // Save any remaining time since last update
+    if (userId) {
+      // Calculate remaining seconds that haven't been saved
+      const currentTime = Date.now()
+      const lastUpdate = lastUpdateTime || currentTime
+      const remainingSeconds = Math.floor((currentTime - lastUpdate) / 1000)
+      
       if (remainingSeconds > 0) {
         try {
           await TaskService.updateTimeLog(userId, currentTaskId, remainingSeconds)
+          console.log(`Saved remaining ${remainingSeconds} seconds`)
         } catch (error) {
           console.error('Error updating final time log:', error)
         }

@@ -342,6 +342,7 @@ export class TaskService {
   
   static async getDailyTimeLog(userId: string, date: Date): Promise<number> {
     const dateStr = formatDateForDatabase(date)
+    console.log(`Fetching daily time log for user ${userId} on date ${dateStr}`)
     
     const { data, error } = await supabase
       .from('task_time_logs')
@@ -354,7 +355,9 @@ export class TaskService {
       throw error
     }
     
-    return (data || []).reduce((total, log) => total + (log.duration || 0), 0)
+    const total = (data || []).reduce((total, log) => total + (log.duration || 0), 0)
+    console.log(`Found ${data?.length || 0} logs with total duration: ${total} seconds`)
+    return total
   }
   
   static async getTaskTimeLog(userId: string, taskId: string): Promise<number> {
@@ -375,6 +378,7 @@ export class TaskService {
   static async updateTimeLog(userId: string, taskId: string | null, duration: number, date?: Date): Promise<void> {
     const targetDate = date || new Date()
     const dateStr = formatDateForDatabase(targetDate)
+    console.log(`updateTimeLog called: userId=${userId}, taskId=${taskId}, duration=${duration}, date=${dateStr}`)
     
     // Build query conditionally based on whether taskId is null
     let query = supabase
@@ -393,10 +397,13 @@ export class TaskService {
       
     if (existingLog) {
       // Update existing log - add to duration
+      const newDuration = (existingLog.duration || 0) + duration
+      console.log(`Updating existing log ${existingLog.id}: ${existingLog.duration || 0} + ${duration} = ${newDuration}`)
+      
       const { error } = await supabase
         .from('task_time_logs')
         .update({ 
-          duration: existingLog.duration + duration,
+          duration: newDuration,
           updated_at: new Date().toISOString()
         })
         .eq('id', existingLog.id)
@@ -405,8 +412,10 @@ export class TaskService {
         console.error('Error updating time log:', error)
         throw error
       }
+      console.log('Time log updated successfully')
     } else {
       // Create new log
+      console.log(`Creating new time log with duration: ${duration}`)
       const { error } = await supabase
         .from('task_time_logs')
         .insert({
@@ -420,6 +429,7 @@ export class TaskService {
         console.error('Error creating time log:', error)
         throw error
       }
+      console.log('Time log created successfully')
     }
   }
   
