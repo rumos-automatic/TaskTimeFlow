@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
 import { Switch } from '@/components/ui/switch'
 import { Label } from '@/components/ui/label'
-import { Play, Pause, RotateCcw, Settings, TrendingUp, CheckCircle, Square, Clock, Timer } from 'lucide-react'
+import { Play, Pause, RotateCcw, Settings, TrendingUp, CheckCircle, Square, Clock, Timer, Coffee, Briefcase } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { useTheme } from 'next-themes'
 import { useTimerStore } from '@/lib/store/use-timer-store'
@@ -35,6 +35,7 @@ export function FocusMode() {
     waveAnimation,
     colorTransition,
     lastSavedSeconds,
+    isBreak,
     startTimer,
     pauseTimer,
     resumeTimer,
@@ -43,6 +44,7 @@ export function FocusMode() {
     startStopwatch,
     stopStopwatch,
     resetStopwatch,
+    toggleStopwatchBreak,
     setTimerMode,
     getTodayTotalTime,
     getTaskTotalTime,
@@ -298,6 +300,37 @@ export function FocusMode() {
           </div>
         </div>
       </Card>
+      
+      {/* Work/Break Toggle (Stopwatch mode only) */}
+      {timerMode === 'stopwatch' && (
+        <Card className="p-3">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-2">
+              <Briefcase className={`w-4 h-4 ${!isBreak ? 'text-blue-500' : 'text-muted-foreground'}`} />
+              <Label htmlFor="work-break-toggle" className={`text-sm font-medium ${!isBreak ? '' : 'text-muted-foreground'}`}>
+                作業
+              </Label>
+            </div>
+            <Switch
+              id="work-break-toggle"
+              checked={isBreak}
+              onCheckedChange={toggleStopwatchBreak}
+              className="data-[state=checked]:bg-green-500"
+            />
+            <div className="flex items-center space-x-2">
+              <Label htmlFor="work-break-toggle" className={`text-sm font-medium ${isBreak ? '' : 'text-muted-foreground'}`}>
+                休憩
+              </Label>
+              <Coffee className={`w-4 h-4 ${isBreak ? 'text-green-500' : 'text-muted-foreground'}`} />
+            </div>
+          </div>
+          {isBreak && (
+            <div className="text-xs text-muted-foreground mt-2 text-center">
+              休憩中の時間は作業時間に加算されません
+            </div>
+          )}
+        </Card>
+      )}
       
       {/* Timer Display */}
       <Card className={`p-6 text-center transition-all duration-1000 h-auto min-h-fit ${
@@ -622,8 +655,20 @@ export function FocusMode() {
                       ? 'text-slate-600 drop-shadow-sm'
                       : 'text-muted-foreground'
                 }`}>
-                  経過時間
+                  {isBreak ? '休憩時間' : '経過時間'}
                 </div>
+                {isBreak && (
+                  <div className={`text-xs mt-1 flex items-center justify-center space-x-1 ${
+                    gradientAnimation && theme === 'dark' 
+                      ? 'text-white/60 drop-shadow-md' 
+                      : gradientAnimation 
+                        ? 'text-slate-500 drop-shadow-sm'
+                        : 'text-muted-foreground/80'
+                  }`}>
+                    <Coffee className="w-3 h-3" />
+                    <span>休憩中</span>
+                  </div>
+                )}
               </div>
             ) : (
               displayMode === 'digital' ? (
@@ -829,7 +874,7 @@ export function FocusMode() {
               <span className="text-xs font-medium">今日の作業時間</span>
               <span className="text-lg font-bold text-purple-600">
                 {formatStopwatchTime(
-                  todayTotalTime + (timerMode === 'stopwatch' ? (stopwatchTime - lastSavedSeconds) : 0)
+                  todayTotalTime + (timerMode === 'stopwatch' && !isBreak ? (stopwatchTime - lastSavedSeconds) : 0)
                 )}
               </span>
             </div>
@@ -838,11 +883,17 @@ export function FocusMode() {
                 <span className="text-xs text-muted-foreground">現在のタスク</span>
                 <span className="text-sm font-medium">
                   {formatStopwatchTime(
-                    timerMode === 'stopwatch' && isRunning && currentTaskId === currentTask.id
+                    timerMode === 'stopwatch' && isRunning && currentTaskId === currentTask.id && !isBreak
                       ? currentTaskTime + (stopwatchTime - lastSavedSeconds)
                       : currentTaskTime
                   )}
                 </span>
+              </div>
+            )}
+            {timerMode === 'stopwatch' && isBreak && isRunning && (
+              <div className="text-xs text-muted-foreground text-center mt-2 flex items-center justify-center space-x-1">
+                <Coffee className="w-3 h-3" />
+                <span>休憩中 - 作業時間に加算されません</span>
               </div>
             )}
           </div>
