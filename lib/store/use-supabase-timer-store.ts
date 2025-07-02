@@ -71,6 +71,7 @@ interface SupabaseTimerStore {
   
   // Time tracking
   getTodayTotalTime: () => Promise<number>
+  getTodayBreakTime: () => Promise<number>
   getTaskTotalTime: (taskId: string) => Promise<number>
   
   // Settings
@@ -307,24 +308,27 @@ export const useSupabaseTimerStore = create<SupabaseTimerStore>((set, get) => ({
       const elapsed = Math.floor((Date.now() - startTime) / 1000)
       set({ stopwatchTime: initialTime + elapsed })
       
-      // Update Supabase every 5 seconds (only if not in break mode)
+      // Update Supabase every 5 seconds
       if (elapsed > 0 && elapsed % 5 === 0) {
         const currentBreakState = get().isBreak
-        if (!currentBreakState) {
-          try {
+        try {
+          if (!currentBreakState) {
+            // Work time
             console.log(`Saving 5 seconds to Supabase for ${taskId ? `task ${taskId}` : 'general time'}`)
             await TaskService.updateTimeLog(userId, taskId || null, 5)
-            // Update lastUpdateTime and lastSavedSeconds after successful save
-            set({ 
-              lastUpdateTime: Date.now(),
-              lastSavedSeconds: elapsed  // 保存済みの秒数を記録
-            })
-            console.log('Time log updated successfully')
-          } catch (error) {
-            console.error('Error updating time log:', error)
+          } else {
+            // Break time
+            console.log(`Saving 5 seconds of break time to Supabase`)
+            await TaskService.updateBreakTime(userId, 5)
           }
-        } else {
-          console.log('Skipping time save - currently in break mode')
+          // Update lastUpdateTime and lastSavedSeconds after successful save
+          set({ 
+            lastUpdateTime: Date.now(),
+            lastSavedSeconds: elapsed  // 保存済みの秒数を記録
+          })
+          console.log(`${currentBreakState ? 'Break' : 'Work'} time log updated successfully`)
+        } catch (error) {
+          console.error('Error updating time log:', error)
         }
       }
     }, 1000)
@@ -348,8 +352,8 @@ export const useSupabaseTimerStore = create<SupabaseTimerStore>((set, get) => ({
       console.log('Stopwatch interval cleared')
     }
     
-    // Save any remaining time since last update (only if not in break mode)
-    if (userId && !isBreak) {
+    // Save any remaining time since last update
+    if (userId) {
       // Calculate remaining seconds that haven't been saved
       const currentTime = Date.now()
       const lastUpdate = lastUpdateTime || currentTime
@@ -357,14 +361,19 @@ export const useSupabaseTimerStore = create<SupabaseTimerStore>((set, get) => ({
       
       if (remainingSeconds > 0) {
         try {
-          await TaskService.updateTimeLog(userId, currentTaskId, remainingSeconds)
-          console.log(`Saved remaining ${remainingSeconds} seconds`)
+          if (!isBreak) {
+            // Work time
+            await TaskService.updateTimeLog(userId, currentTaskId, remainingSeconds)
+            console.log(`Saved remaining ${remainingSeconds} seconds of work time`)
+          } else {
+            // Break time
+            await TaskService.updateBreakTime(userId, remainingSeconds)
+            console.log(`Saved remaining ${remainingSeconds} seconds of break time`)
+          }
         } catch (error) {
           console.error('Error updating final time log:', error)
         }
       }
-    } else if (isBreak) {
-      console.log('Skipping final time save - was in break mode')
     }
     
     // 停止時の状態を更新（一時停止として扱う）
@@ -437,6 +446,18 @@ export const useSupabaseTimerStore = create<SupabaseTimerStore>((set, get) => ({
       return await TaskService.getDailyTimeLog(userId, new Date())
     } catch (error) {
       console.error('Error getting today total time:', error)
+      return 0
+    }
+  },
+  
+  getTodayBreakTime: async () => {
+    const { userId } = get()
+    if (!userId) return 0
+    
+    try {
+      return await TaskService.getDailyBreakTime(userId, new Date())
+    } catch (error) {
+      console.error('Error getting today break time:', error)
       return 0
     }
   },

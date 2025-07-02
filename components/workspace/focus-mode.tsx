@@ -18,6 +18,7 @@ export function FocusMode() {
   const { theme } = useTheme()
   const { user } = useAuth()
   const [todayTotalTime, setTodayTotalTime] = useState(0)
+  const [todayBreakTime, setTodayBreakTime] = useState(0)
   const [currentTaskTime, setCurrentTaskTime] = useState(0)
   
   const {
@@ -47,6 +48,7 @@ export function FocusMode() {
     toggleStopwatchBreak,
     setTimerMode,
     getTodayTotalTime,
+    getTodayBreakTime,
     getTaskTotalTime,
     setUserId
   } = useTimerStore()
@@ -212,6 +214,9 @@ export function FocusMode() {
           const todayTime = await getTodayTotalTime()
           setTodayTotalTime(todayTime)
           
+          const breakTime = await getTodayBreakTime()
+          setTodayBreakTime(breakTime)
+          
           if (currentTask) {
             const taskTime = await getTaskTotalTime(currentTask.id)
             setCurrentTaskTime(taskTime)
@@ -257,6 +262,9 @@ export function FocusMode() {
         const todayTime = await getTodayTotalTime()
         setTodayTotalTime(todayTime)
         
+        const breakTime = await getTodayBreakTime()
+        setTodayBreakTime(breakTime)
+        
         if (currentTask) {
           const taskTime = await getTaskTotalTime(currentTask.id)
           setCurrentTaskTime(taskTime)
@@ -274,7 +282,7 @@ export function FocusMode() {
     const interval = setInterval(fetchTimeData, updateInterval)
     
     return () => clearInterval(interval)
-  }, [user, currentTask, getTodayTotalTime, getTaskTotalTime, timerMode, isRunning])
+  }, [user, currentTask, getTodayTotalTime, getTodayBreakTime, getTaskTotalTime, timerMode, isRunning])
 
   return (
     <div className="space-y-6 h-full flex flex-col">
@@ -875,6 +883,14 @@ export function FocusMode() {
               <span className="text-lg font-bold text-purple-600">
                 {formatStopwatchTime(
                   todayTotalTime + (timerMode === 'stopwatch' && !isBreak ? (stopwatchTime - lastSavedSeconds) : 0)
+                )}
+              </span>
+            </div>
+            <div className="flex justify-between items-center">
+              <span className="text-xs font-medium">今日の休憩時間</span>
+              <span className="text-lg font-bold text-green-600">
+                {formatStopwatchTime(
+                  todayBreakTime + (timerMode === 'stopwatch' && isBreak ? (stopwatchTime - lastSavedSeconds) : 0)
                 )}
               </span>
             </div>

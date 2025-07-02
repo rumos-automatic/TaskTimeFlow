@@ -354,7 +354,7 @@ export class TaskService {
       throw error
     }
     
-    const total = (data || []).reduce((total, log) => total + (log.duration || 0), 0)
+    const total = (data || []).reduce((total: number, log: any) => total + (log.duration || 0), 0)
     return total
   }
   
@@ -442,6 +442,120 @@ export class TaskService {
           event: '*',
           schema: 'public',
           table: 'task_time_logs',
+          filter: `user_id=eq.${userId}`
+        },
+        () => {
+          callback()
+        }
+      )
+      .subscribe()
+      
+    return () => {
+      supabase.removeChannel(channel)
+    }
+  }
+  
+  // Break Time Log operations
+  static async getBreakTimeLogs(userId: string, date?: Date): Promise<any[]> {
+    let query = (supabase as any)
+      .from('break_time_logs')
+      .select('*')
+      .eq('user_id', userId)
+      
+    if (date) {
+      const dateStr = formatDateForDatabase(date)
+      query = query.eq('date', dateStr)
+    }
+    
+    const { data, error } = await query.order('date', { ascending: false })
+    
+    if (error) {
+      console.error('Error fetching break time logs:', error)
+      throw error
+    }
+    
+    return data || []
+  }
+  
+  static async getDailyBreakTime(userId: string, date: Date): Promise<number> {
+    const dateStr = formatDateForDatabase(date)
+    
+    const { data, error } = await (supabase as any)
+      .from('break_time_logs')
+      .select('duration')
+      .eq('user_id', userId)
+      .eq('date', dateStr)
+      
+    if (error) {
+      console.error('Error fetching daily break time:', error)
+      throw error
+    }
+    
+    const total = (data || []).reduce((total: number, log: any) => total + (log.duration || 0), 0)
+    return total
+  }
+  
+  static async updateBreakTime(userId: string, duration: number, date?: Date): Promise<void> {
+    const targetDate = date || new Date()
+    const dateStr = formatDateForDatabase(targetDate)
+    console.log(`updateBreakTime called: userId=${userId}, duration=${duration}, date=${dateStr}`)
+    
+    // Check if a log already exists for this date
+    const { data: existingLog } = await (supabase as any)
+      .from('break_time_logs')
+      .select('*')
+      .eq('user_id', userId)
+      .eq('date', dateStr)
+      .single()
+      
+    if (existingLog) {
+      // Update existing log - add to duration
+      const newDuration = (existingLog.duration || 0) + duration
+      console.log(`Updating existing break log ${existingLog.id}: ${existingLog.duration || 0} + ${duration} = ${newDuration}`)
+      
+      const { error } = await (supabase as any)
+        .from('break_time_logs')
+        .update({ 
+          duration: newDuration,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', existingLog.id)
+        
+      if (error) {
+        console.error('Error updating break time log:', error)
+        throw error
+      }
+      console.log('Break time log updated successfully')
+    } else {
+      // Create new log
+      console.log(`Creating new break time log with duration: ${duration}`)
+      const { error } = await (supabase as any)
+        .from('break_time_logs')
+        .insert({
+          user_id: userId,
+          date: dateStr,
+          duration: duration
+        })
+        
+      if (error) {
+        console.error('Error creating break time log:', error)
+        throw error
+      }
+      console.log('Break time log created successfully')
+    }
+  }
+  
+  static subscribeToBreakTimeLogs(userId: string, callback: () => void) {
+    const channelName = `break_time_logs_channel_${userId}_${Date.now()}`
+    
+    const channel = supabase
+      .channel(channelName)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'break_time_logs',
           filter: `user_id=eq.${userId}`
         },
         () => {
