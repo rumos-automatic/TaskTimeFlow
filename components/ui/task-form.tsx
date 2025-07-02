@@ -71,6 +71,22 @@ const urgencyOptions = [
   { value: 'low', label: '低', description: '時間に余裕あり', color: 'text-blue-600' }
 ] as const
 
+// Time options for estimated time dropdown
+const timeOptions = [
+  { value: 15, label: '15分' },
+  { value: 30, label: '30分' },
+  { value: 45, label: '45分' },
+  { value: 60, label: '1時間' },
+  { value: 90, label: '1時間30分' },
+  { value: 120, label: '2時間' },
+  { value: 180, label: '3時間' },
+  { value: 240, label: '4時間' },
+  { value: 300, label: '5時間' },
+  { value: 360, label: '6時間' },
+  { value: 420, label: '7時間' },
+  { value: 480, label: '8時間' }
+] as const
+
 // Base Task Form Component
 export function BaseTaskForm({
   defaultValues,
@@ -95,21 +111,12 @@ export function BaseTaskForm({
     ...defaultValues
   })
   
-  // モバイルでのestimatedTimeの値を確実に扱うための変数
-  const [estimatedTimeValue, setEstimatedTimeValue] = useState<string>(
-    String(defaultValues?.estimatedTime || 30)
-  )
-
   const [isSubmitting, setIsSubmitting] = useState(false)
 
   // Update form data when default values change
   useEffect(() => {
     if (defaultValues) {
       setFormData(prev => ({ ...prev, ...defaultValues }))
-      // estimatedTimeの値も同期
-      if (defaultValues.estimatedTime !== undefined) {
-        setEstimatedTimeValue(String(defaultValues.estimatedTime))
-      }
     }
   }, [defaultValues])
 
@@ -119,31 +126,14 @@ export function BaseTaskForm({
 
     setIsSubmitting(true)
     try {
-      // モバイルでも確実にestimatedTimeを取得
-      const numValue = parseInt(estimatedTimeValue)
-      const finalEstimatedTime = !isNaN(numValue) && numValue >= 5 && numValue <= 480 
-        ? numValue 
-        : 30
-      
-      const submitData = {
-        ...formData,
-        estimatedTime: finalEstimatedTime
-      }
-      
-      console.log('📱 Form Submit Data:', {
-        estimatedTimeValue,
-        finalEstimatedTime,
-        submitData
-      })
-      
-      await onSubmit(submitData)
+      await onSubmit(formData)
     } finally {
       setIsSubmitting(false)
     }
   }
 
   // Time options for calendar view (30-minute intervals)
-  const timeOptions = Array.from({ length: 48 }, (_, i) => {
+  const scheduleTimeOptions = Array.from({ length: 48 }, (_, i) => {
     const hour = Math.floor(i / 2)
     const minute = (i % 2) * 30
     return `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`
@@ -264,34 +254,22 @@ export function BaseTaskForm({
           </SelectContent>
         </Select>
 
-        <Input
-          type="number"
-          min="5"
-          max="480"
-          value={estimatedTimeValue}
-          onChange={(e) => {
-            // 文字列として保存し、入力を妨げない
-            setEstimatedTimeValue(e.target.value)
-          }}
-          onBlur={(e) => {
-            // フォーカスが外れたときに値を確実に設定
-            const value = e.target.value
-            const numValue = parseInt(value)
-            if (!value || isNaN(numValue) || numValue < 5) {
-              setEstimatedTimeValue('30')
-              setFormData(prev => ({ ...prev, estimatedTime: 30 }))
-            } else if (numValue > 480) {
-              setEstimatedTimeValue('480')
-              setFormData(prev => ({ ...prev, estimatedTime: 480 }))
-            } else {
-              setEstimatedTimeValue(String(numValue))
-              setFormData(prev => ({ ...prev, estimatedTime: numValue }))
-            }
-          }}
-          className={cn(inputSize, selectSize)}
-          placeholder="分"
+        <Select
+          value={String(formData.estimatedTime)}
+          onValueChange={(value) => setFormData(prev => ({ ...prev, estimatedTime: parseInt(value) }))}
           disabled={isSubmitting}
-        />
+        >
+          <SelectTrigger className={cn(inputSize, selectSize)}>
+            <SelectValue placeholder="時間を選択" />
+          </SelectTrigger>
+          <SelectContent>
+            {timeOptions.map((option) => (
+              <SelectItem key={option.value} value={String(option.value)}>
+                <span className={inputSize}>{option.label}</span>
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </div>
 
       {/* Date and Time Picker (for extended variant) */}
@@ -318,7 +296,7 @@ export function BaseTaskForm({
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                {timeOptions.map((time) => (
+                {scheduleTimeOptions.map((time) => (
                   <SelectItem key={time} value={time}>
                     <span className={inputSize}>{time}</span>
                   </SelectItem>

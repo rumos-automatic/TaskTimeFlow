@@ -483,7 +483,13 @@ function AddTimeSlotTaskForm({ time, hour, minute, onSave, onCancel, scheduledTa
   const { allCategories } = useCategoryStoreWithAuth()
   
   // Calculate default duration based on available time
-  const defaultDuration = calculateAvailableDuration(time, scheduledTasks)
+  const calculatedDuration = calculateAvailableDuration(time, scheduledTasks)
+  
+  // Find the closest available time option
+  const timeOptions = [15, 30, 45, 60, 90, 120, 180, 240, 300, 360, 420, 480]
+  const defaultDuration = timeOptions.reduce((prev, curr) => {
+    return Math.abs(curr - calculatedDuration) < Math.abs(prev - calculatedDuration) ? curr : prev
+  })
 
   const handleSubmit = (formData: TaskFormData) => {
     const finalData = {

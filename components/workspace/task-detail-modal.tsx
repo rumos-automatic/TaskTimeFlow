@@ -15,6 +15,22 @@ interface TaskDetailModalProps {
   onSave: (taskId: string, updates: Partial<Task>) => void
 }
 
+// Time options for estimated time dropdown
+const timeOptions = [
+  { value: 15, label: '15分' },
+  { value: 30, label: '30分' },
+  { value: 45, label: '45分' },
+  { value: 60, label: '1時間' },
+  { value: 90, label: '1時間30分' },
+  { value: 120, label: '2時間' },
+  { value: 180, label: '3時間' },
+  { value: 240, label: '4時間' },
+  { value: 300, label: '5時間' },
+  { value: 360, label: '6時間' },
+  { value: 420, label: '7時間' },
+  { value: 480, label: '8時間' }
+]
+
 export function TaskDetailModal({ task, isOpen, onClose, onSave }: TaskDetailModalProps) {
   const [isEditing, setIsEditing] = useState(false)
   const [formData, setFormData] = useState<Partial<Task>>({})
@@ -125,15 +141,17 @@ export function TaskDetailModal({ task, isOpen, onClose, onSave }: TaskDetailMod
                     </option>
                   ))}
                 </select>
-                <input
-                  type="number"
-                  min="5"
-                  max="480"
+                <select
                   value={formData.estimatedTime}
-                  onChange={(e) => setFormData(prev => ({ ...prev, estimatedTime: parseInt(e.target.value) || 30 }))}
-                  className="px-3 py-1 border border-border rounded text-sm bg-background w-24"
-                  placeholder="分"
-                />
+                  onChange={(e) => setFormData(prev => ({ ...prev, estimatedTime: parseInt(e.target.value) }))}
+                  className="px-3 py-1 border border-border rounded text-sm bg-background"
+                >
+                  {timeOptions.map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
               </>
             ) : (
               <>
