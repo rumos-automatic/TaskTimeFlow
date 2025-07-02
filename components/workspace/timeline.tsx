@@ -443,10 +443,47 @@ interface AddTimeSlotTaskFormProps {
   minute: number
   onSave: (taskData: any) => void
   onCancel: () => void
+  scheduledTasks?: any[]
 }
 
-function AddTimeSlotTaskForm({ time, hour, minute, onSave, onCancel }: AddTimeSlotTaskFormProps) {
+// Function to calculate available duration until next task
+function calculateAvailableDuration(currentTime: string, scheduledTasks: any[]): number {
+  const [currentHour, currentMinute] = currentTime.split(':').map(Number)
+  const currentTotalMinutes = currentHour * 60 + currentMinute
+  
+  // Find all tasks scheduled after the current time
+  const laterTasks = scheduledTasks
+    .filter(item => {
+      const [taskHour, taskMinute] = item.slotData.startTime.split(':').map(Number)
+      const taskTotalMinutes = taskHour * 60 + taskMinute
+      return taskTotalMinutes > currentTotalMinutes
+    })
+    .sort((a, b) => {
+      const [aHour, aMinute] = a.slotData.startTime.split(':').map(Number)
+      const [bHour, bMinute] = b.slotData.startTime.split(':').map(Number)
+      return (aHour * 60 + aMinute) - (bHour * 60 + bMinute)
+    })
+  
+  if (laterTasks.length > 0) {
+    // Calculate duration until the next task
+    const nextTask = laterTasks[0]
+    const [nextHour, nextMinute] = nextTask.slotData.startTime.split(':').map(Number)
+    const nextTotalMinutes = nextHour * 60 + nextMinute
+    const availableMinutes = nextTotalMinutes - currentTotalMinutes
+    
+    // Return the available duration, but cap it at 120 minutes (2 hours)
+    return Math.min(availableMinutes, 120)
+  }
+  
+  // If no tasks after this time, default to 30 minutes
+  return 30
+}
+
+function AddTimeSlotTaskForm({ time, hour, minute, onSave, onCancel, scheduledTasks = [] }: AddTimeSlotTaskFormProps) {
   const { allCategories } = useCategoryStoreWithAuth()
+  
+  // Calculate default duration based on available time
+  const defaultDuration = calculateAvailableDuration(time, scheduledTasks)
 
   const handleSubmit = (formData: TaskFormData) => {
     const finalData = {
@@ -454,7 +491,7 @@ function AddTimeSlotTaskForm({ time, hour, minute, onSave, onCancel }: AddTimeSl
       priority: formData.priority,
       urgency: formData.urgency,
       category: formData.category,
-      estimatedTime: formData.estimatedTime === '' ? 60 : formData.estimatedTime,
+      estimatedTime: formData.estimatedTime === '' ? defaultDuration : formData.estimatedTime,
       scheduledTime: time
     }
     onSave(finalData)
@@ -465,7 +502,7 @@ function AddTimeSlotTaskForm({ time, hour, minute, onSave, onCancel }: AddTimeSl
       <TimelineAddForm
         defaultValues={{
           category: 'work',
-          estimatedTime: 60
+          estimatedTime: defaultDuration
         }}
         onSubmit={handleSubmit}
         onCancel={onCancel}
@@ -709,6 +746,7 @@ function DroppableTimeSlot({ time, hour, minute, slotIndex, isBusinessHour, isHo
             time={time}
             hour={hour}
             minute={minute}
+            scheduledTasks={scheduledTasks}
             onSave={handleAddTask}
             onCancel={() => {
               setActiveFormSlot(null)
@@ -1081,7 +1119,7 @@ function CalendarTaskForm({ date, onSave, onCancel }: CalendarTaskFormProps) {
     const { scheduledTime, scheduledDate, ...taskData } = formData
     const finalTaskData = {
       ...taskData,
-      estimatedTime: taskData.estimatedTime === '' ? 60 : taskData.estimatedTime
+      estimatedTime: taskData.estimatedTime === '' ? 30 : taskData.estimatedTime
     }
     
     // scheduledDateをDateオブジェクトに変換
@@ -1100,7 +1138,7 @@ function CalendarTaskForm({ date, onSave, onCancel }: CalendarTaskFormProps) {
       <CalendarAddForm
         defaultValues={{
           category: 'personal',
-          estimatedTime: 60,
+          estimatedTime: 30,
           scheduledTime: '09:00',
           scheduledDate: formatDateForInput(date)
         }}
@@ -1137,7 +1175,7 @@ function CalendarTaskEditForm({ task, slot, onSave, onCancel }: CalendarTaskEdit
     const { scheduledTime, scheduledDate, ...taskData } = formData
     const finalTaskData = {
       ...taskData,
-      estimatedTime: taskData.estimatedTime === '' ? 60 : taskData.estimatedTime
+      estimatedTime: taskData.estimatedTime === '' ? 30 : taskData.estimatedTime
     }
     
     // scheduledDateをDateオブジェクトに変換
