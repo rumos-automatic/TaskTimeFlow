@@ -4,7 +4,7 @@ import { useState, useEffect, useRef, useCallback } from 'react'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
-import { Calendar, ChevronLeft, ChevronRight, Clock, Edit2, Trash2, X, Check, RotateCcw, CalendarDays, Plus, Copy } from 'lucide-react'
+import { Calendar, ChevronLeft, ChevronRight, Clock, Edit2, Trash2, X, Check, RotateCcw, CalendarDays, Plus, Copy, FileText } from 'lucide-react'
 import { useDroppable } from '@dnd-kit/core'
 import { useSortable, SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
@@ -15,6 +15,7 @@ import { useViewState } from '@/lib/hooks/use-view-state'
 import { useCategoryStoreWithAuth } from '@/lib/hooks/use-category-store-with-auth'
 import { Task, Priority, Urgency, TaskCategory } from '@/lib/types'
 import { TimelineAddForm, BaseTaskForm, CalendarAddForm, TaskFormData } from '@/components/ui/task-form'
+import { TaskDetailModal } from './task-detail-modal'
 
 const timeSlots = Array.from({ length: 96 }, (_, i) => {
   const hour = Math.floor(i / 4)
@@ -40,6 +41,7 @@ interface ScheduledTaskCardProps {
 function ScheduledTaskCard({ task, slotId, slotData }: ScheduledTaskCardProps) {
   const [showActions, setShowActions] = useState(false)
   const [isEditing, setIsEditing] = useState(false)
+  const [showDetail, setShowDetail] = useState(false)
   const { updateTask, removeTimeSlot, completeTask, uncompleteTask, addTask, moveTaskToTimeline } = useTaskStoreWithAuth()
   const { user } = useAuth()
   const {
@@ -189,8 +191,11 @@ function ScheduledTaskCard({ task, slotId, slotData }: ScheduledTaskCardProps) {
       >
         <div className="relative h-full">
           {/* コンテンツエリア */}
-          <div className="relative h-full pointer-events-none">
-            <div className={`text-xs font-medium mb-1 ${isCompleted ? 'line-through text-muted-foreground' : ''}`}>
+          <div className="relative h-full">
+            <div 
+              className={`text-xs font-medium mb-1 cursor-pointer hover:text-primary transition-colors ${isCompleted ? 'line-through text-muted-foreground' : ''}`}
+              onClick={() => setShowDetail(true)}
+            >
               {task.title}
             </div>
             <div className="flex items-center space-x-1 text-xs">
@@ -216,6 +221,13 @@ function ScheduledTaskCard({ task, slotId, slotData }: ScheduledTaskCardProps) {
                   <Check className="w-3 h-3 ml-1 text-green-600" />
                 )}
               </div>
+              {/* メモアイコン */}
+              {task.notes && (
+                <div className="flex items-center space-x-1 text-amber-600" title="メモあり">
+                  <FileText className="w-3 h-3" />
+                  <span className="text-xs">メモ</span>
+                </div>
+              )}
             </div>
           </div>
           
@@ -273,6 +285,15 @@ function ScheduledTaskCard({ task, slotId, slotData }: ScheduledTaskCardProps) {
           )}
         </div>
       </Card>
+      <TaskDetailModal
+        task={task}
+        isOpen={showDetail}
+        onClose={() => setShowDetail(false)}
+        onSave={(taskId, updates) => {
+          updateTask(taskId, updates)
+          setShowDetail(false)
+        }}
+      />
     </div>
   )
 }
@@ -1602,10 +1623,13 @@ interface SelectedDateTaskCardProps {
 
 function SelectedDateTaskCard({ task, slot, onComplete, onUncomplete, onRemove, onEdit }: SelectedDateTaskCardProps) {
   const [showActions, setShowActions] = useState(false)
+  const [showDetail, setShowDetail] = useState(false)
+  const { updateTask } = useTaskStoreWithAuth()
   const isCompleted = task.status === 'completed'
   
   return (
-    <Card 
+    <>
+      <Card 
       className={`p-3 md:p-4 transition-colors hover:bg-muted/50 ${
         isCompleted ? 'opacity-60 bg-muted/30' : ''
       }`}
@@ -1616,9 +1640,12 @@ function SelectedDateTaskCard({ task, slot, onComplete, onUncomplete, onRemove, 
         <div className="flex-1 min-w-0">
           {/* Task Title and Time */}
           <div className="flex items-center space-x-2 mb-2">
-            <h4 className={`font-medium text-sm md:text-base truncate ${
-              isCompleted ? 'line-through text-muted-foreground' : 'text-foreground'
-            }`}>
+            <h4 
+              className={`font-medium text-sm md:text-base truncate cursor-pointer hover:text-primary transition-colors ${
+                isCompleted ? 'line-through text-muted-foreground' : 'text-foreground'
+              }`}
+              onClick={() => setShowDetail(true)}
+            >
               {task.title}
             </h4>
             {isCompleted && (
@@ -1659,6 +1686,13 @@ function SelectedDateTaskCard({ task, slot, onComplete, onUncomplete, onRemove, 
             <div className="px-2 py-1 rounded text-xs bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300">
               {task.category === 'work' ? '仕事' : task.category === 'personal' ? '個人' : 'カスタム'}
             </div>
+            {/* メモアイコン */}
+            {task.notes && (
+              <div className="flex items-center space-x-1 text-amber-600" title="メモあり">
+                <FileText className="w-3 h-3" />
+                <span className="text-xs">メモ</span>
+              </div>
+            )}
           </div>
         </div>
         
@@ -1709,6 +1743,16 @@ function SelectedDateTaskCard({ task, slot, onComplete, onUncomplete, onRemove, 
           </div>
         )}
       </div>
-    </Card>
+      </Card>
+      <TaskDetailModal
+        task={task}
+        isOpen={showDetail}
+        onClose={() => setShowDetail(false)}
+        onSave={(taskId, updates) => {
+          updateTask(taskId, updates)
+          setShowDetail(false)
+        }}
+      />
+    </>
   )
 }
