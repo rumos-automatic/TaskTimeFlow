@@ -1,12 +1,13 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import React from 'react'
 import type { ReactElement } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
-import { Plus, Circle, Clock, AlertCircle, X, Edit2, Trash2, MoreVertical, Check, RotateCcw, ChevronDown, ChevronUp, Settings, ChevronLeft, ChevronRight, Copy, FileText } from 'lucide-react'
+import { Plus, Circle, Clock, AlertCircle, X, Edit2, Trash2, MoreVertical, Check, RotateCcw, ChevronDown, ChevronUp, Settings, ChevronLeft, ChevronRight, Copy, FileText, ArrowUpDown } from 'lucide-react'
 import { useTaskStoreWithAuth } from '@/lib/hooks/use-task-store-with-auth'
 import { useAuth } from '@/lib/auth/auth-context'
 import { useSortable, SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable'
@@ -20,6 +21,13 @@ import { CategoryManagement } from './category-management'
 import { RichTextEditor } from '@/components/ui/rich-text-editor'
 import { TaskDetailModal } from './task-detail-modal'
 import { TaskPoolAddForm, BaseTaskForm, TaskFormData } from '@/components/ui/task-form'
+import { useTaskSort, SORT_OPTIONS } from '@/lib/hooks/use-task-sort'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
 
 const priorityColors: Record<Priority, string> = {
   high: 'border-red-500 bg-red-50 dark:bg-red-950/20',
@@ -38,9 +46,11 @@ const urgencyBadges: Record<Urgency, { icon: ReactElement; color: string; label:
 
 interface DraggableTaskCardProps {
   task: Task
+  onDragStart?: () => void
+  onDragEnd?: () => void
 }
 
-function DraggableTaskCard({ task }: DraggableTaskCardProps) {
+function DraggableTaskCard({ task, onDragStart, onDragEnd }: DraggableTaskCardProps) {
   const [showActions, setShowActions] = useState(false)
   const [isEditing, setIsEditing] = useState(false)
   const [showDetail, setShowDetail] = useState(false)
@@ -53,7 +63,13 @@ function DraggableTaskCard({ task }: DraggableTaskCardProps) {
     transform,
     transition,
     isDragging
-  } = useSortable({ id: task.id })
+  } = useSortable({ 
+    id: task.id,
+    data: {
+      onDragStart,
+      onDragEnd
+    }
+  })
 
   const style = {
     transform: CSS.Transform.toString(transform),
@@ -397,7 +413,12 @@ function AddTaskForm({ defaultCategory }: AddTaskFormProps) {
   )
 }
 
-export function TaskPool() {
+interface TaskPoolProps {
+  onDragStart?: () => void
+  onDragEnd?: () => void
+}
+
+export function TaskPool({ onDragStart, onDragEnd }: TaskPoolProps = {}) {
   const { 
     tasks, 
     getTasksByCategory,
@@ -406,7 +427,8 @@ export function TaskPool() {
     removeDuplicateTasks,
     resetMigrationStatus,
     hideCompletedTask,
-    clearHiddenCompletedTasks
+    clearHiddenCompletedTasks,
+    reorderTasks
   } = useTaskStoreWithAuth()
   
   const { 
@@ -442,12 +464,33 @@ export function TaskPool() {
 
   const unscheduledTasks = getUnscheduledTasks()
   const completedTasks = getCompletedTasks()
-  const filteredTasks = selectedCategory === 'all' 
+  const baseFilteredTasks = selectedCategory === 'all' 
     ? unscheduledTasks 
     : unscheduledTasks.filter(task => task.category === selectedCategory)
   const filteredCompletedTasks = selectedCategory === 'all'
     ? completedTasks
     : completedTasks.filter(task => task.category === selectedCategory)
+
+  // ソート機能を適用
+  const { 
+    sortedTasks: filteredTasks, 
+    sortOrder, 
+    setSortOrder, 
+    loading: sortLoading,
+    onDragStart: onSortDragStart,
+    onDragEnd: onSortDragEnd 
+  } = useTaskSort(baseFilteredTasks, selectedCategory !== 'all' ? selectedCategory : undefined)
+  
+  // ドラッグイベントの統合
+  const handleDragStart = React.useCallback(() => {
+    onSortDragStart()
+    onDragStart?.()
+  }, [onSortDragStart, onDragStart])
+  
+  const handleDragEnd = React.useCallback(() => {
+    onSortDragEnd()
+    onDragEnd?.()
+  }, [onSortDragEnd, onDragEnd])
 
   return (
     <div 
@@ -456,10 +499,10 @@ export function TaskPool() {
         isOver ? 'bg-muted/20' : ''
       }`}
     >
-      {/* Dynamic Category Tabs */}
+      {/* Dynamic Category Tabs and Sort */}
       <div className="space-y-2">
-        {/* Main tab row with scroll */}
-        <div className="flex items-center space-x-2">
+        {/* Main tab row with scroll and sort */}
+        <div className="flex items-center justify-between gap-2">
           <div className="flex-1 overflow-hidden">
             <div className="flex space-x-2 overflow-x-auto scrollbar-hide pb-1">
               {/* All tab */}
@@ -511,17 +554,46 @@ export function TaskPool() {
             </div>
           </div>
           
-          {/* Category management button */}
-          <CategoryManagement>
-            <Button 
-              variant="ghost" 
-              size="sm"
-              className="flex-shrink-0 h-8 w-8 p-0"
-              title="カテゴリ管理"
-            >
-              <Settings className="w-4 h-4" />
-            </Button>
-          </CategoryManagement>
+          <div className="flex items-center space-x-2">
+            {/* Sort dropdown */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="sm" className="h-8 gap-1 flex-shrink-0">
+                  <ArrowUpDown className="w-3 h-3" />
+                  <span className="text-xs">
+                    {SORT_OPTIONS.find(opt => opt.value === sortOrder)?.icon} {SORT_OPTIONS.find(opt => opt.value === sortOrder)?.label}
+                  </span>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-56">
+                {SORT_OPTIONS.map((option) => (
+                  <DropdownMenuItem
+                    key={option.value}
+                    onClick={() => setSortOrder(option.value)}
+                    className="gap-2"
+                  >
+                    <span className="text-lg">{option.icon}</span>
+                    <span>{option.label}</span>
+                    {sortOrder === option.value && (
+                      <Check className="w-4 h-4 ml-auto" />
+                    )}
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
+            
+            {/* Category management button */}
+            <CategoryManagement>
+              <Button 
+                variant="ghost" 
+                size="sm"
+                className="flex-shrink-0 h-8 w-8 p-0"
+                title="カテゴリ管理"
+              >
+                <Settings className="w-4 h-4" />
+              </Button>
+            </CategoryManagement>
+          </div>
         </div>
         
         {/* Category info row */}
@@ -660,11 +732,17 @@ export function TaskPool() {
 
       {/* Task List */}
       <div className="flex-1 overflow-y-auto space-y-3 mb-0">
-        <SortableContext items={filteredTasks.map(task => task.id)} strategy={verticalListSortingStrategy}>
+        <SortableContext 
+          items={filteredTasks.map(task => task.id)} 
+          strategy={verticalListSortingStrategy}
+          disabled={sortOrder !== 'custom'}
+        >
           {filteredTasks.map((task) => (
             <DraggableTaskCard 
               key={task.id} 
               task={task} 
+              onDragStart={handleDragStart}
+              onDragEnd={handleDragEnd}
             />
           ))}
         </SortableContext>
