@@ -499,9 +499,9 @@ export function TaskPool({ onDragStart, onDragEnd }: TaskPoolProps = {}) {
         isOver ? 'bg-muted/20' : ''
       }`}
     >
-      {/* Dynamic Category Tabs and Sort */}
+      {/* Dynamic Category Tabs */}
       <div className="space-y-2">
-        {/* Main tab row with scroll and sort */}
+        {/* Main tab row with category management */}
         <div className="flex items-center justify-between gap-2">
           <div className="flex-1 overflow-hidden">
             <div className="flex space-x-2 overflow-x-auto scrollbar-hide pb-1">
@@ -554,46 +554,17 @@ export function TaskPool({ onDragStart, onDragEnd }: TaskPoolProps = {}) {
             </div>
           </div>
           
-          <div className="flex items-center space-x-2">
-            {/* Sort dropdown */}
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="outline" size="sm" className="h-8 gap-1 flex-shrink-0">
-                  <ArrowUpDown className="w-3 h-3" />
-                  <span className="text-xs">
-                    {SORT_OPTIONS.find(opt => opt.value === sortOrder)?.icon} {SORT_OPTIONS.find(opt => opt.value === sortOrder)?.label}
-                  </span>
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-56">
-                {SORT_OPTIONS.map((option) => (
-                  <DropdownMenuItem
-                    key={option.value}
-                    onClick={() => setSortOrder(option.value)}
-                    className="gap-2"
-                  >
-                    <span className="text-lg">{option.icon}</span>
-                    <span>{option.label}</span>
-                    {sortOrder === option.value && (
-                      <Check className="w-4 h-4 ml-auto" />
-                    )}
-                  </DropdownMenuItem>
-                ))}
-              </DropdownMenuContent>
-            </DropdownMenu>
-            
-            {/* Category management button */}
-            <CategoryManagement>
-              <Button 
-                variant="ghost" 
-                size="sm"
-                className="flex-shrink-0 h-8 w-8 p-0"
-                title="カテゴリ管理"
-              >
-                <Settings className="w-4 h-4" />
-              </Button>
-            </CategoryManagement>
-          </div>
+          {/* Category management button */}
+          <CategoryManagement>
+            <Button 
+              variant="ghost" 
+              size="sm"
+              className="flex-shrink-0 h-8 w-8 p-0"
+              title="カテゴリ管理"
+            >
+              <Settings className="w-4 h-4" />
+            </Button>
+          </CategoryManagement>
         </div>
         
         {/* Category info row */}
@@ -727,8 +698,42 @@ export function TaskPool({ onDragStart, onDragEnd }: TaskPoolProps = {}) {
         </>
       )}
 
-      {/* Add Task Form */}
-      <AddTaskForm defaultCategory={selectedCategory} />
+      {/* Add Task Form and Sort */}
+      <div className="flex items-center gap-2">
+        {/* Sort dropdown - icon only */}
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button 
+              variant="outline" 
+              size="icon" 
+              className="h-10 w-10 flex-shrink-0"
+              title={SORT_OPTIONS.find(opt => opt.value === sortOrder)?.label}
+            >
+              <span className="text-lg">{SORT_OPTIONS.find(opt => opt.value === sortOrder)?.icon}</span>
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="start" className="w-56">
+            {SORT_OPTIONS.map((option) => (
+              <DropdownMenuItem
+                key={option.value}
+                onClick={() => setSortOrder(option.value)}
+                className="gap-2"
+              >
+                <span className="text-lg">{option.icon}</span>
+                <span>{option.label}</span>
+                {sortOrder === option.value && (
+                  <Check className="w-4 h-4 ml-auto" />
+                )}
+              </DropdownMenuItem>
+            ))}
+          </DropdownMenuContent>
+        </DropdownMenu>
+        
+        {/* Add Task Button */}
+        <div className="flex-1">
+          <AddTaskForm defaultCategory={selectedCategory} />
+        </div>
+      </div>
 
       {/* Task List */}
       <div className="flex-1 overflow-y-auto space-y-3 mb-0">
