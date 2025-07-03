@@ -7,7 +7,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
-import { Plus, Circle, Clock, AlertCircle, X, Edit2, Trash2, MoreVertical, Check, RotateCcw, ChevronDown, ChevronUp, Settings, ChevronLeft, ChevronRight, Copy, FileText, ArrowUpDown } from 'lucide-react'
+import { Plus, Circle, Clock, AlertCircle, X, Edit2, Trash2, MoreVertical, Check, RotateCcw, ChevronDown, ChevronUp, Settings, ChevronLeft, ChevronRight, Copy, FileText, ArrowUpDown, GripVertical, TrendingDown, TrendingUp, Zap, CalendarPlus, CalendarMinus, Timer, Hourglass, SortAsc, SortDesc } from 'lucide-react'
 import { useTaskStoreWithAuth } from '@/lib/hooks/use-task-store-with-auth'
 import { useAuth } from '@/lib/auth/auth-context'
 import { useSortable, SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable'
@@ -418,6 +418,36 @@ interface TaskPoolProps {
   onDragEnd?: () => void
 }
 
+// ソート順に応じたアイコンを返す関数
+function getSortIcon(sortOrder: string) {
+  switch (sortOrder) {
+    case 'custom':
+      return <GripVertical className="w-4 h-4" />
+    case 'priority-desc':
+      return <TrendingDown className="w-4 h-4" />
+    case 'priority-asc':
+      return <TrendingUp className="w-4 h-4" />
+    case 'urgency-desc':
+      return <Zap className="w-4 h-4" />
+    case 'urgency-asc':
+      return <Circle className="w-4 h-4" />
+    case 'created-desc':
+      return <CalendarPlus className="w-4 h-4" />
+    case 'created-asc':
+      return <CalendarMinus className="w-4 h-4" />
+    case 'time-asc':
+      return <Timer className="w-4 h-4" />
+    case 'time-desc':
+      return <Hourglass className="w-4 h-4" />
+    case 'title-asc':
+      return <SortAsc className="w-4 h-4" />
+    case 'title-desc':
+      return <SortDesc className="w-4 h-4" />
+    default:
+      return <ArrowUpDown className="w-4 h-4" />
+  }
+}
+
 export function TaskPool({ onDragStart, onDragEnd }: TaskPoolProps = {}) {
   const { 
     tasks, 
@@ -709,7 +739,7 @@ export function TaskPool({ onDragStart, onDragEnd }: TaskPoolProps = {}) {
               className="h-10 w-10 flex-shrink-0"
               title={SORT_OPTIONS.find(opt => opt.value === sortOrder)?.label}
             >
-              <span className="text-lg">{SORT_OPTIONS.find(opt => opt.value === sortOrder)?.icon}</span>
+              {getSortIcon(sortOrder)}
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="start" className="w-56">
@@ -719,7 +749,7 @@ export function TaskPool({ onDragStart, onDragEnd }: TaskPoolProps = {}) {
                 onClick={() => setSortOrder(option.value)}
                 className="gap-2"
               >
-                <span className="text-lg">{option.icon}</span>
+                {getSortIcon(option.value)}
                 <span>{option.label}</span>
                 {sortOrder === option.value && (
                   <Check className="w-4 h-4 ml-auto" />

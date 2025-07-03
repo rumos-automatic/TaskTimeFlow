@@ -16,18 +16,18 @@ export type SortOrder =
   | 'title-asc'        // タイトルA→Z
   | 'title-desc'       // タイトルZ→A
 
-export const SORT_OPTIONS: { value: SortOrder; label: string; icon?: string }[] = [
-  { value: 'custom', label: 'カスタム並び', icon: '✏️' },
-  { value: 'priority-desc', label: '優先度：高→低', icon: '🔴' },
-  { value: 'priority-asc', label: '優先度：低→高', icon: '🟢' },
-  { value: 'urgency-desc', label: '緊急度：高→低', icon: '⚡' },
-  { value: 'urgency-asc', label: '緊急度：低→高', icon: '🔵' },
-  { value: 'created-desc', label: '作成日：新しい順', icon: '📅' },
-  { value: 'created-asc', label: '作成日：古い順', icon: '📆' },
-  { value: 'time-asc', label: '時間：短い順', icon: '⏱️' },
-  { value: 'time-desc', label: '時間：長い順', icon: '⏳' },
-  { value: 'title-asc', label: 'タイトル：A→Z', icon: '🔤' },
-  { value: 'title-desc', label: 'タイトル：Z→A', icon: '🔤' }
+export const SORT_OPTIONS: { value: SortOrder; label: string }[] = [
+  { value: 'custom', label: 'カスタム並び' },
+  { value: 'priority-desc', label: '優先度：高→低' },
+  { value: 'priority-asc', label: '優先度：低→高' },
+  { value: 'urgency-desc', label: '緊急度：高→低' },
+  { value: 'urgency-asc', label: '緊急度：低→高' },
+  { value: 'created-desc', label: '作成日：新しい順' },
+  { value: 'created-asc', label: '作成日：古い順' },
+  { value: 'time-asc', label: '時間：短い順' },
+  { value: 'time-desc', label: '時間：長い順' },
+  { value: 'title-asc', label: 'タイトル：A→Z' },
+  { value: 'title-desc', label: 'タイトル：Z→A' }
 ]
 
 interface UserSettings {
