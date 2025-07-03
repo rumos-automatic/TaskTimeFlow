@@ -41,42 +41,8 @@ interface TaskStore {
 export const useTaskStore = create<TaskStore>()(
   persist(
     (set, get) => ({
-      // Initial state
-      tasks: [
-        {
-          id: '1',
-          title: '新しいランディングページのデザイン',
-          priority: 'high',
-          urgency: 'high',
-          category: 'work',
-          estimatedTime: 120,
-          status: 'todo',
-          createdAt: new Date(),
-          updatedAt: new Date()
-        },
-        {
-          id: '2',
-          title: 'プルリクエストのレビュー',
-          priority: 'low',
-          urgency: 'high',
-          category: 'work',
-          estimatedTime: 30,
-          status: 'todo',
-          createdAt: new Date(),
-          updatedAt: new Date()
-        },
-        {
-          id: '3',
-          title: '食料品の買い物',
-          priority: 'low',
-          urgency: 'low',
-          category: 'personal',
-          estimatedTime: 60,
-          status: 'todo',
-          createdAt: new Date(),
-          updatedAt: new Date()
-        }
-      ],
+      // Initial state - 新規ユーザーは空のタスクリストから開始
+      tasks: [],
       timeSlots: [],
       selectedCategory: 'all',
       searchQuery: '',

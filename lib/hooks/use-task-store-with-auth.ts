@@ -51,6 +51,27 @@ export function useTaskStoreWithAuth() {
       return false
     }
   }
+  
+  // Check if this is a completely new user (first time using the app)
+  const isNewUser = (userId: string): boolean => {
+    try {
+      const firstLoginKey = `first_login_completed_${userId}`
+      return localStorage.getItem(firstLoginKey) !== 'true'
+    } catch (error) {
+      console.warn('Failed to check if new user:', error)
+      return true // Assume new user for safety
+    }
+  }
+  
+  // Mark that the user has completed their first login
+  const markFirstLoginCompleted = (userId: string) => {
+    try {
+      const firstLoginKey = `first_login_completed_${userId}`
+      localStorage.setItem(firstLoginKey, 'true')
+    } catch (error) {
+      console.warn('Failed to mark first login completed:', error)
+    }
+  }
 
   // Mark that the current user has local data in this browser
   const markUserLocalDataOwnership = (userId: string) => {
@@ -108,6 +129,16 @@ export function useTaskStoreWithAuth() {
         setMigrating(false)
         return
       }
+      
+      // **追加の安全チェック**: 新規ユーザーの場合は絶対にマイグレーションしない
+      const newUser = isNewUser(user.id)
+      if (newUser) {
+        console.log(`⚠️  User ${user.id} is a new user. Absolutely no migration will be performed.`)
+        console.log('New users start with a clean slate in Supabase.')
+        setMigrationStatus(user.id, true)
+        setMigrating(false)
+        return
+      }
 
       // Supabaseに既にデータがある場合はマイグレーションをスキップ
       const existingTasks = supabaseStore.tasks
@@ -160,6 +191,25 @@ export function useTaskStoreWithAuth() {
     if (user && !initializingRef.current) {
       console.log('User authenticated, initializing Supabase store for user:', user.id)
       initializingRef.current = true
+      
+      // 新規ユーザーチェック
+      const newUser = isNewUser(user.id)
+      if (newUser) {
+        console.log('🆕 New user detected:', user.id)
+        console.log('Clearing any existing local data to prevent cross-contamination')
+        
+        // ローカルストレージからタスクデータをクリア
+        try {
+          localStorage.removeItem('task-store')
+          console.log('✅ Local task data cleared for new user')
+        } catch (error) {
+          console.error('Failed to clear local data:', error)
+        }
+        
+        // 新規ユーザーとしてマーク
+        markFirstLoginCompleted(user.id)
+        setMigrationStatus(user.id, true) // マイグレーション不要
+      }
       
       // 永続化されたマイグレーション状態を復元
       const alreadyMigrated = checkMigrationStatus(user.id)

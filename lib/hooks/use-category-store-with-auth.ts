@@ -16,6 +16,17 @@ export function useCategoryStoreWithAuth() {
   const [migrating, setMigrating] = useState(false)
   const [initialized, setInitialized] = useState(false)
   const initializingRef = useRef(false)
+  
+  // Check if this is a completely new user (first time using the app)
+  const isNewUser = (userId: string): boolean => {
+    try {
+      const firstLoginKey = `first_login_completed_${userId}`
+      return localStorage.getItem(firstLoginKey) !== 'true'
+    } catch (error) {
+      console.warn('Failed to check if new user:', error)
+      return true // Assume new user for safety
+    }
+  }
 
   // ユーザーIDベースでマイグレーション完了状態をチェック
   const checkMigrationStatus = (userId: string): boolean => {
@@ -54,6 +65,15 @@ export function useCategoryStoreWithAuth() {
     const alreadyMigrated = checkMigrationStatus(user.id)
     if (alreadyMigrated) {
       console.log('📦 Category migration already completed for user:', user.id)
+      setMigrationCompleted(true)
+      return
+    }
+    
+    // 新規ユーザーの場合はマイグレーションしない
+    const newUser = isNewUser(user.id)
+    if (newUser) {
+      console.log('🆕 New user detected. No category migration needed.')
+      setMigrationStatus(user.id, true)
       setMigrationCompleted(true)
       return
     }
@@ -121,6 +141,21 @@ export function useCategoryStoreWithAuth() {
 
     initializingRef.current = true
     console.log('🔧 Initializing category stores for user:', user.id)
+    
+    // 新規ユーザーチェック
+    const newUser = isNewUser(user.id)
+    if (newUser) {
+      console.log('🆕 New user detected for categories:', user.id)
+      console.log('Clearing any existing local category data')
+      
+      // ローカルストレージからカテゴリデータをクリア
+      try {
+        localStorage.removeItem('category-store') // カテゴリストアのキーを確認する必要があるかも
+        console.log('✅ Local category data cleared for new user')
+      } catch (error) {
+        console.error('Failed to clear local category data:', error)
+      }
+    }
 
     try {
       // Supabaseストアを初期化
