@@ -749,6 +749,46 @@ export function FocusMode() {
           {isPaused && "一時停止中"}
           {!isRunning && !isPaused && "開始準備完了"}
         </div>
+
+        {/* Work Time Summary - Integrated with Timer */}
+        <div className="mt-4 pt-4 border-t border-border/20">
+          <div className="grid grid-cols-2 gap-3">
+            <div className="text-center">
+              <div className="text-lg font-bold text-purple-600">
+                {formatStopwatchTime(
+                  todayTotalTime + (timerMode === 'stopwatch' && !isBreak ? (stopwatchTime - lastSavedSeconds) : 0)
+                )}
+              </div>
+              <div className="text-xs text-muted-foreground">今日の作業時間</div>
+            </div>
+            <div className="text-center">
+              <div className="text-lg font-bold text-green-600">
+                {formatStopwatchTime(
+                  todayBreakTime + (timerMode === 'stopwatch' && isBreak ? (stopwatchTime - lastSavedSeconds) : 0)
+                )}
+              </div>
+              <div className="text-xs text-muted-foreground">今日の休憩時間</div>
+            </div>
+          </div>
+          {currentTask && (currentTaskTime > 0 || (timerMode === 'stopwatch' && isRunning && currentTaskId === currentTask.id)) && (
+            <div className="flex justify-between items-center mt-2 px-4">
+              <span className="text-xs text-muted-foreground">現在のタスク</span>
+              <span className="text-sm font-medium">
+                {formatStopwatchTime(
+                  timerMode === 'stopwatch' && isRunning && currentTaskId === currentTask.id && !isBreak
+                    ? currentTaskTime + (stopwatchTime - lastSavedSeconds)
+                    : currentTaskTime
+                )}
+              </span>
+            </div>
+          )}
+          {timerMode === 'stopwatch' && isBreak && isRunning && (
+            <div className="text-xs text-muted-foreground text-center mt-2 flex items-center justify-center space-x-1">
+              <Coffee className="w-3 h-3" />
+              <span>休憩中 - 作業時間に加算されません</span>
+            </div>
+          )}
+        </div>
       </Card>
 
       <Separator />
@@ -875,45 +915,6 @@ export function FocusMode() {
           </Card>
         </div>
 
-        {/* Work Time Summary */}
-        <Card className="p-3">
-          <div className="space-y-2">
-            <div className="flex justify-between items-center">
-              <span className="text-xs font-medium">今日の作業時間</span>
-              <span className="text-lg font-bold text-purple-600">
-                {formatStopwatchTime(
-                  todayTotalTime + (timerMode === 'stopwatch' && !isBreak ? (stopwatchTime - lastSavedSeconds) : 0)
-                )}
-              </span>
-            </div>
-            <div className="flex justify-between items-center">
-              <span className="text-xs font-medium">今日の休憩時間</span>
-              <span className="text-lg font-bold text-green-600">
-                {formatStopwatchTime(
-                  todayBreakTime + (timerMode === 'stopwatch' && isBreak ? (stopwatchTime - lastSavedSeconds) : 0)
-                )}
-              </span>
-            </div>
-            {currentTask && (currentTaskTime > 0 || (timerMode === 'stopwatch' && isRunning && currentTaskId === currentTask.id)) && (
-              <div className="flex justify-between items-center">
-                <span className="text-xs text-muted-foreground">現在のタスク</span>
-                <span className="text-sm font-medium">
-                  {formatStopwatchTime(
-                    timerMode === 'stopwatch' && isRunning && currentTaskId === currentTask.id && !isBreak
-                      ? currentTaskTime + (stopwatchTime - lastSavedSeconds)
-                      : currentTaskTime
-                  )}
-                </span>
-              </div>
-            )}
-            {timerMode === 'stopwatch' && isBreak && isRunning && (
-              <div className="text-xs text-muted-foreground text-center mt-2 flex items-center justify-center space-x-1">
-                <Coffee className="w-3 h-3" />
-                <span>休憩中 - 作業時間に加算されません</span>
-              </div>
-            )}
-          </div>
-        </Card>
 
         <div className="space-y-2">
           <div className="flex justify-between text-xs">
