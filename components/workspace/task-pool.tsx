@@ -770,7 +770,6 @@ export function TaskPool({ onDragStart, onDragEnd }: TaskPoolProps = {}) {
         <SortableContext 
           items={filteredTasks.map(task => task.id)} 
           strategy={verticalListSortingStrategy}
-          disabled={sortOrder !== 'custom'}
         >
           {filteredTasks.map((task) => (
             <DraggableTaskCard 
