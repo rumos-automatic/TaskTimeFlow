@@ -40,6 +40,7 @@ interface SupabaseTaskStore {
   getTasksForDate: (date: Date) => TimeSlot[]
   getUnscheduledTasks: () => Task[]
   getCompletedTasks: () => Task[]
+  getAllActiveTasks: () => Task[]
   
   // Maintenance operations
   removeDuplicateTasks: () => Promise<void>
@@ -609,6 +610,10 @@ export const useSupabaseTaskStore = create<SupabaseTaskStore>()((set, get) => {
       return get().tasks.filter((task) => 
         task.status === 'completed' && !hiddenIds.includes(task.id)
       )
+    },
+
+    getAllActiveTasks: () => {
+      return get().tasks.filter((task) => task.status !== 'completed')
     },
 
     // Maintenance operations

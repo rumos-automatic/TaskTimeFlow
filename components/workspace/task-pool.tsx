@@ -23,6 +23,7 @@ import { TaskDetailModal } from './task-detail-modal'
 import { TaskPoolAddForm, BaseTaskForm, TaskFormData } from '@/components/ui/task-form'
 import { useTaskSort, SORT_OPTIONS } from '@/lib/hooks/use-task-sort'
 import { getDueDateInfo, formatDueDateForInput } from '@/lib/utils/date-helpers'
+import { useUserSettings } from '@/lib/hooks/use-user-settings'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -188,6 +189,15 @@ function DraggableTaskCard({ task, onDragStart, onDragEnd }: DraggableTaskCardPr
                   </div>
                 )
               })()}
+              {/* スケジュール表示 */}
+              {task.scheduledDate && task.scheduledTime && (
+                <div className="flex items-center space-x-1 px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300">
+                  <Clock className="w-3 h-3" />
+                  <span>
+                    {new Date(task.scheduledDate).toLocaleDateString('ja-JP', { month: 'numeric', day: 'numeric' })} {task.scheduledTime}
+                  </span>
+                </div>
+              )}
             </div>
           </div>
           
@@ -469,6 +479,7 @@ export function TaskPool({ onDragStart, onDragEnd }: TaskPoolProps = {}) {
     getTasksByCategory,
     getUnscheduledTasks,
     getCompletedTasks,
+    getAllActiveTasks,
     removeDuplicateTasks,
     resetMigrationStatus,
     hideCompletedTask,
@@ -483,6 +494,7 @@ export function TaskPool({ onDragStart, onDragEnd }: TaskPoolProps = {}) {
     googleTasksSync 
   } = useCategoryStoreWithAuth()
   
+  const { settings } = useUserSettings()
   
   const [showDebugMenu, setShowDebugMenu] = useState(false)
 
@@ -507,11 +519,12 @@ export function TaskPool({ onDragStart, onDragEnd }: TaskPoolProps = {}) {
     }
   }, [isCompletedCollapsed])
 
-  const unscheduledTasks = getUnscheduledTasks()
+  // ユーザー設定に基づいてタスクを取得
+  const activeTasks = settings.showScheduledTasksInPool ? getAllActiveTasks() : getUnscheduledTasks()
   const completedTasks = getCompletedTasks()
   const baseFilteredTasks = selectedCategory === 'all' 
-    ? unscheduledTasks 
-    : unscheduledTasks.filter(task => task.category === selectedCategory)
+    ? activeTasks 
+    : activeTasks.filter(task => task.category === selectedCategory)
   const filteredCompletedTasks = selectedCategory === 'all'
     ? completedTasks
     : completedTasks.filter(task => task.category === selectedCategory)

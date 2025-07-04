@@ -4,10 +4,13 @@ import { Card } from '@/components/ui/card'
 import { Label } from '@/components/ui/label'
 import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Switch } from '@/components/ui/switch'
 import { useAuth } from '@/lib/auth/auth-context'
+import { useUserSettings } from '@/lib/hooks/use-user-settings'
 
 export function GeneralSettings() {
   const { user } = useAuth()
+  const { settings, updateSettings, loading } = useUserSettings()
 
   return (
     <div className="space-y-6">
@@ -68,6 +71,25 @@ export function GeneralSettings() {
               <SelectItem value="en">English</SelectItem>
             </SelectContent>
           </Select>
+        </div>
+      </Card>
+
+      <Card className="p-4 space-y-4">
+        <h4 className="font-medium">タスク表示設定</h4>
+        
+        <div className="flex items-center justify-between space-x-2">
+          <div className="space-y-0.5">
+            <Label htmlFor="show-scheduled-tasks">スケジュール済みタスクの表示</Label>
+            <p className="text-sm text-muted-foreground">
+              タイムラインに配置したタスクをタスクプールにも表示します
+            </p>
+          </div>
+          <Switch
+            id="show-scheduled-tasks"
+            checked={settings.showScheduledTasksInPool}
+            onCheckedChange={(checked) => updateSettings({ showScheduledTasksInPool: checked })}
+            disabled={loading}
+          />
         </div>
       </Card>
     </div>

@@ -30,6 +30,7 @@ interface TaskStore {
   getTasksForDate: (date: Date) => TimeSlot[]
   getUnscheduledTasks: () => Task[]
   getCompletedTasks: () => Task[]
+  getAllActiveTasks: () => Task[]
   
   // Maintenance operations (placeholder for local store)
   removeDuplicateTasks: () => Promise<void>
@@ -182,6 +183,10 @@ export const useTaskStore = create<TaskStore>()(
 
       getCompletedTasks: () => {
         return get().tasks.filter((task) => task.status === 'completed')
+      },
+
+      getAllActiveTasks: () => {
+        return get().tasks.filter((task) => task.status !== 'completed')
       },
 
       reorderTasks: (activeId, overId) => {
