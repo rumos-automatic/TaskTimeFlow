@@ -25,6 +25,8 @@ export interface Task {
   duration?: number // in minutes
   // Rich text notes
   notes?: string
+  // Due date
+  dueDate?: Date
 }
 
 export interface TimeSlot {

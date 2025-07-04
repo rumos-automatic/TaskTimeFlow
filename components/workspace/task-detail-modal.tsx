@@ -6,7 +6,8 @@ import { Button } from '@/components/ui/button'
 import { RichTextEditor } from '@/components/ui/rich-text-editor'
 import { Task, Priority, Urgency, TaskCategory } from '@/lib/types'
 import { useCategoryStoreWithAuth } from '@/lib/hooks/use-category-store-with-auth'
-import { Edit2, Save, X, Clock, AlertCircle } from 'lucide-react'
+import { Edit2, Save, X, Clock, AlertCircle, CalendarDays } from 'lucide-react'
+import { getDueDateInfo, formatDueDateForInput, parseDueDateFromInput } from '@/lib/utils/date-helpers'
 
 interface TaskDetailModalProps {
   task: Task | null
@@ -45,7 +46,8 @@ export function TaskDetailModal({ task, isOpen, onClose, onSave }: TaskDetailMod
       urgency: task.urgency,
       category: task.category,
       estimatedTime: task.estimatedTime,
-      notes: task.notes || ''
+      notes: task.notes || '',
+      dueDate: task.dueDate
     })
     setIsEditing(true)
   }
@@ -152,6 +154,13 @@ export function TaskDetailModal({ task, isOpen, onClose, onSave }: TaskDetailMod
                     </option>
                   ))}
                 </select>
+                <input
+                  type="date"
+                  value={formatDueDateForInput(formData.dueDate as Date | undefined)}
+                  onChange={(e) => setFormData(prev => ({ ...prev, dueDate: parseDueDateFromInput(e.target.value) }))}
+                  className="px-3 py-1 border border-border rounded text-sm bg-background"
+                  placeholder="期限日を選択"
+                />
               </>
             ) : (
               <>
@@ -174,6 +183,16 @@ export function TaskDetailModal({ task, isOpen, onClose, onSave }: TaskDetailMod
                   <Clock className="w-4 h-4" />
                   {formatTime(task.estimatedTime)}
                 </div>
+                {(() => {
+                  const dueDateInfo = getDueDateInfo(task.dueDate)
+                  if (!dueDateInfo) return null
+                  return (
+                    <div className={`flex items-center gap-1 px-3 py-1 rounded-full text-sm font-medium ${dueDateInfo.colorClass}`}>
+                      <CalendarDays className="w-4 h-4" />
+                      {dueDateInfo.text}
+                    </div>
+                  )
+                })()}
               </>
             )}
           </div>

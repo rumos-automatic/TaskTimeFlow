@@ -7,7 +7,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
-import { Plus, Circle, Clock, AlertCircle, X, Edit2, Trash2, MoreVertical, Check, RotateCcw, ChevronDown, ChevronUp, Settings, ChevronLeft, ChevronRight, Copy, FileText, ArrowUpDown, GripVertical, TrendingDown, TrendingUp, Zap, CalendarPlus, CalendarMinus, Timer, Hourglass, SortAsc, SortDesc } from 'lucide-react'
+import { Plus, Circle, Clock, AlertCircle, X, Edit2, Trash2, MoreVertical, Check, RotateCcw, ChevronDown, ChevronUp, Settings, ChevronLeft, ChevronRight, Copy, FileText, ArrowUpDown, GripVertical, TrendingDown, TrendingUp, Zap, CalendarPlus, CalendarMinus, Timer, Hourglass, SortAsc, SortDesc, CalendarDays } from 'lucide-react'
 import { useTaskStoreWithAuth } from '@/lib/hooks/use-task-store-with-auth'
 import { useAuth } from '@/lib/auth/auth-context'
 import { useSortable, SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable'
@@ -22,6 +22,7 @@ import { RichTextEditor } from '@/components/ui/rich-text-editor'
 import { TaskDetailModal } from './task-detail-modal'
 import { TaskPoolAddForm, BaseTaskForm, TaskFormData } from '@/components/ui/task-form'
 import { useTaskSort, SORT_OPTIONS } from '@/lib/hooks/use-task-sort'
+import { getDueDateInfo, formatDueDateForInput } from '@/lib/utils/date-helpers'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -176,6 +177,17 @@ function DraggableTaskCard({ task, onDragStart, onDragEnd }: DraggableTaskCardPr
                   <span className="text-xs">メモ</span>
                 </div>
               )}
+              {/* 期限表示 */}
+              {(() => {
+                const dueDateInfo = getDueDateInfo(task.dueDate)
+                if (!dueDateInfo) return null
+                return (
+                  <div className={`flex items-center space-x-1 px-2 py-1 rounded-full text-xs font-medium ${dueDateInfo.colorClass}`}>
+                    <CalendarDays className="w-3 h-3" />
+                    <span>{dueDateInfo.text}</span>
+                  </div>
+                )
+              })()}
             </div>
           </div>
           
@@ -333,7 +345,8 @@ function EditTaskCard({ task, onSave, onCancel }: EditTaskCardProps) {
       priority: formData.priority,
       urgency: formData.urgency,
       category: formData.category,
-      estimatedTime: formData.estimatedTime === '' ? 30 : formData.estimatedTime
+      estimatedTime: formData.estimatedTime === '' ? 30 : formData.estimatedTime,
+      dueDate: formData.dueDate ? new Date(formData.dueDate) : undefined
     }
     onSave(finalData)
   }
@@ -346,7 +359,8 @@ function EditTaskCard({ task, onSave, onCancel }: EditTaskCardProps) {
           priority: task.priority,
           urgency: task.urgency,
           category: task.category,
-          estimatedTime: task.estimatedTime
+          estimatedTime: task.estimatedTime,
+          dueDate: formatDueDateForInput(task.dueDate)
         }}
         onSubmit={handleSubmit}
         onCancel={onCancel}
@@ -378,7 +392,8 @@ function AddTaskForm({ defaultCategory }: AddTaskFormProps) {
       urgency: formData.urgency,
       category: formData.category,
       estimatedTime: formData.estimatedTime === '' ? 30 : formData.estimatedTime,
-      status: 'todo' as const
+      status: 'todo' as const,
+      dueDate: formData.dueDate ? new Date(formData.dueDate) : undefined
     }
 
     await addTask(taskData, user.id)

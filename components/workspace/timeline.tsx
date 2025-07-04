@@ -1373,6 +1373,8 @@ function CalendarView({ selectedDate, setSelectedDate, scheduledSlots, tasks }: 
   
   // Group tasks by date
   const tasksByDate: { [key: string]: any[] } = {}
+  
+  // Add scheduled tasks
   scheduledSlots.forEach(slot => {
     const slotDate = slot.date instanceof Date ? slot.date : new Date(slot.date)
     const dateKey = slotDate.toDateString()
@@ -1392,12 +1394,55 @@ function CalendarView({ selectedDate, setSelectedDate, scheduledSlots, tasks }: 
     }
   })
   
+  // Add tasks with due dates
+  tasks.forEach(task => {
+    if (task.dueDate) {
+      const dueDate = task.dueDate instanceof Date ? task.dueDate : new Date(task.dueDate)
+      const dateKey = dueDate.toDateString()
+      
+      // Skip if already scheduled on this date
+      if (!tasksByDate[dateKey]?.some(({ task: t }) => t.id === task.id)) {
+        if (!tasksByDate[dateKey]) {
+          tasksByDate[dateKey] = []
+        }
+        tasksByDate[dateKey].push({ 
+          task, 
+          slot: { 
+            id: `due-${task.id}`, 
+            isDueDate: true,
+            date: dueDate,
+            startTime: null,
+            endTime: null 
+          } 
+        })
+      }
+    }
+  })
+  
   console.log('📊 tasksByDate result:', tasksByDate)
   console.log('📊 Total dates with tasks:', Object.keys(tasksByDate).length)
   
   // Get tasks for selected date
   const selectedDateKey = selectedDate.toDateString()
-  const selectedDateTasks = tasksByDate[selectedDateKey] || []
+  const scheduledTasksForDate = tasksByDate[selectedDateKey] || []
+  
+  // Get tasks with due date matching selected date
+  const dueTasksForDate = tasks.filter(task => {
+    if (!task.dueDate) return false
+    const dueDate = task.dueDate instanceof Date ? task.dueDate : new Date(task.dueDate)
+    return dueDate.toDateString() === selectedDateKey && !scheduledTasksForDate.some(({ task: scheduledTask }) => scheduledTask.id === task.id)
+  }).map(task => ({ 
+    task, 
+    slot: { 
+      id: `due-${task.id}`, 
+      isDueDate: true,
+      date: selectedDate,
+      startTime: null,
+      endTime: null 
+    } 
+  }))
+  
+  const selectedDateTasks = [...scheduledTasksForDate, ...dueTasksForDate]
   
   console.log('🎯 Selected date tasks:', selectedDateTasks.length)
   console.log('🎯 Selected date tasks content:', selectedDateTasks)
@@ -1670,13 +1715,20 @@ function SelectedDateTaskCard({ task, slot, onComplete, onUncomplete, onRemove, 
           
           {/* Time and Duration */}
           <div className="flex items-center space-x-4 mb-2 text-xs md:text-sm text-muted-foreground">
-            <div className="flex items-center space-x-1">
-              <Clock className="w-3 h-3" />
-              <span>{slot.startTime || '時間未設定'}</span>
-              {slot.endTime && (
-                <span>- {slot.endTime}</span>
-              )}
-            </div>
+            {slot.isDueDate ? (
+              <div className="flex items-center space-x-1 text-orange-600 font-medium">
+                <CalendarDays className="w-3 h-3" />
+                <span>期限日</span>
+              </div>
+            ) : (
+              <div className="flex items-center space-x-1">
+                <Clock className="w-3 h-3" />
+                <span>{slot.startTime || '時間未設定'}</span>
+                {slot.endTime && (
+                  <span>- {slot.endTime}</span>
+                )}
+              </div>
+            )}
             <div className="flex items-center space-x-1">
               <span>予想時間: {task.estimatedTime || 60}分</span>
             </div>
@@ -1734,15 +1786,17 @@ function SelectedDateTaskCard({ task, slot, onComplete, onUncomplete, onRemove, 
                 >
                   <Edit2 className="w-3 h-3" />
                 </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="h-6 w-6 p-0 hover:bg-red-200 dark:hover:bg-red-800 text-red-600"
-                  onClick={onRemove}
-                  title="削除"
-                >
-                  <Trash2 className="w-3 h-3" />
-                </Button>
+                {!slot.isDueDate && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-6 w-6 p-0 hover:bg-red-200 dark:hover:bg-red-800 text-red-600"
+                    onClick={onRemove}
+                    title="削除"
+                  >
+                    <Trash2 className="w-3 h-3" />
+                  </Button>
+                )}
               </>
             ) : (
               <Button

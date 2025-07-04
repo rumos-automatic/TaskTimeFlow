@@ -162,6 +162,7 @@ export type Database = {
           completed_at: string | null
           created_at: string | null
           description: string | null
+          due_date: string | null
           duration: number | null
           estimated_time: number
           id: string
@@ -187,6 +188,7 @@ export type Database = {
           completed_at?: string | null
           created_at?: string | null
           description?: string | null
+          due_date?: string | null
           duration?: number | null
           estimated_time?: number
           id?: string
@@ -212,6 +214,7 @@ export type Database = {
           completed_at?: string | null
           created_at?: string | null
           description?: string | null
+          due_date?: string | null
           duration?: number | null
           estimated_time?: number
           id?: string

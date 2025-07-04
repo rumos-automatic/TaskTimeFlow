@@ -44,6 +44,7 @@ export function dbTaskToTask(dbTask: DbTask): Task {
     scheduledTime: dbTask.scheduled_time || undefined,
     duration: dbTask.duration || undefined,
     notes: dbTask.notes || undefined,
+    dueDate: dbTask.due_date ? parseDateFromDatabase(dbTask.due_date) : undefined,
     createdAt: new Date(dbTask.created_at!),
     updatedAt: new Date(dbTask.updated_at!)
   }
@@ -64,7 +65,8 @@ export function taskToDbTaskInsert(task: Omit<Task, 'id' | 'createdAt' | 'update
     scheduled_date: task.scheduledDate ? formatDateForDatabase(task.scheduledDate) : null,
     scheduled_time: task.scheduledTime,
     duration: task.duration,
-    notes: task.notes || null
+    notes: task.notes || null,
+    due_date: task.dueDate ? formatDateForDatabase(task.dueDate) : null
   }
 }
 
@@ -84,6 +86,7 @@ export function taskToDbTaskUpdate(task: Partial<Task>): DbTaskUpdate {
   if (task.scheduledTime !== undefined) update.scheduled_time = task.scheduledTime
   if (task.duration !== undefined) update.duration = task.duration
   if (task.notes !== undefined) update.notes = task.notes
+  if (task.dueDate !== undefined) update.due_date = task.dueDate ? formatDateForDatabase(task.dueDate) : null
   
   return update
 }

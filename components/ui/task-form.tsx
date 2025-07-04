@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { cn } from '@/lib/utils'
 import { Task, Priority, Urgency, TaskCategory } from '@/lib/types'
-import { AlertCircle, Clock, Calendar, X, Plus } from 'lucide-react'
+import { AlertCircle, Clock, Calendar, X, Plus, CalendarDays } from 'lucide-react'
 import { cva, type VariantProps } from 'class-variance-authority'
 
 // Variant definitions for different contexts
@@ -44,6 +44,7 @@ export interface TaskFormData {
   // Extended fields for calendar
   scheduledDate?: string
   scheduledTime?: string
+  dueDate?: string
 }
 
 // Props for the base task form
@@ -308,6 +309,22 @@ export function BaseTaskForm({
           </div>
         </div>
       )}
+
+      {/* Due Date Picker */}
+      <div>
+        <Label className={cn(inputSize, 'font-medium mb-1 flex items-center')}>
+          <CalendarDays className="w-3 h-3 mr-1 text-orange-600" />
+          期限日（オプション）
+        </Label>
+        <Input
+          type="date"
+          value={formData.dueDate || ''}
+          onChange={(e) => setFormData(prev => ({ ...prev, dueDate: e.target.value }))}
+          className={cn(inputSize, selectSize)}
+          disabled={isSubmitting}
+          placeholder="期限日を選択"
+        />
+      </div>
 
       {/* Action Buttons */}
       <div className="flex space-x-2 pt-1">
