@@ -44,6 +44,14 @@ npm run db:migrate    # Run migrations
 npm run db:studio     # Open database studio
 ```
 
+## Important Development Notes
+
+**⚠️ TESTING WORKFLOW**
+- 開発サーバーでの動作確認は不要です
+- ビルドテストが成功したら、直接プッシュしてください
+- 本番環境のテストはVercelで直接行います
+- 「開発サーバーで動作確認をお願いします」などの提案は不要です
+
 ## Core Features - Revolutionary 3-Screen UI
 
 ### 1. Task Pool Screen (Left)
