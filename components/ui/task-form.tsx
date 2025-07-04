@@ -112,13 +112,15 @@ export function BaseTaskForm({
   })
   
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [hasInitialized, setHasInitialized] = useState(false)
 
-  // Update form data when default values change
+  // Update form data only on initial mount or when component key changes
   useEffect(() => {
-    if (defaultValues) {
+    if (defaultValues && !hasInitialized) {
       setFormData(prev => ({ ...prev, ...defaultValues }))
+      setHasInitialized(true)
     }
-  }, [defaultValues])
+  }, [defaultValues, hasInitialized])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()

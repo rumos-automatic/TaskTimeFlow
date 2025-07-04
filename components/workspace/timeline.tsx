@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useRef, useCallback } from 'react'
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
@@ -459,6 +459,12 @@ function AddTimeSlotTaskForm({ time, hour, minute, onSave, onCancel, scheduledTa
     return Math.abs(curr - calculatedDuration) < Math.abs(prev - calculatedDuration) ? curr : prev
   })
 
+  // Memoize defaultValues to prevent re-renders from resetting the form
+  const defaultValues = useMemo(() => ({
+    category: 'work',
+    estimatedTime: defaultDuration
+  }), [defaultDuration])
+
   const handleSubmit = (formData: TaskFormData) => {
     const finalData = {
       title: formData.title,
@@ -474,10 +480,7 @@ function AddTimeSlotTaskForm({ time, hour, minute, onSave, onCancel, scheduledTa
   return (
     <div className="absolute left-0 right-0 top-0 z-50 bg-white dark:bg-gray-800 border border-border rounded-md shadow-lg">
       <TimelineAddForm
-        defaultValues={{
-          category: 'work',
-          estimatedTime: defaultDuration
-        }}
+        defaultValues={defaultValues}
         onSubmit={handleSubmit}
         onCancel={onCancel}
         categories={allCategories}
