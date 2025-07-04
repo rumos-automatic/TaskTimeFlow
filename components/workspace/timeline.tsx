@@ -16,6 +16,7 @@ import { useCategoryStoreWithAuth } from '@/lib/hooks/use-category-store-with-au
 import { Task, Priority, Urgency, TaskCategory } from '@/lib/types'
 import { TimelineAddForm, BaseTaskForm, CalendarAddForm, TaskFormData } from '@/components/ui/task-form'
 import { TaskDetailModal } from './task-detail-modal'
+import { getDueDateInfo } from '@/lib/utils/date-helpers'
 
 const timeSlots = Array.from({ length: 96 }, (_, i) => {
   const hour = Math.floor(i / 4)
@@ -814,10 +815,26 @@ export function Timeline({
   console.log('📝 Final scheduledTasks for display:', scheduledTasks.length)
   console.log('📝 scheduledTasks content:', scheduledTasks)
   
-  // Create sortable IDs for scheduled tasks
-  const sortableIds = scheduledTasks
+  // Get due tasks for selected date
+  const dueTasks = tasks.filter(task => {
+    if (!task.dueDate || task.status === 'completed') return false
+    const dueDate = task.dueDate instanceof Date ? task.dueDate : new Date(task.dueDate)
+    return dueDate.toDateString() === selectedDate.toDateString()
+  }).filter(task => {
+    // Exclude already scheduled tasks
+    return !scheduledTasks.some(({ task: scheduledTask }) => scheduledTask?.id === task.id)
+  })
+  
+  console.log('🎯 Due tasks for selected date:', dueTasks.length)
+  
+  // Create sortable IDs for scheduled tasks and due tasks
+  const scheduledSortableIds = scheduledTasks
     .filter(item => item.task) // TypeScript安全性のため
     .map(item => `scheduled-${item.task!.id}-${item.slotId}`)
+    
+  const dueSortableIds = dueTasks.map(task => `due-task-${task.id}`)
+  
+  const sortableIds = [...dueSortableIds, ...scheduledSortableIds]
 
   // Function to scroll to current time indicator
   const scrollToCurrentTime = useCallback(() => {
@@ -993,13 +1010,35 @@ export function Timeline({
 
       {/* Timeline or Calendar View */}
       {viewMode === 'timeline' ? (
-        <div 
-          ref={timelineContainerRef} 
-          className="flex-1 overflow-y-auto" 
-          data-timeline="true"
-        >
+        <div className="flex-1 flex flex-col gap-4">
           <SortableContext items={sortableIds} strategy={verticalListSortingStrategy}>
-          <div className="relative">
+            {/* Due Tasks Section */}
+            {dueTasks.length > 0 && (
+              <div className="bg-orange-50 dark:bg-orange-950/30 border border-orange-200 dark:border-orange-800 rounded-lg p-4">
+                <div className="flex items-center justify-between mb-3">
+                  <h3 className="text-sm font-medium text-orange-800 dark:text-orange-200 flex items-center gap-2">
+                    <CalendarDays className="w-4 h-4" />
+                    本日期限のタスク
+                    <span className="text-xs bg-orange-100 dark:bg-orange-900 px-2 py-0.5 rounded-full">
+                      {dueTasks.length}件
+                    </span>
+                  </h3>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
+                  {dueTasks.map(task => (
+                    <DueDateTaskCard key={task.id} task={task} />
+                  ))}
+                </div>
+              </div>
+            )}
+            
+            {/* Timeline */}
+            <div 
+              ref={timelineContainerRef} 
+              className="flex-1 overflow-y-auto" 
+              data-timeline="true"
+            >
+              <div className="relative">
             {/* Current Time Indicator */}
             <div 
               ref={currentTimeIndicatorRef}
@@ -1060,6 +1099,7 @@ export function Timeline({
               />
             ))}
           </div>
+        </div>
         </SortableContext>
       </div>
       ) : (
@@ -1668,6 +1708,98 @@ function CalendarView({ selectedDate, setSelectedDate, scheduledSlots, tasks }: 
         )}
       </div>
     </div>
+  )
+}
+
+// Due Date Task Card Component
+interface DueDateTaskCardProps {
+  task: Task
+}
+
+function DueDateTaskCard({ task }: DueDateTaskCardProps) {
+  const [showDetail, setShowDetail] = useState(false)
+  const { updateTask, moveTaskToTimeline } = useTaskStoreWithAuth()
+  const { user } = useAuth()
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({
+    id: `due-task-${task.id}`,
+    data: {
+      type: 'due-task',
+      task: task
+    }
+  })
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+  }
+
+  const categoryInfo = useCategoryStoreWithAuth().allCategories.find(c => c.id === task.category)
+  const dueDateInfo = getDueDateInfo(task.dueDate)
+
+  return (
+    <>
+      <div
+        ref={setNodeRef}
+        style={style}
+        className={`relative ${isDragging ? 'opacity-50' : ''}`}
+      >
+        <Card 
+          className={`p-3 hover:shadow-md transition-all cursor-move ${
+            isDragging ? 'shadow-lg ring-2 ring-primary' : ''
+          }`}
+          {...attributes}
+          {...listeners}
+        >
+          <div className="flex items-start justify-between">
+            <div className="flex-1 min-w-0">
+              <h4 
+                className="font-medium text-sm truncate mb-1 cursor-pointer hover:text-primary transition-colors"
+                onClick={() => setShowDetail(true)}
+              >
+                {task.title}
+              </h4>
+              <div className="flex flex-wrap items-center gap-1 text-xs">
+                {/* Category */}
+                {categoryInfo && (
+                  <div className="flex items-center gap-1 px-1.5 py-0.5 rounded bg-muted">
+                    <span>{categoryInfo.icon}</span>
+                    <span>{categoryInfo.name}</span>
+                  </div>
+                )}
+                {/* Estimated time */}
+                <div className="flex items-center gap-1 text-muted-foreground">
+                  <Clock className="w-3 h-3" />
+                  <span>{task.estimatedTime}分</span>
+                </div>
+                {/* Due date */}
+                {dueDateInfo && (
+                  <div className={`flex items-center gap-1 px-1.5 py-0.5 rounded text-xs font-medium ${dueDateInfo.colorClass}`}>
+                    <CalendarDays className="w-3 h-3" />
+                    <span>{dueDateInfo.text}</span>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        </Card>
+      </div>
+      <TaskDetailModal
+        task={task}
+        isOpen={showDetail}
+        onClose={() => setShowDetail(false)}
+        onSave={(taskId, updates) => {
+          updateTask(taskId, updates)
+          setShowDetail(false)
+        }}
+      />
+    </>
   )
 }
 
