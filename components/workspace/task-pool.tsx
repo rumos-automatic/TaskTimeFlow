@@ -52,15 +52,18 @@ interface DraggableTaskCardProps {
   onDragEnd?: () => void
 }
 
-function DraggableTaskCard({ task, onDragStart, onDragEnd }: DraggableTaskCardProps) {
+const DraggableTaskCard = React.memo(function DraggableTaskCard({ task, onDragStart, onDragEnd }: DraggableTaskCardProps) {
   const [showActions, setShowActions] = useState(false)
   const [isEditing, setIsEditing] = useState(false)
   const [showDetail, setShowDetail] = useState(false)
   const { updateTask, deleteTask, completeTask, addTask } = useTaskStoreWithAuth()
   const { user } = useAuth()
   
-  // スケジュール済みタスクの場合は、IDにプレフィックスを追加してユニークにする
-  const draggableId = task.scheduledDate ? `pool-${task.id}` : task.id
+  // スケジュール済みタスクの場合は、IDにプレフィックスを追加してユニークにする（メモ化）
+  const draggableId = React.useMemo(() => 
+    task.scheduledDate ? `pool-${task.id}` : task.id,
+    [task.id, task.scheduledDate]
+  )
   
   const {
     attributes,
@@ -256,13 +259,13 @@ function DraggableTaskCard({ task, onDragStart, onDragEnd }: DraggableTaskCardPr
       />
     </div>
   )
-}
+})
 
 interface CompletedTaskCardProps {
   task: Task
 }
 
-function CompletedTaskCard({ task }: CompletedTaskCardProps) {
+const CompletedTaskCard = React.memo(function CompletedTaskCard({ task }: CompletedTaskCardProps) {
   const [showActions, setShowActions] = useState(false)
   const { uncompleteTask } = useTaskStoreWithAuth()
   
@@ -342,7 +345,7 @@ function CompletedTaskCard({ task }: CompletedTaskCardProps) {
       </div>
     </Card>
   )
-}
+})
 
 interface EditTaskCardProps {
   task: Task
@@ -350,7 +353,7 @@ interface EditTaskCardProps {
   onCancel: () => void
 }
 
-function EditTaskCard({ task, onSave, onCancel }: EditTaskCardProps) {
+const EditTaskCard = React.memo(function EditTaskCard({ task, onSave, onCancel }: EditTaskCardProps) {
   const { allCategories } = useCategoryStoreWithAuth()
 
   const handleSubmit = (formData: TaskFormData) => {
@@ -385,13 +388,13 @@ function EditTaskCard({ task, onSave, onCancel }: EditTaskCardProps) {
       />
     </Card>
   )
-}
+})
 
 interface AddTaskFormProps {
   defaultCategory?: CategoryFilter
 }
 
-function AddTaskForm({ defaultCategory }: AddTaskFormProps) {
+const AddTaskForm = React.memo(function AddTaskForm({ defaultCategory }: AddTaskFormProps) {
   const { user } = useAuth()
   const { addTask } = useTaskStoreWithAuth()
   const { allCategories } = useCategoryStoreWithAuth()
@@ -440,7 +443,7 @@ function AddTaskForm({ defaultCategory }: AddTaskFormProps) {
       新しいタスクを追加
     </Button>
   )
-}
+})
 
 interface TaskPoolProps {
   onDragStart?: () => void
@@ -500,6 +503,9 @@ export function TaskPool({ onDragStart, onDragEnd }: TaskPoolProps = {}) {
   
   const { settings } = useUserSettings()
   
+  // 設定値をメモ化して不要な再レンダリングを防ぐ
+  const showScheduledTasksInPool = React.useMemo(() => settings.showScheduledTasksInPool, [settings.showScheduledTasksInPool])
+  
   const [showDebugMenu, setShowDebugMenu] = useState(false)
 
 
@@ -523,15 +529,41 @@ export function TaskPool({ onDragStart, onDragEnd }: TaskPoolProps = {}) {
     }
   }, [isCompletedCollapsed])
 
-  // ユーザー設定に基づいてタスクを取得
-  const activeTasks = settings.showScheduledTasksInPool ? getAllActiveTasks() : getUnscheduledTasks()
-  const completedTasks = getCompletedTasks()
-  const baseFilteredTasks = selectedCategory === 'all' 
-    ? activeTasks 
-    : activeTasks.filter(task => task.category === selectedCategory)
-  const filteredCompletedTasks = selectedCategory === 'all'
-    ? completedTasks
-    : completedTasks.filter(task => task.category === selectedCategory)
+  // タスクを直接フィルタリングして安定した参照を保つ
+  const activeTasks = React.useMemo(() => {
+    if (showScheduledTasksInPool) {
+      return tasks.filter(task => task.status !== 'completed')
+    } else {
+      return tasks.filter(task => !task.scheduledDate && task.status !== 'completed')
+    }
+  }, [showScheduledTasksInPool, tasks])
+  
+  // 完了済みタスクのフィルタリング（隠されたタスクを除外）
+  const completedTasks = React.useMemo(() => {
+    try {
+      const hiddenStr = localStorage.getItem('hidden_completed_tasks')
+      const hiddenIds = hiddenStr ? JSON.parse(hiddenStr) : []
+      return tasks.filter(task => 
+        task.status === 'completed' && !hiddenIds.includes(task.id)
+      )
+    } catch {
+      return tasks.filter(task => task.status === 'completed')
+    }
+  }, [tasks])
+  
+  const baseFilteredTasks = React.useMemo(() => 
+    selectedCategory === 'all' 
+      ? activeTasks 
+      : activeTasks.filter(task => task.category === selectedCategory),
+    [selectedCategory, activeTasks]
+  )
+  
+  const filteredCompletedTasks = React.useMemo(() =>
+    selectedCategory === 'all'
+      ? completedTasks
+      : completedTasks.filter(task => task.category === selectedCategory),
+    [selectedCategory, completedTasks]
+  )
 
   // ソート機能を適用
   const { 
@@ -543,16 +575,16 @@ export function TaskPool({ onDragStart, onDragEnd }: TaskPoolProps = {}) {
     onDragEnd: onSortDragEnd 
   } = useTaskSort(baseFilteredTasks, selectedCategory !== 'all' ? selectedCategory : undefined)
   
-  // ドラッグイベントの統合
+  // ドラッグイベントの統合（onSortDragStart/Endは安定しているので依存配列から除外）
   const handleDragStart = React.useCallback(() => {
     onSortDragStart()
     onDragStart?.()
-  }, [onSortDragStart, onDragStart])
+  }, [onDragStart])
   
   const handleDragEnd = React.useCallback(() => {
     onSortDragEnd()
     onDragEnd?.()
-  }, [onSortDragEnd, onDragEnd])
+  }, [onDragEnd])
 
   return (
     <div 
@@ -564,70 +596,72 @@ export function TaskPool({ onDragStart, onDragEnd }: TaskPoolProps = {}) {
       {/* Dynamic Category Tabs */}
       <div className="space-y-2">
         {/* Main tab row with category management */}
-        <div className="flex items-center justify-between gap-2">
-          <div className="flex-1 overflow-hidden">
-            <div className="flex space-x-2 overflow-x-auto scrollbar-hide pb-1">
-              {/* All tab */}
-              <Button 
-                variant={selectedCategory === 'all' ? 'default' : 'outline'}
-                size="sm" 
-                className="flex-shrink-0"
-                onClick={() => setSelectedCategory('all')}
-              >
-                すべて
-              </Button>
-              
-              {/* Built-in and custom category tabs */}
-              {allCategories.map((category) => {
-                const isGoogleTasks = category.id === 'google-tasks'
-                const isSelected = selectedCategory === category.id
+        {React.useMemo(() => (
+          <div className="flex items-center justify-between gap-2">
+            <div className="flex-1 overflow-hidden">
+              <div className="flex space-x-2 overflow-x-auto scrollbar-hide pb-1">
+                {/* All tab */}
+                <Button 
+                  variant={selectedCategory === 'all' ? 'default' : 'outline'}
+                  size="sm" 
+                  className="flex-shrink-0"
+                  onClick={() => setSelectedCategory('all')}
+                >
+                  すべて
+                </Button>
                 
-                return (
-                  <Button 
-                    key={category.id}
-                    variant={isSelected ? 'default' : 'outline'}
-                    size="sm" 
-                    className="flex-shrink-0 flex items-center space-x-1"
-                    onClick={() => setSelectedCategory(category.id)}
-                  >
-                    {/* Category indicator */}
-                    <div 
-                      className="w-2 h-2 rounded-full"
-                      style={{ backgroundColor: category.color }}
-                    />
-                    <span className="text-sm">{category.icon}</span>
-                    <span>{category.name}</span>
-                    
-                    {/* Google Tasks sync indicator */}
-                    {isGoogleTasks && (
-                      <div className={`w-1.5 h-1.5 rounded-full ${
-                        googleTasksSync.syncStatus === 'syncing' 
-                          ? 'bg-yellow-500 animate-pulse' 
-                          : googleTasksSync.syncStatus === 'error'
-                          ? 'bg-red-500'
-                          : googleTasksSync.isEnabled
-                          ? 'bg-green-500'
-                          : 'bg-gray-400'
-                      }`} />
-                    )}
-                  </Button>
-                )
-              })}
+                {/* Built-in and custom category tabs */}
+                {allCategories.map((category) => {
+                  const isGoogleTasks = category.id === 'google-tasks'
+                  const isSelected = selectedCategory === category.id
+                  
+                  return (
+                    <Button 
+                      key={category.id}
+                      variant={isSelected ? 'default' : 'outline'}
+                      size="sm" 
+                      className="flex-shrink-0 flex items-center space-x-1"
+                      onClick={() => setSelectedCategory(category.id)}
+                    >
+                      {/* Category indicator */}
+                      <div 
+                        className="w-2 h-2 rounded-full"
+                        style={{ backgroundColor: category.color }}
+                      />
+                      <span className="text-sm">{category.icon}</span>
+                      <span>{category.name}</span>
+                      
+                      {/* Google Tasks sync indicator */}
+                      {isGoogleTasks && (
+                        <div className={`w-1.5 h-1.5 rounded-full ${
+                          googleTasksSync.syncStatus === 'syncing' 
+                            ? 'bg-yellow-500 animate-pulse' 
+                            : googleTasksSync.syncStatus === 'error'
+                            ? 'bg-red-500'
+                            : googleTasksSync.isEnabled
+                            ? 'bg-green-500'
+                            : 'bg-gray-400'
+                        }`} />
+                      )}
+                    </Button>
+                  )
+                })}
+              </div>
             </div>
+            
+            {/* Category management button */}
+            <CategoryManagement>
+              <Button 
+                variant="ghost" 
+                size="sm"
+                className="flex-shrink-0 h-8 w-8 p-0"
+                title="カテゴリ管理"
+              >
+                <Settings className="w-4 h-4" />
+              </Button>
+            </CategoryManagement>
           </div>
-          
-          {/* Category management button */}
-          <CategoryManagement>
-            <Button 
-              variant="ghost" 
-              size="sm"
-              className="flex-shrink-0 h-8 w-8 p-0"
-              title="カテゴリ管理"
-            >
-              <Settings className="w-4 h-4" />
-            </Button>
-          </CategoryManagement>
-        </div>
+        ), [selectedCategory, setSelectedCategory, allCategories, googleTasksSync])}
         
         {/* Category info row */}
         {selectedCategory !== 'all' && (() => {
@@ -799,19 +833,29 @@ export function TaskPool({ onDragStart, onDragEnd }: TaskPoolProps = {}) {
 
       {/* Task List */}
       <div className="flex-1 overflow-y-auto space-y-3 mb-0">
-        <SortableContext 
-          items={filteredTasks.map(task => task.scheduledDate ? `pool-${task.id}` : task.id)} 
-          strategy={verticalListSortingStrategy}
-        >
-          {filteredTasks.map((task) => (
-            <DraggableTaskCard 
-              key={task.id} 
-              task={task} 
-              onDragStart={handleDragStart}
-              onDragEnd={handleDragEnd}
-            />
-          ))}
-        </SortableContext>
+        {/* Sortable items を事前に計算 */}
+        {(() => {
+          const sortableItems = React.useMemo(() => 
+            filteredTasks.map(task => task.scheduledDate ? `pool-${task.id}` : task.id),
+            [filteredTasks]
+          )
+          
+          return (
+            <SortableContext 
+              items={sortableItems} 
+              strategy={verticalListSortingStrategy}
+            >
+              {filteredTasks.map((task) => (
+                <DraggableTaskCard 
+                  key={task.id} 
+                  task={task} 
+                  onDragStart={handleDragStart}
+                  onDragEnd={handleDragEnd}
+                />
+              ))}
+            </SortableContext>
+          )
+        })()}
         
         {filteredTasks.length === 0 && (
           <div className="text-center text-muted-foreground py-8">
