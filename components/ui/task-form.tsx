@@ -71,21 +71,21 @@ const urgencyOptions = [
   { value: 'low', label: '低', description: '時間に余裕あり', color: 'text-blue-600' }
 ] as const
 
-// Time options for estimated time dropdown (deprecated - now using free input)
-// const timeOptions = [
-//   { value: 15, label: '15分' },
-//   { value: 30, label: '30分' },
-//   { value: 45, label: '45分' },
-//   { value: 60, label: '1時間' },
-//   { value: 90, label: '1時間30分' },
-//   { value: 120, label: '2時間' },
-//   { value: 180, label: '3時間' },
-//   { value: 240, label: '4時間' },
-//   { value: 300, label: '5時間' },
-//   { value: 360, label: '6時間' },
-//   { value: 420, label: '7時間' },
-//   { value: 480, label: '8時間' }
-// ] as const
+// Time options for estimated time dropdown
+const timeOptions = [
+  { value: 15, label: '15分' },
+  { value: 30, label: '30分' },
+  { value: 45, label: '45分' },
+  { value: 60, label: '1時間' },
+  { value: 90, label: '1時間30分' },
+  { value: 120, label: '2時間' },
+  { value: 180, label: '3時間' },
+  { value: 240, label: '4時間' },
+  { value: 300, label: '5時間' },
+  { value: 360, label: '6時間' },
+  { value: 420, label: '7時間' },
+  { value: 480, label: '8時間' }
+] as const
 
 // Base Task Form Component
 export function BaseTaskForm({
@@ -254,40 +254,22 @@ export function BaseTaskForm({
           </SelectContent>
         </Select>
 
-        <div className="flex items-center gap-1">
-          <Input
-            type="number"
-            value={formData.estimatedTime === '' ? '' : formData.estimatedTime}
-            onChange={(e) => {
-              const value = e.target.value
-              if (value === '') {
-                setFormData(prev => ({ ...prev, estimatedTime: '' }))
-              } else {
-                const numValue = parseInt(value)
-                if (!isNaN(numValue) && numValue >= 0) {
-                  setFormData(prev => ({ ...prev, estimatedTime: numValue }))
-                }
-              }
-            }}
-            onBlur={(e) => {
-              const value = e.target.value
-              const numValue = parseInt(value)
-              if (!value || isNaN(numValue) || numValue < 5) {
-                setFormData(prev => ({ ...prev, estimatedTime: 30 }))
-              } else if (numValue > 480) {
-                setFormData(prev => ({ ...prev, estimatedTime: 480 }))
-              } else {
-                setFormData(prev => ({ ...prev, estimatedTime: numValue }))
-              }
-            }}
-            className={cn(inputSize, selectSize, "w-16")}
-            placeholder="30"
-            min="5"
-            max="480"
-            disabled={isSubmitting}
-          />
-          <span className={cn(inputSize, "text-muted-foreground")}>分</span>
-        </div>
+        <Select
+          value={String(formData.estimatedTime)}
+          onValueChange={(value) => setFormData(prev => ({ ...prev, estimatedTime: parseInt(value) }))}
+          disabled={isSubmitting}
+        >
+          <SelectTrigger className={cn(inputSize, selectSize)}>
+            <SelectValue placeholder="時間を選択" />
+          </SelectTrigger>
+          <SelectContent>
+            {timeOptions.map((option) => (
+              <SelectItem key={option.value} value={String(option.value)}>
+                <span className={inputSize}>{option.label}</span>
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </div>
 
       {/* Date and Time Picker (for extended variant) */}
