@@ -485,11 +485,8 @@ function AddTimeSlotTaskForm({ time, hour, minute, onSave, onCancel, scheduledTa
   // Calculate default duration based on available time
   const calculatedDuration = calculateAvailableDuration(time, scheduledTasks)
   
-  // Find the closest available time option
-  const timeOptions = [15, 30, 45, 60, 90, 120, 180, 240, 300, 360, 420, 480]
-  const defaultDuration = timeOptions.reduce((prev, curr) => {
-    return Math.abs(curr - calculatedDuration) < Math.abs(prev - calculatedDuration) ? curr : prev
-  })
+  // Use the calculated duration directly (no need to round to predefined options)
+  const defaultDuration = Math.min(Math.max(calculatedDuration, 5), 480) // Clamp between 5 and 480 minutes
 
   const handleSubmit = (formData: TaskFormData) => {
     const finalData = {
