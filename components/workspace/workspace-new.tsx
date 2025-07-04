@@ -229,8 +229,15 @@ export function WorkspaceNew() {
     // 通常のタスクの場合
     let task = tasks.find(t => t.id === activeId)
     
-    // スケジュール済みタスクの場合 (scheduled-taskId-slotId format)
-    if (!task && activeId.startsWith('scheduled-')) {
+    // タスクプールのスケジュール済みタスクの場合 (pool-taskId format)
+    if (!task && activeId.startsWith('pool-')) {
+      const taskId = activeId.substring(5) // 'pool-' を除去
+      task = tasks.find(t => t.id === taskId)
+      console.log('Extracted task ID from pool:', taskId)
+    }
+    
+    // タイムラインのスケジュール済みタスクの場合 (scheduled-taskId-slotId format)
+    else if (!task && activeId.startsWith('scheduled-')) {
       // scheduled-{UUID}-{UUID} の形式からタスクIDを正しく抽出
       // UUIDは36文字固定なので、scheduled- を除いて前から36文字がtaskId
       const withoutPrefix = activeId.substring(10) // 'scheduled-' を除去
@@ -267,8 +274,15 @@ export function WorkspaceNew() {
     
     const { active, over } = event
     
-    const activeId = active.id.toString()
+    let activeId = active.id.toString()
     const overId = over?.id.toString()
+    
+    // pool- プレフィックスを除去して実際のタスクIDを取得
+    let actualTaskId = activeId
+    if (activeId.startsWith('pool-')) {
+      actualTaskId = activeId.substring(5)
+      console.log('🔍 Removed pool prefix:', activeId, '->', actualTaskId)
+    }
     
     // 通常のドラッグ&ドロップ処理（overが存在する場合）
     if (over) {
@@ -278,15 +292,16 @@ export function WorkspaceNew() {
       if (overId && !overId.startsWith('timeline-slot-') && !overId.startsWith('scheduled-') && 
           overId !== 'task-pool' && !activeId.startsWith('scheduled-')) {
         console.log('🔄 Task pool reorder:', activeId, 'over', overId)
+        // reorderTasksは内部でpool-プレフィックスを処理するので、そのまま渡す
         reorderTasks(activeId, overId)
       }
       
       // 2. タスクプール → タイムライン (既存タスクの新規スケジュール)
       else if (overId && overId.startsWith('timeline-slot-') && !activeId.startsWith('scheduled-') && user) {
         const timeString = overId.replace('timeline-slot-', '')
-        console.log('📅➡️ Moving task to timeline:', { activeId, timeString, selectedDate: selectedDate.toDateString(), userId: user.id })
-        moveTaskToTimeline(activeId, selectedDate, timeString, user.id)
-        console.log('✅ Normal: Moved task to timeline slot:', activeId, 'at', timeString, 'on', selectedDate.toDateString())
+        console.log('📅➡️ Moving task to timeline:', { actualTaskId, timeString, selectedDate: selectedDate.toDateString(), userId: user.id })
+        moveTaskToTimeline(actualTaskId, selectedDate, timeString, user.id)
+        console.log('✅ Normal: Moved task to timeline slot:', actualTaskId, 'at', timeString, 'on', selectedDate.toDateString())
       }
       
       // 3. タイムライン → 別のタイムスロット (スケジュール済みタスクの移動)
@@ -356,9 +371,9 @@ export function WorkspaceNew() {
         // 15分単位に丸める
         const roundedMinute = Math.floor(currentMinute / 15) * 15
         const timeString = `${currentHour.toString().padStart(2, '0')}:${roundedMinute.toString().padStart(2, '0')}`
-        console.log('📱📅➡️ Cross-view moving task to selected date:', { activeId, timeString, selectedDate: selectedDate.toDateString(), userId: user.id })
-        moveTaskToTimeline(activeId, selectedDate, timeString, user.id)
-        console.log('✅ Cross-view: Moved task to selected date:', activeId, 'at', timeString, 'on', selectedDate.toDateString())
+        console.log('📱📅➡️ Cross-view moving task to selected date:', { actualTaskId, timeString, selectedDate: selectedDate.toDateString(), userId: user.id })
+        moveTaskToTimeline(actualTaskId, selectedDate, timeString, user.id)
+        console.log('✅ Cross-view: Moved task to selected date:', actualTaskId, 'at', timeString, 'on', selectedDate.toDateString())
       }
       
       // タイムラインからタスクプールへのクロスビュードラッグ

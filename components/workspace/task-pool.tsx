@@ -58,6 +58,10 @@ function DraggableTaskCard({ task, onDragStart, onDragEnd }: DraggableTaskCardPr
   const [showDetail, setShowDetail] = useState(false)
   const { updateTask, deleteTask, completeTask, addTask } = useTaskStoreWithAuth()
   const { user } = useAuth()
+  
+  // スケジュール済みタスクの場合は、IDにプレフィックスを追加してユニークにする
+  const draggableId = task.scheduledDate ? `pool-${task.id}` : task.id
+  
   const {
     attributes,
     listeners,
@@ -66,7 +70,7 @@ function DraggableTaskCard({ task, onDragStart, onDragEnd }: DraggableTaskCardPr
     transition,
     isDragging
   } = useSortable({ 
-    id: task.id,
+    id: draggableId,
     data: {
       onDragStart,
       onDragEnd
@@ -796,7 +800,7 @@ export function TaskPool({ onDragStart, onDragEnd }: TaskPoolProps = {}) {
       {/* Task List */}
       <div className="flex-1 overflow-y-auto space-y-3 mb-0">
         <SortableContext 
-          items={filteredTasks.map(task => task.id)} 
+          items={filteredTasks.map(task => task.scheduledDate ? `pool-${task.id}` : task.id)} 
           strategy={verticalListSortingStrategy}
         >
           {filteredTasks.map((task) => (

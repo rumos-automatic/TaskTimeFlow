@@ -191,8 +191,13 @@ export const useTaskStore = create<TaskStore>()(
 
       reorderTasks: (activeId, overId) => {
         const { tasks } = get()
-        const activeIndex = tasks.findIndex((task) => task.id === activeId)
-        const overIndex = tasks.findIndex((task) => task.id === overId)
+        
+        // pool- プレフィックスを除去
+        const actualActiveId = activeId.startsWith('pool-') ? activeId.substring(5) : activeId
+        const actualOverId = overId.startsWith('pool-') ? overId.substring(5) : overId
+        
+        const activeIndex = tasks.findIndex((task) => task.id === actualActiveId)
+        const overIndex = tasks.findIndex((task) => task.id === actualOverId)
         
         if (activeIndex === -1 || overIndex === -1) return
         
