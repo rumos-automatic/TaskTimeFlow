@@ -840,26 +840,50 @@ export function WorkspaceNew() {
 
         {/* リサイザーバー */}
         <div
-          className={`relative w-1 bg-border/20 hover:bg-border/40 transition-all duration-200 cursor-col-resize group ${
-            isResizing ? 'bg-primary/50 w-1.5' : ''
+          className={`relative w-1 bg-border/10 hover:bg-gradient-to-r hover:from-primary/20 hover:to-primary/30 transition-all duration-300 cursor-col-resize group ${
+            isResizing ? 'bg-gradient-to-r from-primary/40 to-primary/60 w-1.5 shadow-lg' : ''
           }`}
           onMouseDown={handleResizeStart}
           style={{
             // クリック領域を広げるために padding を追加
-            paddingLeft: '2px',
-            paddingRight: '2px',
-            marginLeft: '-2px',
-            marginRight: '-2px'
+            paddingLeft: '4px',
+            paddingRight: '4px',
+            marginLeft: '-4px',
+            marginRight: '-4px'
           }}
         >
-          {/* ホバー時の視覚的フィードバック */}
-          <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-            <div className="w-0.5 h-8 bg-border/60 rounded-full shadow-sm" />
+          {/* ホバー時のモダンな視覚的フィードバック */}
+          <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-300 ease-out">
+            {/* メインハンドル */}
+            <div className="relative">
+              <div className="w-1 h-12 bg-gradient-to-b from-primary/60 via-primary/80 to-primary/60 rounded-full shadow-xl blur-[0.5px]" />
+              <div className="absolute inset-0 w-1 h-12 bg-gradient-to-b from-white/30 via-white/10 to-white/30 rounded-full" />
+              {/* グリップドット */}
+              <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 flex flex-col space-y-0.5">
+                <div className="w-0.5 h-0.5 bg-white/60 rounded-full" />
+                <div className="w-0.5 h-0.5 bg-white/60 rounded-full" />
+                <div className="w-0.5 h-0.5 bg-white/60 rounded-full" />
+              </div>
+            </div>
           </div>
-          {/* ドラッグ中の視覚的フィードバック */}
+          
+          {/* ドラッグ中のプレミアムフィードバック */}
           {isResizing && (
             <div className="absolute inset-0 flex items-center justify-center">
-              <div className="w-0.5 h-12 bg-primary rounded-full animate-pulse shadow-lg" />
+              <div className="relative">
+                {/* グロー効果 */}
+                <div className="absolute inset-0 w-2 h-16 bg-primary/40 rounded-full blur-md animate-pulse" />
+                {/* メインバー */}
+                <div className="w-1 h-16 bg-gradient-to-b from-primary via-primary/90 to-primary rounded-full shadow-2xl">
+                  <div className="absolute inset-0 w-1 h-16 bg-gradient-to-b from-white/40 via-transparent to-white/20 rounded-full" />
+                </div>
+                {/* 動くグリップドット */}
+                <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 flex flex-col space-y-1">
+                  <div className="w-0.5 h-0.5 bg-white/80 rounded-full animate-pulse" />
+                  <div className="w-0.5 h-0.5 bg-white/80 rounded-full animate-pulse" style={{ animationDelay: '0.1s' }} />
+                  <div className="w-0.5 h-0.5 bg-white/80 rounded-full animate-pulse" style={{ animationDelay: '0.2s' }} />
+                </div>
+              </div>
             </div>
           )}
         </div>
