@@ -561,6 +561,7 @@ export function WorkspaceNew() {
                   setHasInitialScroll={setHasInitialTimelineScroll}
                   selectedDate={selectedDate}
                   setSelectedDate={setSelectedDate}
+                  mobileContainerRef={mobileTimelineRef}
                 />
               </div>
             )}

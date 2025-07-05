@@ -912,13 +912,15 @@ interface TimelineProps {
   setHasInitialScroll?: (value: boolean) => void
   selectedDate?: Date
   setSelectedDate?: (date: Date) => void
+  mobileContainerRef?: React.RefObject<HTMLDivElement | null>
 }
 
 export function Timeline({ 
   hasInitialScroll = false, 
   setHasInitialScroll,
   selectedDate: propSelectedDate,
-  setSelectedDate: propSetSelectedDate
+  setSelectedDate: propSetSelectedDate,
+  mobileContainerRef
 }: TimelineProps = {}) {
   const [viewMode, setViewMode] = useState<'timeline' | 'calendar'>('timeline')
   
@@ -1008,7 +1010,12 @@ export function Timeline({
 
   // Function to scroll to current time indicator
   const scrollToCurrentTime = useCallback(() => {
-    if (!currentTimeIndicatorRef.current || !timelineContainerRef.current) return
+    // モバイルの場合は親コンテナを使用、それ以外は内部コンテナを使用
+    const scrollContainer = isMobile && mobileContainerRef?.current 
+      ? mobileContainerRef.current 
+      : timelineContainerRef.current
+      
+    if (!currentTimeIndicatorRef.current || !scrollContainer) return
     
     // Calculate scroll position based on current time
     const currentSlotIndex = currentHour * 4 + Math.floor(currentMinute / 15)
@@ -1018,20 +1025,23 @@ export function Timeline({
       totalHeight += slotMinute === 0 ? 64 : 40 // h-16 or h-10
     }
     
+    // モバイルの場合はヘッダー分の高さ（約200px）を追加で考慮
+    const headerOffset = isMobile ? 200 : 0
+    
     // PC/スマホで異なる表示位置
-    const containerHeight = timelineContainerRef.current.clientHeight
+    const containerHeight = scrollContainer.clientHeight
     let calculatedScrollPosition
     
     if (isMobile) {
-      // スマホ：現在時刻を画面上部（上から150px）に表示
-      calculatedScrollPosition = Math.max(0, totalHeight - 150)
+      // スマホ：現在時刻を画面上部（上から150px）に表示、ヘッダー分を追加
+      calculatedScrollPosition = Math.max(0, totalHeight + headerOffset - 150)
     } else {
       // PC：現在時刻を画面上部（上から100px）に表示
       calculatedScrollPosition = Math.max(0, totalHeight - 100)
     }
     
-    timelineContainerRef.current.scrollTop = calculatedScrollPosition
-  }, [currentHour, currentMinute, isMobile])
+    scrollContainer.scrollTop = calculatedScrollPosition
+  }, [currentHour, currentMinute, isMobile, mobileContainerRef])
 
   // Scroll to current time on component mount
   useEffect(() => {
@@ -1047,9 +1057,14 @@ export function Timeline({
         return
       }
       
-      if (currentTimeIndicatorRef.current && timelineContainerRef.current) {
+      // モバイルの場合は親コンテナを使用、それ以外は内部コンテナを使用
+      const scrollContainer = isMobile && mobileContainerRef?.current 
+        ? mobileContainerRef.current 
+        : timelineContainerRef.current
+        
+      if (currentTimeIndicatorRef.current && scrollContainer) {
         // コンテナの高さが確定してからスクロール
-        const containerHeight = timelineContainerRef.current.clientHeight
+        const containerHeight = scrollContainer.clientHeight
         if (containerHeight > 0) {
           scrollToCurrentTime()
           
@@ -1070,7 +1085,7 @@ export function Timeline({
     // Start after DOM is ready (モバイルの場合は遅延を増やす)
     const timer = setTimeout(attemptScroll, isMobile ? 500 : 200)
     return () => clearTimeout(timer)
-  }, [hasInitialScroll, setHasInitialScroll, scrollToCurrentTime, isMobile])
+  }, [hasInitialScroll, setHasInitialScroll, scrollToCurrentTime, isMobile, mobileContainerRef])
   
 
   return (
@@ -1191,7 +1206,7 @@ export function Timeline({
       {viewMode === 'timeline' ? (
         <div 
           ref={timelineContainerRef}
-          className="flex-1 overflow-y-auto" 
+          className={`flex-1 ${isMobile && mobileContainerRef ? '' : 'overflow-y-auto'}`} 
           data-timeline="true"
         >
           <SortableContext items={sortableIds} strategy={verticalListSortingStrategy}>
