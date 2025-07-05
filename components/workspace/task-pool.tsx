@@ -617,12 +617,22 @@ export function TaskPool({ onDragStart, onDragEnd }: TaskPoolProps = {}) {
     }
   }, []) // 初回のみ実行
   
-  // 完了済みタスクのフィルタリング（隠されたタスクを除外）
+  // 完了済みタスクのフィルタリング（隠されたタスクを除外、スケジュール済みタスク設定も考慮）
   const completedTasks = React.useMemo(() => {
-    return tasks.filter(task => 
-      task.status === 'completed' && !hiddenCompletedTaskIds.includes(task.id)
-    )
-  }, [tasks, hiddenCompletedTaskIds])
+    if (showScheduledTasksInPool) {
+      // スケジュール済みタスクも表示する設定の場合
+      return tasks.filter(task => 
+        task.status === 'completed' && !hiddenCompletedTaskIds.includes(task.id)
+      )
+    } else {
+      // スケジュール済みタスクを表示しない設定の場合
+      return tasks.filter(task => 
+        task.status === 'completed' && 
+        !task.scheduledDate && 
+        !hiddenCompletedTaskIds.includes(task.id)
+      )
+    }
+  }, [showScheduledTasksInPool, tasks, hiddenCompletedTaskIds])
   
   const baseFilteredTasks = React.useMemo(() => 
     selectedCategory === 'all' 
