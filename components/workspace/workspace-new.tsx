@@ -75,6 +75,11 @@ export function WorkspaceNew() {
   // AI チャット表示管理
   const [showAIChat, setShowAIChat] = useState(false)
 
+  // リサイザー関連の状態管理
+  const [leftPanelWidth, setLeftPanelWidth] = useState(33) // デフォルト33%
+  const [isResizing, setIsResizing] = useState(false)
+  const containerRef = React.useRef<HTMLDivElement>(null)
+
   // フッター要素のref
   const footerRef = React.useRef<HTMLDivElement>(null)
   
@@ -92,6 +97,58 @@ export function WorkspaceNew() {
   const [hasInitialTimelineScroll, setHasInitialTimelineScroll] = React.useState(false)
 
   // カテゴリストアは useCategoryStoreWithAuth で自動初期化される
+
+  // localStorage から幅設定を読み込み
+  React.useEffect(() => {
+    const savedWidth = localStorage.getItem('taskTimeFlow-leftPanelWidth')
+    if (savedWidth) {
+      const width = parseInt(savedWidth)
+      if (width >= 25 && width <= 60) { // 25%～60%の範囲で制限
+        setLeftPanelWidth(width)
+      }
+    }
+  }, [])
+
+  // 幅変更時にlocalStorageに保存
+  React.useEffect(() => {
+    localStorage.setItem('taskTimeFlow-leftPanelWidth', leftPanelWidth.toString())
+  }, [leftPanelWidth])
+
+  // リサイザーのドラッグ機能
+  const handleResizeStart = React.useCallback((e: React.MouseEvent) => {
+    e.preventDefault()
+    setIsResizing(true)
+    
+    // ドラッグ中のカーソルスタイルを設定
+    document.body.style.cursor = 'col-resize'
+    document.body.style.userSelect = 'none'
+    
+    const handleMouseMove = (e: MouseEvent) => {
+      if (!containerRef.current) return
+      
+      const containerRect = containerRef.current.getBoundingClientRect()
+      const newLeftWidth = ((e.clientX - containerRect.left) / containerRect.width) * 100
+      
+      // 最小幅25%、最大幅60%で制限
+      const minWidth = 25
+      const maxWidth = 60
+      const clampedWidth = Math.max(minWidth, Math.min(maxWidth, newLeftWidth))
+      
+      setLeftPanelWidth(clampedWidth)
+    }
+    
+    const handleMouseUp = () => {
+      setIsResizing(false)
+      // カーソルスタイルをリセット
+      document.body.style.cursor = ''
+      document.body.style.userSelect = ''
+      document.removeEventListener('mousemove', handleMouseMove)
+      document.removeEventListener('mouseup', handleMouseUp)
+    }
+    
+    document.addEventListener('mousemove', handleMouseMove)
+    document.addEventListener('mouseup', handleMouseUp)
+  }, [])
 
   
   // ビュー切り替え時のスクロール位置リセット
@@ -746,13 +803,17 @@ export function WorkspaceNew() {
       onDragStart={handleDragStart}
       onDragEnd={handleDragEnd}
     >
-      <div className="flex h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800">
+      <div 
+        ref={containerRef}
+        className={`flex h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800 ${isResizing ? 'select-none' : ''}`}
+      >
         {/* タスクプール */}
         <motion.div
           initial={{ x: -100, opacity: 0 }}
           animate={{ x: 0, opacity: 1 }}
           transition={{ duration: 0.5 }}
-          className="w-1/3 min-w-[320px] border-r border-border/40 bg-card/50 backdrop-blur-sm h-full overflow-hidden"
+          className="bg-card/50 backdrop-blur-sm h-full overflow-hidden"
+          style={{ width: `${leftPanelWidth}%`, minWidth: '320px' }}
         >
           <div className="p-6 h-full flex flex-col">
             <div className="flex items-center justify-between mb-6 flex-shrink-0">
@@ -777,14 +838,39 @@ export function WorkspaceNew() {
           </div>
         </motion.div>
 
-        <Separator orientation="vertical" className="w-px" />
+        {/* リサイザーバー */}
+        <div
+          className={`relative w-1 bg-border/20 hover:bg-border/40 transition-all duration-200 cursor-col-resize group ${
+            isResizing ? 'bg-primary/50 w-1.5' : ''
+          }`}
+          onMouseDown={handleResizeStart}
+          style={{
+            // クリック領域を広げるために padding を追加
+            paddingLeft: '2px',
+            paddingRight: '2px',
+            marginLeft: '-2px',
+            marginRight: '-2px'
+          }}
+        >
+          {/* ホバー時の視覚的フィードバック */}
+          <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+            <div className="w-0.5 h-8 bg-border/60 rounded-full shadow-sm" />
+          </div>
+          {/* ドラッグ中の視覚的フィードバック */}
+          {isResizing && (
+            <div className="absolute inset-0 flex items-center justify-center">
+              <div className="w-0.5 h-12 bg-primary rounded-full animate-pulse shadow-lg" />
+            </div>
+          )}
+        </div>
 
         {/* タイムライン */}
         <motion.div
           initial={{ y: 100, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           transition={{ duration: 0.5, delay: 0.2 }}
-          className="flex-1 bg-background/50 backdrop-blur-sm h-full overflow-hidden"
+          className="bg-background/50 backdrop-blur-sm h-full overflow-hidden"
+          style={{ width: `${100 - leftPanelWidth}%`, minWidth: '400px' }}
         >
           <div className="p-6 h-full flex flex-col">
             <div className="flex items-center justify-between mb-6">
