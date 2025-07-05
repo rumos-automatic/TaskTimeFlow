@@ -186,3 +186,31 @@ npm run db:studio     # Open database studio
 - `/docs/database-schema.md` - Database schema and data models
 - `/docs/api-specification.md` - API endpoints and specifications
 - `/docs/auth-architecture.md` - Authentication and authorization design
+
+## Development Best Practices
+
+### スクロール位置計算の注意点
+タイムラインやカレンダーなど、スクロール位置を計算する際は以下に注意：
+
+1. **動的コンテンツを考慮する**
+   - Due Tasksセクションなど、条件によって表示される要素の高さを考慮
+   - `querySelector`を使用して実際の要素サイズを取得
+   - 例: `const dueSectionElement = container.querySelector('.bg-orange-50')`
+
+2. **スペーシングを忘れない**
+   - Tailwindの`space-y-*`クラスによるマージンを計算に含める
+   - 例: `space-y-4`は16pxのマージン
+
+3. **モバイルとPCで異なる処理**
+   - モバイルでは二重スクロールコンテナ問題に注意
+   - 親コンテナと子コンテナのどちらを使用するか明確にする
+
+4. **初回ロード時のタイミング**
+   - DOM要素が確実にレンダリングされてからスクロール計算を行う
+   - 必要に応じてリトライロジックを実装
+
+### テスト時の確認ポイント
+- [ ] モバイルとPCの両方で動作確認
+- [ ] 動的コンテンツ（Due Tasksなど）の有無による動作確認
+- [ ] 初回ロード時とリロード時の両方で確認
+- [ ] ビュー切り替え時の動作確認
