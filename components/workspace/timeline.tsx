@@ -47,6 +47,8 @@ function ScheduledTaskCard({ task, slotId, slotData }: ScheduledTaskCardProps) {
   const [resizeStartY, setResizeStartY] = useState(0)
   const [resizeStartHeight, setResizeStartHeight] = useState(0)
   const [tempEstimatedTime, setTempEstimatedTime] = useState(slotData.estimatedTime || 60)
+  const [tempStartTime, setTempStartTime] = useState(slotData.startTime)
+  const [resizePosition, setResizePosition] = useState<'top' | 'bottom' | null>(null)
   const cardRef = useRef<HTMLDivElement>(null)
   
   const { updateTask, removeTimeSlot, completeTask, uncompleteTask, addTask, moveTaskToTimeline } = useTaskStoreWithAuth()
@@ -75,11 +77,13 @@ function ScheduledTaskCard({ task, slotId, slotData }: ScheduledTaskCardProps) {
     setResizeStartY(clientY)
     setResizeStartHeight(cardRef.current?.offsetHeight || 0)
     setIsResizing(true)
+    setResizePosition(position)
     setTempEstimatedTime(slotData.estimatedTime || 60)
+    setTempStartTime(slotData.startTime)
   }
 
   const handleResizeMove = useCallback((e: MouseEvent | TouchEvent) => {
-    if (!isResizing || !cardRef.current) return
+    if (!isResizing || !cardRef.current || !resizePosition) return
     
     const clientY = 'touches' in e ? e.touches[0].clientY : e.clientY
     const deltaY = clientY - resizeStartY
@@ -89,34 +93,59 @@ function ScheduledTaskCard({ task, slotId, slotData }: ScheduledTaskCardProps) {
     const slotsChanged = Math.round(deltaY / pixelsPerSlot)
     const minutesChanged = slotsChanged * 15
     
-    // 新しい推定時間を計算（最小15分、最大240分）
-    const newEstimatedTime = Math.max(15, Math.min(240, (slotData.estimatedTime || 60) + minutesChanged))
-    setTempEstimatedTime(newEstimatedTime)
-  }, [isResizing, resizeStartY, slotData.estimatedTime])
+    if (resizePosition === 'top') {
+      // 上部リサイズ：開始時間を変更
+      // deltaYが負 = 上に移動 = 開始時間が早くなる
+      const [startHour, startMinute] = slotData.startTime.split(':').map(Number)
+      const startTotalMinutes = startHour * 60 + startMinute
+      const newStartTotalMinutes = startTotalMinutes + minutesChanged
+      
+      // 0:00-23:45の範囲に制限
+      const clampedStartMinutes = Math.max(0, Math.min(23 * 60 + 45, newStartTotalMinutes))
+      const newStartHour = Math.floor(clampedStartMinutes / 60)
+      const newStartMinute = clampedStartMinutes % 60
+      const newStartTime = `${newStartHour.toString().padStart(2, '0')}:${newStartMinute.toString().padStart(2, '0')}`
+      
+      // 開始時間の変更に伴い、推定時間も調整（最小15分を保つ）
+      const originalEndMinutes = startTotalMinutes + (slotData.estimatedTime || 60)
+      const newEstimatedTime = Math.max(15, originalEndMinutes - clampedStartMinutes)
+      
+      setTempStartTime(newStartTime)
+      setTempEstimatedTime(newEstimatedTime)
+    } else {
+      // 下部リサイズ：終了時間を変更（推定時間を変更）
+      const newEstimatedTime = Math.max(15, Math.min(240, (slotData.estimatedTime || 60) + minutesChanged))
+      setTempEstimatedTime(newEstimatedTime)
+    }
+  }, [isResizing, resizeStartY, slotData.estimatedTime, slotData.startTime, resizePosition])
 
   const handleResizeEnd = useCallback(async () => {
     if (!isResizing) return
     
     setIsResizing(false)
+    setResizePosition(null)
     
     // 時間が変更された場合のみ更新
-    if (tempEstimatedTime !== (slotData.estimatedTime || 60)) {
+    const timeChanged = tempEstimatedTime !== (slotData.estimatedTime || 60)
+    const startTimeChanged = tempStartTime !== slotData.startTime
+    
+    if (timeChanged || startTimeChanged) {
       const slotDate = slotData.date instanceof Date ? slotData.date : new Date(slotData.date)
       
       // タスクを更新
       await updateTask(task.id, {
         estimatedTime: tempEstimatedTime,
         scheduledDate: slotDate,
-        scheduledTime: slotData.startTime
+        scheduledTime: tempStartTime
       })
       
       // タイムスロットを再作成
       await removeTimeSlot(slotId)
       if (user) {
-        await moveTaskToTimeline(task.id, slotDate, slotData.startTime, user.id)
+        await moveTaskToTimeline(task.id, slotDate, tempStartTime, user.id)
       }
     }
-  }, [isResizing, tempEstimatedTime, slotData, task.id, updateTask, removeTimeSlot, moveTaskToTimeline, user, slotId])
+  }, [isResizing, tempEstimatedTime, tempStartTime, slotData, task.id, updateTask, removeTimeSlot, moveTaskToTimeline, user, slotId])
 
   // リサイズ中のマウス/タッチイベントをリッスン
   useEffect(() => {
@@ -298,7 +327,12 @@ function ScheduledTaskCard({ task, slotId, slotData }: ScheduledTaskCardProps) {
               {/* 時間表示 */}
               <div className="flex items-center space-x-1 text-muted-foreground">
                 <Clock className="w-3 h-3" />
-                <span>{isResizing ? tempEstimatedTime : (slotData.estimatedTime || 60)}分</span>
+                <span>
+                  {isResizing && resizePosition === 'top' && (
+                    <span className="text-primary font-medium">{tempStartTime} - </span>
+                  )}
+                  {isResizing ? tempEstimatedTime : (slotData.estimatedTime || 60)}分
+                </span>
                 {isCompleted && (
                   <Check className="w-3 h-3 ml-1 text-green-600" />
                 )}
