@@ -7,7 +7,8 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
-import { Plus, Circle, Clock, AlertCircle, X, Edit2, Trash2, MoreVertical, Check, RotateCcw, ChevronDown, ChevronUp, Settings, ChevronLeft, ChevronRight, Copy, FileText, ArrowUpDown, GripVertical, TrendingDown, TrendingUp, Zap, CalendarPlus, CalendarMinus, Timer, Hourglass, SortAsc, SortDesc, CalendarDays } from 'lucide-react'
+import { Checkbox } from '@/components/ui/checkbox'
+import { Plus, Circle, Clock, AlertCircle, X, Edit2, Trash2, MoreVertical, Check, RotateCcw, ChevronDown, ChevronUp, Settings, ChevronLeft, ChevronRight, Copy, FileText, ArrowUpDown, GripVertical, TrendingDown, TrendingUp, Zap, CalendarPlus, CalendarMinus, Timer, Hourglass, SortAsc, SortDesc, CalendarDays, ListChecks } from 'lucide-react'
 import { useTaskStoreWithAuth } from '@/lib/hooks/use-task-store-with-auth'
 import { useAuth } from '@/lib/auth/auth-context'
 import { useSortable, SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable'
@@ -50,6 +51,9 @@ interface DraggableTaskCardProps {
   task: Task
   onDragStart?: () => void
   onDragEnd?: () => void
+  isSelectionMode?: boolean
+  isSelected?: boolean
+  onToggleSelection?: (taskId: string) => void
 }
 
 // タスクカードの詳細な比較関数
@@ -67,11 +71,21 @@ const areTaskCardsEqual = (prevProps: DraggableTaskCardProps, nextProps: Draggab
     prevProps.task.notes === nextProps.task.notes &&
     prevProps.task.dueDate === nextProps.task.dueDate &&
     prevProps.onDragStart === nextProps.onDragStart &&
-    prevProps.onDragEnd === nextProps.onDragEnd
+    prevProps.onDragEnd === nextProps.onDragEnd &&
+    prevProps.isSelectionMode === nextProps.isSelectionMode &&
+    prevProps.isSelected === nextProps.isSelected &&
+    prevProps.onToggleSelection === nextProps.onToggleSelection
   )
 }
 
-const DraggableTaskCard = React.memo(function DraggableTaskCard({ task, onDragStart, onDragEnd }: DraggableTaskCardProps) {
+const DraggableTaskCard = React.memo(function DraggableTaskCard({ 
+  task, 
+  onDragStart, 
+  onDragEnd, 
+  isSelectionMode = false,
+  isSelected = false,
+  onToggleSelection
+}: DraggableTaskCardProps) {
   const [showActions, setShowActions] = useState(false)
   const [isEditing, setIsEditing] = useState(false)
   const [showDetail, setShowDetail] = useState(false)
@@ -96,7 +110,8 @@ const DraggableTaskCard = React.memo(function DraggableTaskCard({ task, onDragSt
     data: {
       onDragStart,
       onDragEnd
-    }
+    },
+    disabled: isSelectionMode // 選択モード時はドラッグを無効化
   })
 
   const style = {
@@ -161,15 +176,27 @@ const DraggableTaskCard = React.memo(function DraggableTaskCard({ task, onDragSt
       <Card
         className={`p-4 transition-all hover:shadow-md group relative ${
           priorityColors[task.priority]
-        } ${urgencyColors[task.urgency]}`}
+        } ${urgencyColors[task.urgency]} ${
+          isSelected ? 'ring-2 ring-primary' : ''
+        }`}
         onMouseEnter={() => setShowActions(true)}
         onMouseLeave={() => setShowActions(false)}
       >
         <div 
-          {...listeners}
+          {...(!isSelectionMode ? listeners : {})}
           {...attributes}
-          className="flex items-start justify-between relative cursor-move w-full"
+          className="flex items-start justify-between relative w-full"
         >
+          {/* チェックボックス（選択モード時のみ表示） */}
+          {isSelectionMode && (
+            <div className="mr-3 flex items-center">
+              <Checkbox
+                checked={isSelected}
+                onCheckedChange={() => onToggleSelection?.(task.id)}
+                className="mt-0.5"
+              />
+            </div>
+          )}
           <div className="flex-1">
             <h4 
               className="font-medium text-sm mb-2 cursor-pointer hover:text-primary transition-colors"
@@ -227,8 +254,8 @@ const DraggableTaskCard = React.memo(function DraggableTaskCard({ task, onDragSt
             </div>
           </div>
           
-          {/* アクションボタン */}
-          {showActions && (
+          {/* アクションボタン（選択モード時は非表示） */}
+          {showActions && !isSelectionMode && (
             <div className="flex space-x-1 ml-2">
               <Button
                 variant="ghost"
@@ -510,7 +537,9 @@ export function TaskPool({ onDragStart, onDragEnd }: TaskPoolProps = {}) {
     resetMigrationStatus,
     hideCompletedTask,
     clearHiddenCompletedTasks,
-    reorderTasks
+    reorderTasks,
+    completeTask,
+    deleteTask
   } = useTaskStoreWithAuth()
   
   const { 
@@ -527,9 +556,26 @@ export function TaskPool({ onDragStart, onDragEnd }: TaskPoolProps = {}) {
   
   const [showDebugMenu, setShowDebugMenu] = useState(false)
   
+  // 選択モードの状態管理
+  const [isSelectionMode, setIsSelectionMode] = useState(false)
+  const [selectedTaskIds, setSelectedTaskIds] = useState<Set<string>>(new Set())
+  
   // カテゴリ選択のハンドラをメモ化
   const handleSelectAllCategory = React.useCallback(() => setSelectedCategory('all'), [setSelectedCategory])
   const handleSelectCategory = React.useCallback((categoryId: string) => () => setSelectedCategory(categoryId), [setSelectedCategory])
+  
+  // タスク選択のハンドラ
+  const toggleTaskSelection = React.useCallback((taskId: string) => {
+    setSelectedTaskIds(prev => {
+      const newSet = new Set(prev)
+      if (newSet.has(taskId)) {
+        newSet.delete(taskId)
+      } else {
+        newSet.add(taskId)
+      }
+      return newSet
+    })
+  }, [])
 
 
   const { setNodeRef, isOver } = useDroppable({
@@ -827,7 +873,7 @@ export function TaskPool({ onDragStart, onDragEnd }: TaskPoolProps = {}) {
         </>
       )}
 
-      {/* Add Task Form and Sort */}
+      {/* Add Task Form, Sort and Selection Mode */}
       <div className="flex items-center gap-2">
         {/* Sort dropdown - icon only */}
         {React.useMemo(() => (
@@ -860,6 +906,20 @@ export function TaskPool({ onDragStart, onDragEnd }: TaskPoolProps = {}) {
           </DropdownMenu>
         ), [sortOrder, setSortOrder])}
         
+        {/* Selection Mode Button */}
+        <Button
+          variant={isSelectionMode ? "default" : "outline"}
+          size="icon"
+          className="h-10 w-10 flex-shrink-0"
+          title="選択モード"
+          onClick={() => {
+            setIsSelectionMode(!isSelectionMode)
+            setSelectedTaskIds(new Set()) // 選択をクリア
+          }}
+        >
+          <ListChecks className="w-4 h-4" />
+        </Button>
+        
         {/* Add Task Button */}
         <div className="flex-1">
           <AddTaskForm defaultCategory={selectedCategory} />
@@ -878,6 +938,9 @@ export function TaskPool({ onDragStart, onDragEnd }: TaskPoolProps = {}) {
               task={task} 
               onDragStart={handleDragStart}
               onDragEnd={handleDragEnd}
+              isSelectionMode={isSelectionMode}
+              isSelected={selectedTaskIds.has(task.id)}
+              onToggleSelection={toggleTaskSelection}
             />
           ))}
         </SortableContext>
@@ -954,6 +1017,105 @@ export function TaskPool({ onDragStart, onDragEnd }: TaskPoolProps = {}) {
           </div>
         )}
       </div>
+      
+      {/* 一括操作ツールバー（選択されたタスクがある場合のみ表示） */}
+      <AnimatePresence>
+        {isSelectionMode && selectedTaskIds.size > 0 && (
+          <motion.div
+            initial={{ y: 100, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            exit={{ y: 100, opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            className="fixed bottom-6 left-1/2 transform -translate-x-1/2 z-50"
+          >
+            <Card className="p-4 shadow-lg border-2">
+              <div className="flex items-center gap-4">
+                {/* 選択数 */}
+                <span className="text-sm font-medium">
+                  {selectedTaskIds.size}個選択中
+                </span>
+                
+                <Separator orientation="vertical" className="h-6" />
+                
+                {/* アクションボタン */}
+                <div className="flex items-center gap-2">
+                  {/* すべて選択 */}
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      const allTaskIds = new Set(filteredTasks.map(t => t.id))
+                      setSelectedTaskIds(allTaskIds)
+                    }}
+                  >
+                    すべて選択
+                  </Button>
+                  
+                  {/* 選択解除 */}
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setSelectedTaskIds(new Set())}
+                  >
+                    選択解除
+                  </Button>
+                  
+                  <Separator orientation="vertical" className="h-6" />
+                  
+                  {/* 完了ボタン */}
+                  <Button
+                    variant="default"
+                    size="sm"
+                    className="bg-green-600 hover:bg-green-700"
+                    onClick={async () => {
+                      if (confirm(`${selectedTaskIds.size}個のタスクを完了しますか？`)) {
+                        for (const taskId of selectedTaskIds) {
+                          await completeTask(taskId)
+                        }
+                        setSelectedTaskIds(new Set())
+                        setIsSelectionMode(false)
+                      }
+                    }}
+                  >
+                    <Check className="w-4 h-4 mr-1" />
+                    完了
+                  </Button>
+                  
+                  {/* 削除ボタン */}
+                  <Button
+                    variant="destructive"
+                    size="sm"
+                    onClick={async () => {
+                      if (confirm(`${selectedTaskIds.size}個のタスクを削除しますか？\nこの操作は取り消せません。`)) {
+                        for (const taskId of selectedTaskIds) {
+                          await deleteTask(taskId)
+                        }
+                        setSelectedTaskIds(new Set())
+                        setIsSelectionMode(false)
+                      }
+                    }}
+                  >
+                    <Trash2 className="w-4 h-4 mr-1" />
+                    削除
+                  </Button>
+                  
+                  {/* キャンセル */}
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => {
+                      setIsSelectionMode(false)
+                      setSelectedTaskIds(new Set())
+                    }}
+                  >
+                    <X className="w-4 h-4" />
+                  </Button>
+                </div>
+              </div>
+            </Card>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   )
 }
