@@ -8,7 +8,7 @@ import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
 import { Checkbox } from '@/components/ui/checkbox'
-import { Plus, Circle, Clock, AlertCircle, X, Edit2, Trash2, MoreVertical, Check, RotateCcw, ChevronDown, ChevronUp, Settings, ChevronLeft, ChevronRight, Copy, FileText, ArrowUpDown, GripVertical, TrendingDown, TrendingUp, Zap, CalendarPlus, CalendarMinus, Timer, Hourglass, SortAsc, SortDesc, CalendarDays, ListChecks } from 'lucide-react'
+import { Plus, Circle, Clock, AlertCircle, X, Edit2, Trash2, MoreVertical, Check, RotateCcw, ChevronDown, ChevronUp, Settings, ChevronLeft, ChevronRight, Copy, FileText, ArrowUpDown, GripVertical, TrendingDown, TrendingUp, Zap, CalendarPlus, CalendarMinus, Timer, Hourglass, SortAsc, SortDesc, CalendarDays, ListChecks, Sparkles, CheckCircle2, XCircle, SquareDashedBottom } from 'lucide-react'
 import { useTaskStoreWithAuth } from '@/lib/hooks/use-task-store-with-auth'
 import { useAuth } from '@/lib/auth/auth-context'
 import { useSortable, SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable'
@@ -905,18 +905,26 @@ export function TaskPool({ onDragStart, onDragEnd }: TaskPoolProps = {}) {
         </DropdownMenu>
         
         {/* Selection Mode Button */}
-        <Button
-          variant={isSelectionMode ? "default" : "outline"}
-          size="icon"
-          className="h-10 w-10 flex-shrink-0"
-          title="選択モード"
-          onClick={() => {
-            setIsSelectionMode(!isSelectionMode)
-            setSelectedTaskIds(new Set()) // 選択をクリア
-          }}
-        >
-          <ListChecks className="w-4 h-4" />
-        </Button>
+        <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+          <Button
+            variant={isSelectionMode ? "default" : "outline"}
+            size="icon"
+            className={`h-10 w-10 flex-shrink-0 transition-all duration-300 ${
+              isSelectionMode 
+                ? 'bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white border-0 shadow-lg shadow-purple-600/25' 
+                : 'hover:border-primary/50 hover:bg-primary/10'
+            }`}
+            title="選択モード"
+            onClick={() => {
+              setIsSelectionMode(!isSelectionMode)
+              setSelectedTaskIds(new Set()) // 選択をクリア
+            }}
+          >
+            <ListChecks className={`w-4 h-4 transition-transform duration-300 ${
+              isSelectionMode ? 'rotate-12' : ''
+            }`} />
+          </Button>
+        </motion.div>
         
         {/* Add Task Button */}
         <div className="flex-1">
@@ -1024,100 +1032,247 @@ export function TaskPool({ onDragStart, onDragEnd }: TaskPoolProps = {}) {
       <AnimatePresence>
         {isSelectionMode && selectedTaskIds.size > 0 && (
           <motion.div
-            initial={{ y: 100, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            exit={{ y: 100, opacity: 0 }}
-            transition={{ duration: 0.2 }}
+            initial={{ y: 100, opacity: 0, scale: 0.9 }}
+            animate={{ y: 0, opacity: 1, scale: 1 }}
+            exit={{ y: 100, opacity: 0, scale: 0.9 }}
+            transition={{ 
+              type: "spring",
+              stiffness: 260,
+              damping: 20
+            }}
             className="absolute bottom-4 left-0 right-0 px-4 lg:px-8"
             style={{ zIndex: 40 }}
           >
-            <Card className="p-3 sm:p-4 shadow-2xl border-2 border-primary/20 bg-background/95 backdrop-blur-md ring-1 ring-black/5 dark:ring-white/10 max-w-5xl mx-auto">
-              <div className="flex flex-col sm:flex-row items-center gap-4">
-                {/* 選択数 */}
-                <span className="text-sm font-medium whitespace-nowrap">
-                  {selectedTaskIds.size}個選択中
-                </span>
+            <div className="relative max-w-5xl mx-auto">
+              {/* アニメーショングラデーション背景 */}
+              <motion.div 
+                className="absolute inset-0 rounded-2xl"
+                animate={{
+                  background: [
+                    "radial-gradient(circle at 20% 50%, rgba(147, 51, 234, 0.2) 0%, transparent 70%)",
+                    "radial-gradient(circle at 80% 50%, rgba(59, 130, 246, 0.2) 0%, transparent 70%)",
+                    "radial-gradient(circle at 20% 50%, rgba(147, 51, 234, 0.2) 0%, transparent 70%)"
+                  ]
+                }}
+                transition={{
+                  duration: 10,
+                  repeat: Infinity,
+                  ease: "linear"
+                }}
+              >
+                <div className="absolute inset-0 bg-gradient-to-r from-purple-500/10 via-pink-500/10 to-blue-500/10 rounded-2xl blur-3xl" />
+              </motion.div>
+              
+              <div className="relative overflow-hidden rounded-2xl shadow-2xl border border-white/10">
+                {/* 光沢エフェクト */}
+                <motion.div
+                  className="absolute inset-0 opacity-30"
+                  animate={{
+                    backgroundPosition: ["200% 0%", "-200% 0%"]
+                  }}
+                  transition={{
+                    duration: 15,
+                    repeat: Infinity,
+                    ease: "linear"
+                  }}
+                  style={{
+                    background: "linear-gradient(105deg, transparent 40%, rgba(255,255,255,0.4) 50%, transparent 60%)",
+                    backgroundSize: "200% 100%"
+                  }}
+                />
                 
-                <Separator orientation="vertical" className="h-6 hidden sm:block" />
+                {/* メイン背景 */}
+                <div className="absolute inset-0 bg-gradient-to-br from-background/85 via-background/95 to-background/85 backdrop-blur-xl" />
+                <div className="absolute inset-0 bg-gradient-to-t from-primary/5 via-transparent to-transparent" />
                 
-                {/* アクションボタン */}
-                <div className="flex flex-wrap items-center gap-2 justify-center">
-                  {/* すべて選択 */}
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => {
-                      const allTaskIds = new Set(filteredTasks.map(t => t.id))
-                      setSelectedTaskIds(allTaskIds)
-                    }}
-                  >
-                    すべて選択
-                  </Button>
+                {/* ノイズテクスチャ */}
+                <div className="absolute inset-0 opacity-[0.015]" style={{
+                  backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E")`
+                }} />
+                
+                {/* コンテンツ */}
+                <div className="relative p-4 sm:p-6">
+                  <div className="flex flex-col sm:flex-row items-center gap-4">
+                    {/* 選択数バッジ */}
+                    <motion.div
+                      initial={{ scale: 0 }}
+                      animate={{ scale: 1 }}
+                      transition={{ type: "spring", delay: 0.1 }}
+                      className="flex items-center gap-2"
+                    >
+                      <div className="relative group">
+                        {/* パルスエフェクト */}
+                        <motion.div
+                          className="absolute inset-0 bg-gradient-to-r from-purple-600 to-blue-600 rounded-full"
+                          animate={{
+                            scale: [1, 1.2, 1],
+                            opacity: [0.6, 0.2, 0.6]
+                          }}
+                          transition={{
+                            duration: 2,
+                            repeat: Infinity,
+                            ease: "easeInOut"
+                          }}
+                        />
+                        <div className="absolute inset-0 bg-gradient-to-r from-purple-600 to-blue-600 rounded-full blur-lg opacity-40 group-hover:opacity-60 transition-opacity" />
+                        <motion.div 
+                          className="relative bg-gradient-to-r from-purple-600 to-blue-600 text-white px-5 py-2.5 rounded-full font-bold flex items-center gap-2.5 shadow-lg"
+                          whileHover={{ scale: 1.05 }}
+                          whileTap={{ scale: 0.95 }}
+                        >
+                          <motion.div
+                            animate={{ rotate: 360 }}
+                            transition={{ duration: 3, repeat: Infinity, ease: "linear" }}
+                          >
+                            <Sparkles className="w-4 h-4" />
+                          </motion.div>
+                          <span className="text-sm font-semibold">{selectedTaskIds.size}個選択中</span>
+                        </motion.div>
+                      </div>
+                    </motion.div>
+                    
+                    {/* セパレーター */}
+                    <div className="hidden sm:block h-8 w-px bg-gradient-to-b from-transparent via-muted-foreground/30 to-transparent" />
+                    
+                    {/* アクションボタン群 */}
+                    <div className="flex flex-wrap items-center gap-3 justify-center">
+                      {/* 選択系ボタン */}
+                      <div className="flex items-center gap-2">
+                        <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => {
+                              const allTaskIds = new Set(filteredTasks.map(t => t.id))
+                              setSelectedTaskIds(allTaskIds)
+                            }}
+                            className="border-muted-foreground/20 hover:border-primary/50 hover:bg-primary/10 transition-all duration-200"
+                          >
+                            <SquareDashedBottom className="w-4 h-4 mr-1.5" />
+                            すべて選択
+                          </Button>
+                        </motion.div>
+                        
+                        <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => setSelectedTaskIds(new Set())}
+                            className="hover:bg-muted/50 transition-all duration-200"
+                          >
+                            選択解除
+                          </Button>
+                        </motion.div>
+                      </div>
+                      
+                      {/* ディバイダー */}
+                      <div className="h-6 w-px bg-gradient-to-b from-transparent via-muted-foreground/20 to-transparent" />
+                      
+                      {/* アクションボタン */}
+                      <div className="flex items-center gap-2">
+                        {/* 完了ボタン */}
+                        <motion.div 
+                          className="relative"
+                          whileHover={{ scale: 1.05 }} 
+                          whileTap={{ scale: 0.95 }}
+                        >
+                          <div className="absolute inset-0 bg-gradient-to-r from-green-600 to-emerald-600 rounded-md blur-lg opacity-50" />
+                          <Button
+                            size="sm"
+                            onClick={async () => {
+                              if (confirm(`${selectedTaskIds.size}個のタスクを完了しますか？`)) {
+                                const taskIdsArray = Array.from(selectedTaskIds)
+                                for (const taskId of taskIdsArray) {
+                                  await completeTask(taskId)
+                                }
+                                setSelectedTaskIds(new Set())
+                                setIsSelectionMode(false)
+                              }
+                            }}
+                            className="relative bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-500 hover:to-emerald-500 text-white border-0 shadow-xl transition-all duration-300 font-medium"
+                          >
+                            <CheckCircle2 className="w-4 h-4 mr-1.5 drop-shadow-sm" />
+                            完了
+                          </Button>
+                        </motion.div>
+                        
+                        {/* 削除ボタン */}
+                        <motion.div 
+                          className="relative"
+                          whileHover={{ scale: 1.05 }} 
+                          whileTap={{ scale: 0.95 }}
+                        >
+                          <div className="absolute inset-0 bg-gradient-to-r from-red-600 to-rose-600 rounded-md blur-lg opacity-50" />
+                          <Button
+                            size="sm"
+                            onClick={async () => {
+                              if (confirm(`${selectedTaskIds.size}個のタスクを削除しますか？\nこの操作は取り消せません。`)) {
+                                const taskIdsArray = Array.from(selectedTaskIds)
+                                for (const taskId of taskIdsArray) {
+                                  await deleteTask(taskId)
+                                }
+                                setSelectedTaskIds(new Set())
+                                setIsSelectionMode(false)
+                              }
+                            }}
+                            className="relative bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-500 hover:to-rose-500 text-white border-0 shadow-xl transition-all duration-300 font-medium"
+                          >
+                            <Trash2 className="w-4 h-4 mr-1.5 drop-shadow-sm" />
+                            削除
+                          </Button>
+                        </motion.div>
+                        
+                        {/* キャンセルボタン */}
+                        <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => {
+                              setIsSelectionMode(false)
+                              setSelectedTaskIds(new Set())
+                            }}
+                            className="ml-2 hover:bg-muted/50 rounded-full h-9 w-9 p-0 transition-all duration-200"
+                          >
+                            <XCircle className="w-5 h-5" />
+                          </Button>
+                        </motion.div>
+                      </div>
+                    </div>
+                  </div>
                   
-                  {/* 選択解除 */}
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setSelectedTaskIds(new Set())}
+                  {/* プログレスバー */}
+                  <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ delay: 0.2 }}
+                    className="mt-4"
                   >
-                    選択解除
-                  </Button>
-                  
-                  <Separator orientation="vertical" className="h-6 mx-1" />
-                  
-                  {/* 完了ボタン */}
-                  <Button
-                    variant="default"
-                    size="sm"
-                    className="bg-green-600 hover:bg-green-700 text-white"
-                    onClick={async () => {
-                      if (confirm(`${selectedTaskIds.size}個のタスクを完了しますか？`)) {
-                        const taskIdsArray = Array.from(selectedTaskIds)
-                        for (const taskId of taskIdsArray) {
-                          await completeTask(taskId)
-                        }
-                        setSelectedTaskIds(new Set())
-                        setIsSelectionMode(false)
-                      }
-                    }}
-                  >
-                    <Check className="w-4 h-4 mr-1" />
-                    完了
-                  </Button>
-                  
-                  {/* 削除ボタン */}
-                  <Button
-                    variant="destructive"
-                    size="sm"
-                    onClick={async () => {
-                      if (confirm(`${selectedTaskIds.size}個のタスクを削除しますか？\nこの操作は取り消せません。`)) {
-                        const taskIdsArray = Array.from(selectedTaskIds)
-                        for (const taskId of taskIdsArray) {
-                          await deleteTask(taskId)
-                        }
-                        setSelectedTaskIds(new Set())
-                        setIsSelectionMode(false)
-                      }
-                    }}
-                  >
-                    <Trash2 className="w-4 h-4 mr-1" />
-                    削除
-                  </Button>
-                  
-                  {/* キャンセル */}
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => {
-                      setIsSelectionMode(false)
-                      setSelectedTaskIds(new Set())
-                    }}
-                  >
-                    <X className="w-4 h-4" />
-                  </Button>
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="text-xs text-muted-foreground">選択率</span>
+                      <span className="text-xs font-medium text-primary">
+                        {Math.round((selectedTaskIds.size / filteredTasks.length) * 100)}%
+                      </span>
+                    </div>
+                    <div className="relative h-2 bg-muted/30 rounded-full overflow-hidden backdrop-blur-sm">
+                      <motion.div
+                        initial={{ width: 0 }}
+                        animate={{ width: `${(selectedTaskIds.size / filteredTasks.length) * 100}%` }}
+                        transition={{ 
+                          duration: 0.5,
+                          type: "spring",
+                          stiffness: 100,
+                          damping: 15
+                        }}
+                        className="absolute inset-y-0 left-0 rounded-full overflow-hidden"
+                      >
+                        <div className="h-full bg-gradient-to-r from-purple-500 via-pink-500 to-blue-500 animate-gradient-x" />
+                        <div className="absolute inset-0 bg-white/20 animate-shimmer" />
+                      </motion.div>
+                    </div>
+                  </motion.div>
                 </div>
               </div>
-            </Card>
+            </div>
           </motion.div>
         )}
       </AnimatePresence>
