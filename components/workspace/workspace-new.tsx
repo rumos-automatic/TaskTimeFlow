@@ -109,6 +109,10 @@ export function WorkspaceNew() {
         focusContainer.scrollTop = 0
       }
     }
+    // タイムラインビューに切り替わった場合、スクロールフラグをリセット
+    if (currentView === 'timeline' && prevView !== 'timeline') {
+      setHasInitialTimelineScroll(false)
+    }
   }, [currentView, isMobile])
   
   // ビューが変更された時にスクロール位置を処理

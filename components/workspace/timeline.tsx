@@ -1023,8 +1023,8 @@ export function Timeline({
     let calculatedScrollPosition
     
     if (isMobile) {
-      // スマホ：現在時刻を上から1/5の位置に表示（次のタスクがより見やすくなる）
-      calculatedScrollPosition = Math.max(0, totalHeight - containerHeight / 5)
+      // スマホ：現在時刻を画面上部（上から150px）に表示
+      calculatedScrollPosition = Math.max(0, totalHeight - 150)
     } else {
       // PC：現在時刻を画面上部（上から100px）に表示
       calculatedScrollPosition = Math.max(0, totalHeight - 100)
@@ -1035,33 +1035,42 @@ export function Timeline({
 
   // Scroll to current time on component mount
   useEffect(() => {
+    // 既にスクロール済みの場合は何もしない
+    if (hasInitialScroll) return
+    
     const attemptScroll = (attempt = 1) => {
-      if (attempt > 3) {
+      if (attempt > 5) {
         // Mark as initial scroll done if this was the first time
-        if (!hasInitialScroll && setHasInitialScroll) {
+        if (setHasInitialScroll) {
           setHasInitialScroll(true)
         }
         return
       }
       
-      if (currentTimeIndicatorRef.current) {
-        // 常に画面中央にスクロール
-        scrollToCurrentTime()
-        
-        // 初回の場合のみフラグを更新
-        if (!hasInitialScroll && setHasInitialScroll) {
-          setHasInitialScroll(true)
+      if (currentTimeIndicatorRef.current && timelineContainerRef.current) {
+        // コンテナの高さが確定してからスクロール
+        const containerHeight = timelineContainerRef.current.clientHeight
+        if (containerHeight > 0) {
+          scrollToCurrentTime()
+          
+          // スクロール完了後にフラグを更新
+          if (setHasInitialScroll) {
+            setTimeout(() => setHasInitialScroll(true), 100)
+          }
+        } else {
+          // コンテナの高さがまだ確定していない場合は再試行
+          setTimeout(() => attemptScroll(attempt + 1), 300)
         }
       } else {
         // Try again after short delay
-        setTimeout(() => attemptScroll(attempt + 1), 500)
+        setTimeout(() => attemptScroll(attempt + 1), 300)
       }
     }
 
-    // Start after DOM is ready
-    const timer = setTimeout(attemptScroll, 200)
+    // Start after DOM is ready (モバイルの場合は遅延を増やす)
+    const timer = setTimeout(attemptScroll, isMobile ? 500 : 200)
     return () => clearTimeout(timer)
-  }, [hasInitialScroll, setHasInitialScroll, scrollToCurrentTime])
+  }, [hasInitialScroll, setHasInitialScroll, scrollToCurrentTime, isMobile])
   
 
   return (
