@@ -279,11 +279,12 @@ function ScheduledTaskCard({ task, slotId, slotData }: ScheduledTaskCardProps) {
         style={{ 
           height: `${(() => {
             const minutes = isResizing ? tempEstimatedTime : (slotData.estimatedTime || 60)
+            const currentStartTime = isResizing && resizePosition === 'top' ? tempStartTime : slotData.startTime
             const slots = Math.ceil(minutes / 15)
             let totalHeight = 0
             
             // タスクの開始時刻から必要なスロット数分の高さを計算
-            const [startHour, startMinute] = slotData.startTime.split(':').map(Number)
+            const [startHour, startMinute] = currentStartTime.split(':').map(Number)
             const startSlotIndex = startHour * 4 + Math.floor(startMinute / 15)
             
             for (let i = 0; i < slots; i++) {
@@ -295,7 +296,39 @@ function ScheduledTaskCard({ task, slotId, slotData }: ScheduledTaskCardProps) {
             // パディング分を考慮して少し減らす
             return totalHeight - 4
           })()}px`,
-          top: '0px'
+          top: `${(() => {
+            if (!isResizing || resizePosition !== 'top') return 0
+            
+            // 元の開始時間と新しい開始時間の差を計算
+            const [origHour, origMinute] = slotData.startTime.split(':').map(Number)
+            const [newHour, newMinute] = tempStartTime.split(':').map(Number)
+            const origTotalMinutes = origHour * 60 + origMinute
+            const newTotalMinutes = newHour * 60 + newMinute
+            const minutesDiff = newTotalMinutes - origTotalMinutes
+            const slotsDiff = Math.floor(minutesDiff / 15)
+            
+            // スロット差分から位置の変更を計算
+            let topOffset = 0
+            const origSlotIndex = origHour * 4 + Math.floor(origMinute / 15)
+            
+            if (slotsDiff < 0) {
+              // 上に移動（開始時間が早くなった）
+              for (let i = slotsDiff; i < 0; i++) {
+                const slotIndex = origSlotIndex + i
+                const minute = (slotIndex % 4) * 15
+                topOffset -= (minute === 0 ? 64 : 40)
+              }
+            } else if (slotsDiff > 0) {
+              // 下に移動（開始時間が遅くなった）
+              for (let i = 0; i < slotsDiff; i++) {
+                const slotIndex = origSlotIndex + i
+                const minute = (slotIndex % 4) * 15
+                topOffset += (minute === 0 ? 64 : 40)
+              }
+            }
+            
+            return topOffset
+          })()}px`
         }}
         onMouseEnter={() => setShowActions(true)}
         onMouseLeave={() => setShowActions(false)}
@@ -993,8 +1026,8 @@ export function Timeline({
       // スマホ：現在時刻を上から1/5の位置に表示（次のタスクがより見やすくなる）
       calculatedScrollPosition = Math.max(0, totalHeight - containerHeight / 5)
     } else {
-      // PC：画面中央に表示
-      calculatedScrollPosition = Math.max(0, totalHeight - containerHeight / 2.2)
+      // PC：現在時刻を画面上部（上から100px）に表示
+      calculatedScrollPosition = Math.max(0, totalHeight - 100)
     }
     
     timelineContainerRef.current.scrollTop = calculatedScrollPosition
