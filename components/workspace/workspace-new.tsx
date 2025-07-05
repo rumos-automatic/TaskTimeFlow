@@ -120,7 +120,7 @@ export function WorkspaceNew() {
     setIsResizing(true)
     
     // ドラッグ中のカーソルスタイルを設定
-    document.body.style.cursor = 'col-resize'
+    document.body.classList.add('cursor-resize-dragging')
     document.body.style.userSelect = 'none'
     
     const handleMouseMove = (e: MouseEvent) => {
@@ -140,7 +140,7 @@ export function WorkspaceNew() {
     const handleMouseUp = () => {
       setIsResizing(false)
       // カーソルスタイルをリセット
-      document.body.style.cursor = ''
+      document.body.classList.remove('cursor-resize-dragging')
       document.body.style.userSelect = ''
       document.removeEventListener('mousemove', handleMouseMove)
       document.removeEventListener('mouseup', handleMouseUp)
@@ -840,8 +840,8 @@ export function WorkspaceNew() {
 
         {/* リサイザーバー */}
         <div
-          className={`relative w-1 bg-border/10 hover:bg-gradient-to-r hover:from-primary/20 hover:to-primary/30 transition-all duration-300 cursor-col-resize group ${
-            isResizing ? 'bg-gradient-to-r from-primary/40 to-primary/60 w-1.5 shadow-lg' : ''
+          className={`relative w-1 bg-border/10 hover:bg-gradient-to-r hover:from-primary/20 hover:to-primary/30 transition-all duration-300 group ${
+            isResizing ? 'bg-gradient-to-r from-primary/40 to-primary/60 w-1.5 shadow-lg cursor-resize-dragging' : 'cursor-resize-custom'
           }`}
           onMouseDown={handleResizeStart}
           style={{
