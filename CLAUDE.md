@@ -52,6 +52,12 @@ npm run db:studio     # Open database studio
 - 本番環境のテストはVercelで直接行います
 - 「開発サーバーで動作確認をお願いします」などの提案は不要です
 
+**⚠️ PUSH前の必須チェック**
+- `npm run build` でビルドエラーがないことを確認
+- `npx next lint` でESLintエラーがないことを確認
+- `npx tsc --noEmit` でTypeScriptエラーがないことを確認
+- **これらのチェックをせずにpushすることは厳禁です**
+
 ## Core Features - Revolutionary 3-Screen UI
 
 ### 1. Task Pool Screen (Left)
