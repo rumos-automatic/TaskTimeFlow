@@ -1025,16 +1025,29 @@ export function Timeline({
       totalHeight += slotMinute === 0 ? 64 : 40 // h-16 or h-10
     }
     
+    // Add offset for Due Tasks Section if present
+    // Due Tasks Sectionのコンテナ要素を探す
+    const dueSectionElement = scrollContainer.querySelector('.bg-orange-50') as HTMLElement
+    let dueSectionOffset = 0
+    if (dueSectionElement) {
+      // Due Tasks Sectionの高さ + space-y-4のマージン（16px）
+      dueSectionOffset = dueSectionElement.offsetHeight + 16
+    }
+    
+    // 実際のタイムラインインジケーターの位置
+    const actualIndicatorPosition = totalHeight + dueSectionOffset
+    
     // PC/スマホで異なる表示位置
     const containerHeight = scrollContainer.clientHeight
     let calculatedScrollPosition
     
     if (isMobile) {
       // スマホ：現在時刻を上から1/5の位置に表示
-      calculatedScrollPosition = Math.max(0, totalHeight - containerHeight * 4 / 5)
+      const offsetFromTop = containerHeight / 5  // 画面の1/5の位置
+      calculatedScrollPosition = Math.max(0, actualIndicatorPosition - offsetFromTop)
     } else {
       // PC：現在時刻を画面上部（上から100px）に表示
-      calculatedScrollPosition = Math.max(0, totalHeight - 100)
+      calculatedScrollPosition = Math.max(0, actualIndicatorPosition - 100)
     }
     
     scrollContainer.scrollTop = calculatedScrollPosition
