@@ -925,33 +925,36 @@ export function TaskPool({ onDragStart, onDragEnd }: TaskPoolProps = {}) {
       </div>
 
       {/* Task List */}
-      <div className="flex-1 overflow-y-auto space-y-3 mb-0">
-        <SortableContext 
-          items={sortableItems} 
-          strategy={verticalListSortingStrategy}
-        >
-          {filteredTasks.map((task) => (
-            <DraggableTaskCard 
-              key={task.id} 
-              task={task} 
-              onDragStart={handleDragStart}
-              onDragEnd={handleDragEnd}
-              isSelectionMode={isSelectionMode}
-              isSelected={selectedTaskIds.has(task.id)}
-              onToggleSelection={toggleTaskSelection}
-            />
-          ))}
-        </SortableContext>
-        
-        {filteredTasks.length === 0 && (
-          <div className="text-center text-muted-foreground py-8">
-            タスクがありません
-          </div>
-        )}
+      <div className="flex-1 overflow-y-auto mb-0">
+        <div className={`space-y-3 ${
+          isSelectionMode && selectedTaskIds.size > 0 ? 'pb-40' : ''
+        }`}>
+          <SortableContext 
+            items={sortableItems} 
+            strategy={verticalListSortingStrategy}
+          >
+            {filteredTasks.map((task) => (
+              <DraggableTaskCard 
+                key={task.id} 
+                task={task} 
+                onDragStart={handleDragStart}
+                onDragEnd={handleDragEnd}
+                isSelectionMode={isSelectionMode}
+                isSelected={selectedTaskIds.has(task.id)}
+                onToggleSelection={toggleTaskSelection}
+              />
+            ))}
+          </SortableContext>
+          
+          {filteredTasks.length === 0 && (
+            <div className="text-center text-muted-foreground py-8">
+              タスクがありません
+            </div>
+          )}
 
-        {/* Completed Tasks Section */}
-        {filteredCompletedTasks.length > 0 && (
-          <div className="pt-4 mb-0">
+          {/* Completed Tasks Section */}
+          {filteredCompletedTasks.length > 0 && (
+            <div className="pt-4 mb-0">
             <Separator />
             
             {/* Collapsible Header */}
@@ -1014,6 +1017,7 @@ export function TaskPool({ onDragStart, onDragEnd }: TaskPoolProps = {}) {
             </AnimatePresence>
           </div>
         )}
+        </div>
       </div>
       
       {/* 一括操作ツールバー（選択されたタスクがある場合のみ表示） */}
@@ -1024,10 +1028,10 @@ export function TaskPool({ onDragStart, onDragEnd }: TaskPoolProps = {}) {
             animate={{ y: 0, opacity: 1 }}
             exit={{ y: 100, opacity: 0 }}
             transition={{ duration: 0.2 }}
-            className="fixed bottom-24 left-1/2 transform -translate-x-1/2 max-w-2xl w-[calc(100%-2rem)] sm:bottom-20"
-            style={{ zIndex: 999999 }}
+            className="absolute bottom-4 left-0 right-0 px-4 lg:px-8"
+            style={{ zIndex: 40 }}
           >
-            <Card className="p-4 shadow-2xl border-2 border-primary/20 bg-background backdrop-blur-md ring-1 ring-black/5 dark:ring-white/10">
+            <Card className="p-3 sm:p-4 shadow-2xl border-2 border-primary/20 bg-background/95 backdrop-blur-md ring-1 ring-black/5 dark:ring-white/10 max-w-5xl mx-auto">
               <div className="flex flex-col sm:flex-row items-center gap-4">
                 {/* 選択数 */}
                 <span className="text-sm font-medium whitespace-nowrap">
