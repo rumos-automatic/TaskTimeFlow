@@ -668,7 +668,7 @@ export function TaskPool({ onDragStart, onDragEnd }: TaskPoolProps = {}) {
   return (
     <div 
       ref={setNodeRef}
-      className={`space-y-3 h-full flex flex-col transition-colors pb-0 ${
+      className={`space-y-3 h-full flex flex-col transition-colors pb-0 relative ${
         isOver ? 'bg-muted/20' : ''
       }`}
     >
@@ -1024,19 +1024,20 @@ export function TaskPool({ onDragStart, onDragEnd }: TaskPoolProps = {}) {
             animate={{ y: 0, opacity: 1 }}
             exit={{ y: 100, opacity: 0 }}
             transition={{ duration: 0.2 }}
-            className="fixed bottom-6 left-1/2 transform -translate-x-1/2 z-50"
+            className="fixed bottom-24 left-1/2 transform -translate-x-1/2 max-w-2xl w-[calc(100%-2rem)] sm:bottom-20"
+            style={{ zIndex: 999999 }}
           >
-            <Card className="p-4 shadow-lg border-2">
-              <div className="flex items-center gap-4">
+            <Card className="p-4 shadow-2xl border-2 border-primary/20 bg-background backdrop-blur-md ring-1 ring-black/5 dark:ring-white/10">
+              <div className="flex flex-col sm:flex-row items-center gap-4">
                 {/* 選択数 */}
-                <span className="text-sm font-medium">
+                <span className="text-sm font-medium whitespace-nowrap">
                   {selectedTaskIds.size}個選択中
                 </span>
                 
-                <Separator orientation="vertical" className="h-6" />
+                <Separator orientation="vertical" className="h-6 hidden sm:block" />
                 
                 {/* アクションボタン */}
-                <div className="flex items-center gap-2">
+                <div className="flex flex-wrap items-center gap-2 justify-center">
                   {/* すべて選択 */}
                   <Button
                     variant="outline"
@@ -1058,13 +1059,13 @@ export function TaskPool({ onDragStart, onDragEnd }: TaskPoolProps = {}) {
                     選択解除
                   </Button>
                   
-                  <Separator orientation="vertical" className="h-6" />
+                  <Separator orientation="vertical" className="h-6 mx-1" />
                   
                   {/* 完了ボタン */}
                   <Button
                     variant="default"
                     size="sm"
-                    className="bg-green-600 hover:bg-green-700"
+                    className="bg-green-600 hover:bg-green-700 text-white"
                     onClick={async () => {
                       if (confirm(`${selectedTaskIds.size}個のタスクを完了しますか？`)) {
                         const taskIdsArray = Array.from(selectedTaskIds)
