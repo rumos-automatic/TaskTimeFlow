@@ -1031,7 +1031,7 @@ export function Timeline({
     
     if (isMobile) {
       // スマホ：現在時刻を上から1/5の位置に表示
-      calculatedScrollPosition = Math.max(0, totalHeight - containerHeight / 5)
+      calculatedScrollPosition = Math.max(0, totalHeight - containerHeight * 4 / 5)
     } else {
       // PC：現在時刻を画面上部（上から100px）に表示
       calculatedScrollPosition = Math.max(0, totalHeight - 100)
