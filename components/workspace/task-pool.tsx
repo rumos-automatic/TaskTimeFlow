@@ -575,16 +575,16 @@ export function TaskPool({ onDragStart, onDragEnd }: TaskPoolProps = {}) {
     onDragEnd: onSortDragEnd 
   } = useTaskSort(baseFilteredTasks, selectedCategory !== 'all' ? selectedCategory : undefined)
   
-  // ドラッグイベントの統合（onSortDragStart/Endは安定しているので依存配列から除外）
+  // ドラッグイベントの統合
   const handleDragStart = React.useCallback(() => {
     onSortDragStart()
     onDragStart?.()
-  }, [onDragStart])
+  }, [onSortDragStart, onDragStart])
   
   const handleDragEnd = React.useCallback(() => {
     onSortDragEnd()
     onDragEnd?.()
-  }, [onDragEnd])
+  }, [onSortDragEnd, onDragEnd])
 
   return (
     <div 
@@ -833,29 +833,19 @@ export function TaskPool({ onDragStart, onDragEnd }: TaskPoolProps = {}) {
 
       {/* Task List */}
       <div className="flex-1 overflow-y-auto space-y-3 mb-0">
-        {/* Sortable items を事前に計算 */}
-        {(() => {
-          const sortableItems = React.useMemo(() => 
-            filteredTasks.map(task => task.scheduledDate ? `pool-${task.id}` : task.id),
-            [filteredTasks]
-          )
-          
-          return (
-            <SortableContext 
-              items={sortableItems} 
-              strategy={verticalListSortingStrategy}
-            >
-              {filteredTasks.map((task) => (
-                <DraggableTaskCard 
-                  key={task.id} 
-                  task={task} 
-                  onDragStart={handleDragStart}
-                  onDragEnd={handleDragEnd}
-                />
-              ))}
-            </SortableContext>
-          )
-        })()}
+        <SortableContext 
+          items={filteredTasks.map(task => task.scheduledDate ? `pool-${task.id}` : task.id)} 
+          strategy={verticalListSortingStrategy}
+        >
+          {filteredTasks.map((task) => (
+            <DraggableTaskCard 
+              key={task.id} 
+              task={task} 
+              onDragStart={handleDragStart}
+              onDragEnd={handleDragEnd}
+            />
+          ))}
+        </SortableContext>
         
         {filteredTasks.length === 0 && (
           <div className="text-center text-muted-foreground py-8">
