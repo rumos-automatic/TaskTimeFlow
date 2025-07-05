@@ -876,35 +876,33 @@ export function TaskPool({ onDragStart, onDragEnd }: TaskPoolProps = {}) {
       {/* Add Task Form, Sort and Selection Mode */}
       <div className="flex items-center gap-2">
         {/* Sort dropdown - icon only */}
-        {React.useMemo(() => (
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button 
-                variant="outline" 
-                size="icon" 
-                className="h-10 w-10 flex-shrink-0"
-                title={SORT_OPTIONS.find(opt => opt.value === sortOrder)?.label}
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button 
+              variant="outline" 
+              size="icon" 
+              className="h-10 w-10 flex-shrink-0"
+              title={SORT_OPTIONS.find(opt => opt.value === sortOrder)?.label}
+            >
+              {getSortIcon(sortOrder)}
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="start" className="w-56">
+            {SORT_OPTIONS.map((option) => (
+              <DropdownMenuItem
+                key={option.value}
+                onClick={() => setSortOrder(option.value)}
+                className="gap-2"
               >
-                {getSortIcon(sortOrder)}
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="start" className="w-56">
-              {SORT_OPTIONS.map((option) => (
-                <DropdownMenuItem
-                  key={option.value}
-                  onClick={() => setSortOrder(option.value)}
-                  className="gap-2"
-                >
-                  {getSortIcon(option.value)}
-                  <span>{option.label}</span>
-                  {sortOrder === option.value && (
-                    <Check className="w-4 h-4 ml-auto" />
-                  )}
-                </DropdownMenuItem>
-              ))}
-            </DropdownMenuContent>
-          </DropdownMenu>
-        ), [sortOrder, setSortOrder])}
+                {getSortIcon(option.value)}
+                <span>{option.label}</span>
+                {sortOrder === option.value && (
+                  <Check className="w-4 h-4 ml-auto" />
+                )}
+              </DropdownMenuItem>
+            ))}
+          </DropdownMenuContent>
+        </DropdownMenu>
         
         {/* Selection Mode Button */}
         <Button
@@ -1069,7 +1067,8 @@ export function TaskPool({ onDragStart, onDragEnd }: TaskPoolProps = {}) {
                     className="bg-green-600 hover:bg-green-700"
                     onClick={async () => {
                       if (confirm(`${selectedTaskIds.size}個のタスクを完了しますか？`)) {
-                        for (const taskId of selectedTaskIds) {
+                        const taskIdsArray = Array.from(selectedTaskIds)
+                        for (const taskId of taskIdsArray) {
                           await completeTask(taskId)
                         }
                         setSelectedTaskIds(new Set())
@@ -1087,7 +1086,8 @@ export function TaskPool({ onDragStart, onDragEnd }: TaskPoolProps = {}) {
                     size="sm"
                     onClick={async () => {
                       if (confirm(`${selectedTaskIds.size}個のタスクを削除しますか？\nこの操作は取り消せません。`)) {
-                        for (const taskId of selectedTaskIds) {
+                        const taskIdsArray = Array.from(selectedTaskIds)
+                        for (const taskId of taskIdsArray) {
                           await deleteTask(taskId)
                         }
                         setSelectedTaskIds(new Set())
