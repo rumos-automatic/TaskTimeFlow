@@ -43,6 +43,12 @@ function ScheduledTaskCard({ task, slotId, slotData }: ScheduledTaskCardProps) {
   const [showActions, setShowActions] = useState(false)
   const [isEditing, setIsEditing] = useState(false)
   const [showDetail, setShowDetail] = useState(false)
+  const [isResizing, setIsResizing] = useState(false)
+  const [resizeStartY, setResizeStartY] = useState(0)
+  const [resizeStartHeight, setResizeStartHeight] = useState(0)
+  const [tempEstimatedTime, setTempEstimatedTime] = useState(slotData.estimatedTime || 60)
+  const cardRef = useRef<HTMLDivElement>(null)
+  
   const { updateTask, removeTimeSlot, completeTask, uncompleteTask, addTask, moveTaskToTimeline } = useTaskStoreWithAuth()
   const { user } = useAuth()
   const {
@@ -56,9 +62,81 @@ function ScheduledTaskCard({ task, slotId, slotData }: ScheduledTaskCardProps) {
 
   const style = {
     transform: CSS.Transform.toString(transform),
-    transition,
+    transition: isResizing ? 'none' : transition,
     opacity: isDragging ? 0.5 : 1
   }
+
+  // リサイズハンドラー
+  const handleResizeStart = (e: React.MouseEvent | React.TouchEvent, position: 'top' | 'bottom') => {
+    e.preventDefault()
+    e.stopPropagation()
+    
+    const clientY = 'touches' in e ? e.touches[0].clientY : e.clientY
+    setResizeStartY(clientY)
+    setResizeStartHeight(cardRef.current?.offsetHeight || 0)
+    setIsResizing(true)
+    setTempEstimatedTime(slotData.estimatedTime || 60)
+  }
+
+  const handleResizeMove = useCallback((e: MouseEvent | TouchEvent) => {
+    if (!isResizing || !cardRef.current) return
+    
+    const clientY = 'touches' in e ? e.touches[0].clientY : e.clientY
+    const deltaY = clientY - resizeStartY
+    
+    // 15分単位のスナップ（1スロット = 40px または 64px）
+    const pixelsPerSlot = 40 // 基本的なスロットの高さ
+    const slotsChanged = Math.round(deltaY / pixelsPerSlot)
+    const minutesChanged = slotsChanged * 15
+    
+    // 新しい推定時間を計算（最小15分、最大240分）
+    const newEstimatedTime = Math.max(15, Math.min(240, (slotData.estimatedTime || 60) + minutesChanged))
+    setTempEstimatedTime(newEstimatedTime)
+  }, [isResizing, resizeStartY, slotData.estimatedTime])
+
+  const handleResizeEnd = useCallback(async () => {
+    if (!isResizing) return
+    
+    setIsResizing(false)
+    
+    // 時間が変更された場合のみ更新
+    if (tempEstimatedTime !== (slotData.estimatedTime || 60)) {
+      const slotDate = slotData.date instanceof Date ? slotData.date : new Date(slotData.date)
+      
+      // タスクを更新
+      await updateTask(task.id, {
+        estimatedTime: tempEstimatedTime,
+        scheduledDate: slotDate,
+        scheduledTime: slotData.startTime
+      })
+      
+      // タイムスロットを再作成
+      await removeTimeSlot(slotId)
+      if (user) {
+        await moveTaskToTimeline(task.id, slotDate, slotData.startTime, user.id)
+      }
+    }
+  }, [isResizing, tempEstimatedTime, slotData, task.id, updateTask, removeTimeSlot, moveTaskToTimeline, user, slotId])
+
+  // リサイズ中のマウス/タッチイベントをリッスン
+  useEffect(() => {
+    if (isResizing) {
+      const handleMove = (e: MouseEvent | TouchEvent) => handleResizeMove(e)
+      const handleEnd = () => handleResizeEnd()
+      
+      document.addEventListener('mousemove', handleMove)
+      document.addEventListener('touchmove', handleMove)
+      document.addEventListener('mouseup', handleEnd)
+      document.addEventListener('touchend', handleEnd)
+      
+      return () => {
+        document.removeEventListener('mousemove', handleMove)
+        document.removeEventListener('touchmove', handleMove)
+        document.removeEventListener('mouseup', handleEnd)
+        document.removeEventListener('touchend', handleEnd)
+      }
+    }
+  }, [isResizing, handleResizeMove, handleResizeEnd])
 
   const handleEdit = () => {
     setIsEditing(true)
@@ -158,17 +236,20 @@ function ScheduledTaskCard({ task, slotId, slotData }: ScheduledTaskCardProps) {
   return (
     <div ref={setNodeRef} style={style}>
       <Card
-        {...(!isCompleted ? { ...listeners, ...attributes } : {})}
-        className={`absolute left-2 right-2 p-2 transition-colors group ${!isCompleted ? 'cursor-move' : ''} ${
+        ref={cardRef}
+        {...(!isCompleted && !isResizing ? { ...listeners, ...attributes } : {})}
+        className={`absolute left-2 right-2 p-2 transition-colors group ${!isCompleted && !isResizing ? 'cursor-move' : ''} ${
           isDragging ? 'z-50 shadow-2xl scale-105' : 'z-20'
         } ${
           isCompleted 
             ? 'bg-muted/70 border-muted-foreground/30 opacity-75' 
             : 'bg-blue-100 border-blue-300 dark:bg-blue-950/30 hover:bg-blue-200 dark:hover:bg-blue-900/40'
+        } ${
+          isResizing ? 'ring-2 ring-primary ring-offset-2' : ''
         }`}
         style={{ 
           height: `${(() => {
-            const minutes = slotData.estimatedTime || 60
+            const minutes = isResizing ? tempEstimatedTime : (slotData.estimatedTime || 60)
             const slots = Math.ceil(minutes / 15)
             let totalHeight = 0
             
@@ -217,7 +298,7 @@ function ScheduledTaskCard({ task, slotId, slotData }: ScheduledTaskCardProps) {
               {/* 時間表示 */}
               <div className="flex items-center space-x-1 text-muted-foreground">
                 <Clock className="w-3 h-3" />
-                <span>{slotData.estimatedTime || 60}分</span>
+                <span>{isResizing ? tempEstimatedTime : (slotData.estimatedTime || 60)}分</span>
                 {isCompleted && (
                   <Check className="w-3 h-3 ml-1 text-green-600" />
                 )}
@@ -283,6 +364,28 @@ function ScheduledTaskCard({ task, slotId, slotData }: ScheduledTaskCardProps) {
                 </Button>
               )}
             </div>
+          )}
+          
+          {/* リサイズハンドル（完了タスクでは表示しない） */}
+          {!isCompleted && (
+            <>
+              {/* 上部リサイズハンドル */}
+              <div
+                className={`absolute left-0 right-0 top-0 cursor-ns-resize transition-colors ${
+                  isResizing ? 'bg-primary/30 h-3' : 'h-2 hover:bg-primary/20 hover:h-3'
+                } touch:h-3 md:h-2`}
+                onMouseDown={(e) => handleResizeStart(e, 'top')}
+                onTouchStart={(e) => handleResizeStart(e, 'top')}
+              />
+              {/* 下部リサイズハンドル */}
+              <div
+                className={`absolute left-0 right-0 bottom-0 cursor-ns-resize transition-colors ${
+                  isResizing ? 'bg-primary/30 h-3' : 'h-2 hover:bg-primary/20 hover:h-3'
+                } touch:h-3 md:h-2`}
+                onMouseDown={(e) => handleResizeStart(e, 'bottom')}
+                onTouchStart={(e) => handleResizeStart(e, 'bottom')}
+              />
+            </>
           )}
         </div>
       </Card>
