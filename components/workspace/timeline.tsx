@@ -1025,16 +1025,13 @@ export function Timeline({
       totalHeight += slotMinute === 0 ? 64 : 40 // h-16 or h-10
     }
     
-    // モバイルの場合はヘッダー分の高さ（約200px）を追加で考慮
-    const headerOffset = isMobile ? 200 : 0
-    
     // PC/スマホで異なる表示位置
     const containerHeight = scrollContainer.clientHeight
     let calculatedScrollPosition
     
     if (isMobile) {
-      // スマホ：現在時刻を画面上部（上から150px）に表示、ヘッダー分を追加
-      calculatedScrollPosition = Math.max(0, totalHeight + headerOffset - 150)
+      // スマホ：現在時刻を上から1/5の位置に表示
+      calculatedScrollPosition = Math.max(0, totalHeight - containerHeight / 5)
     } else {
       // PC：現在時刻を画面上部（上から100px）に表示
       calculatedScrollPosition = Math.max(0, totalHeight - 100)
