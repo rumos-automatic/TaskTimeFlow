@@ -52,6 +52,25 @@ interface DraggableTaskCardProps {
   onDragEnd?: () => void
 }
 
+// タスクカードの詳細な比較関数
+const areTaskCardsEqual = (prevProps: DraggableTaskCardProps, nextProps: DraggableTaskCardProps) => {
+  return (
+    prevProps.task.id === nextProps.task.id &&
+    prevProps.task.title === nextProps.task.title &&
+    prevProps.task.priority === nextProps.task.priority &&
+    prevProps.task.urgency === nextProps.task.urgency &&
+    prevProps.task.category === nextProps.task.category &&
+    prevProps.task.estimatedTime === nextProps.task.estimatedTime &&
+    prevProps.task.status === nextProps.task.status &&
+    prevProps.task.scheduledDate === nextProps.task.scheduledDate &&
+    prevProps.task.scheduledTime === nextProps.task.scheduledTime &&
+    prevProps.task.notes === nextProps.task.notes &&
+    prevProps.task.dueDate === nextProps.task.dueDate &&
+    prevProps.onDragStart === nextProps.onDragStart &&
+    prevProps.onDragEnd === nextProps.onDragEnd
+  )
+}
+
 const DraggableTaskCard = React.memo(function DraggableTaskCard({ task, onDragStart, onDragEnd }: DraggableTaskCardProps) {
   const [showActions, setShowActions] = useState(false)
   const [isEditing, setIsEditing] = useState(false)
@@ -259,7 +278,7 @@ const DraggableTaskCard = React.memo(function DraggableTaskCard({ task, onDragSt
       />
     </div>
   )
-})
+}, areTaskCardsEqual)
 
 interface CompletedTaskCardProps {
   task: Task
@@ -507,6 +526,10 @@ export function TaskPool({ onDragStart, onDragEnd }: TaskPoolProps = {}) {
   const showScheduledTasksInPool = React.useMemo(() => settings.showScheduledTasksInPool, [settings.showScheduledTasksInPool])
   
   const [showDebugMenu, setShowDebugMenu] = useState(false)
+  
+  // カテゴリ選択のハンドラをメモ化
+  const handleSelectAllCategory = React.useCallback(() => setSelectedCategory('all'), [setSelectedCategory])
+  const handleSelectCategory = React.useCallback((categoryId: string) => () => setSelectedCategory(categoryId), [setSelectedCategory])
 
 
   const { setNodeRef, isOver } = useDroppable({
@@ -538,18 +561,22 @@ export function TaskPool({ onDragStart, onDragEnd }: TaskPoolProps = {}) {
     }
   }, [showScheduledTasksInPool, tasks])
   
-  // 完了済みタスクのフィルタリング（隠されたタスクを除外）
-  const completedTasks = React.useMemo(() => {
+  // 隠された完了済みタスクのIDをメモ化（localStorageアクセスを減らす）
+  const hiddenCompletedTaskIds = React.useMemo(() => {
     try {
       const hiddenStr = localStorage.getItem('hidden_completed_tasks')
-      const hiddenIds = hiddenStr ? JSON.parse(hiddenStr) : []
-      return tasks.filter(task => 
-        task.status === 'completed' && !hiddenIds.includes(task.id)
-      )
+      return hiddenStr ? JSON.parse(hiddenStr) : []
     } catch {
-      return tasks.filter(task => task.status === 'completed')
+      return []
     }
-  }, [tasks])
+  }, []) // 初回のみ実行
+  
+  // 完了済みタスクのフィルタリング（隠されたタスクを除外）
+  const completedTasks = React.useMemo(() => {
+    return tasks.filter(task => 
+      task.status === 'completed' && !hiddenCompletedTaskIds.includes(task.id)
+    )
+  }, [tasks, hiddenCompletedTaskIds])
   
   const baseFilteredTasks = React.useMemo(() => 
     selectedCategory === 'all' 
@@ -585,6 +612,12 @@ export function TaskPool({ onDragStart, onDragEnd }: TaskPoolProps = {}) {
     onSortDragEnd()
     onDragEnd?.()
   }, [onSortDragEnd, onDragEnd])
+  
+  // SortableContext用のitems配列をメモ化
+  const sortableItems = React.useMemo(() => 
+    filteredTasks.map(task => task.scheduledDate ? `pool-${task.id}` : task.id),
+    [filteredTasks]
+  )
 
   return (
     <div 
@@ -605,7 +638,7 @@ export function TaskPool({ onDragStart, onDragEnd }: TaskPoolProps = {}) {
                   variant={selectedCategory === 'all' ? 'default' : 'outline'}
                   size="sm" 
                   className="flex-shrink-0"
-                  onClick={() => setSelectedCategory('all')}
+                  onClick={handleSelectAllCategory}
                 >
                   すべて
                 </Button>
@@ -621,7 +654,7 @@ export function TaskPool({ onDragStart, onDragEnd }: TaskPoolProps = {}) {
                       variant={isSelected ? 'default' : 'outline'}
                       size="sm" 
                       className="flex-shrink-0 flex items-center space-x-1"
-                      onClick={() => setSelectedCategory(category.id)}
+                      onClick={handleSelectCategory(category.id)}
                     >
                       {/* Category indicator */}
                       <div 
@@ -661,7 +694,7 @@ export function TaskPool({ onDragStart, onDragEnd }: TaskPoolProps = {}) {
               </Button>
             </CategoryManagement>
           </div>
-        ), [selectedCategory, setSelectedCategory, allCategories, googleTasksSync])}
+        ), [selectedCategory, handleSelectAllCategory, handleSelectCategory, allCategories, googleTasksSync])}
         
         {/* Category info row */}
         {selectedCategory !== 'all' && (() => {
@@ -797,33 +830,35 @@ export function TaskPool({ onDragStart, onDragEnd }: TaskPoolProps = {}) {
       {/* Add Task Form and Sort */}
       <div className="flex items-center gap-2">
         {/* Sort dropdown - icon only */}
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button 
-              variant="outline" 
-              size="icon" 
-              className="h-10 w-10 flex-shrink-0"
-              title={SORT_OPTIONS.find(opt => opt.value === sortOrder)?.label}
-            >
-              {getSortIcon(sortOrder)}
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="start" className="w-56">
-            {SORT_OPTIONS.map((option) => (
-              <DropdownMenuItem
-                key={option.value}
-                onClick={() => setSortOrder(option.value)}
-                className="gap-2"
+        {React.useMemo(() => (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button 
+                variant="outline" 
+                size="icon" 
+                className="h-10 w-10 flex-shrink-0"
+                title={SORT_OPTIONS.find(opt => opt.value === sortOrder)?.label}
               >
-                {getSortIcon(option.value)}
-                <span>{option.label}</span>
-                {sortOrder === option.value && (
-                  <Check className="w-4 h-4 ml-auto" />
-                )}
-              </DropdownMenuItem>
-            ))}
-          </DropdownMenuContent>
-        </DropdownMenu>
+                {getSortIcon(sortOrder)}
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="start" className="w-56">
+              {SORT_OPTIONS.map((option) => (
+                <DropdownMenuItem
+                  key={option.value}
+                  onClick={() => setSortOrder(option.value)}
+                  className="gap-2"
+                >
+                  {getSortIcon(option.value)}
+                  <span>{option.label}</span>
+                  {sortOrder === option.value && (
+                    <Check className="w-4 h-4 ml-auto" />
+                  )}
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
+        ), [sortOrder, setSortOrder])}
         
         {/* Add Task Button */}
         <div className="flex-1">
@@ -834,7 +869,7 @@ export function TaskPool({ onDragStart, onDragEnd }: TaskPoolProps = {}) {
       {/* Task List */}
       <div className="flex-1 overflow-y-auto space-y-3 mb-0">
         <SortableContext 
-          items={filteredTasks.map(task => task.scheduledDate ? `pool-${task.id}` : task.id)} 
+          items={sortableItems} 
           strategy={verticalListSortingStrategy}
         >
           {filteredTasks.map((task) => (
