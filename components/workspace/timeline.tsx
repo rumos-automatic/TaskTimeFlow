@@ -51,6 +51,13 @@ function ScheduledTaskCard({ task, slotId, slotData }: ScheduledTaskCardProps) {
   const [resizePosition, setResizePosition] = useState<'top' | 'bottom' | null>(null)
   const cardRef = useRef<HTMLDivElement>(null)
   
+  // モバイル用の操作モード管理
+  const [operationMode, setOperationMode] = useState<'none' | 'move' | 'resize'>('none')
+  const [showModeSelector, setShowModeSelector] = useState(false)
+  const [longPressTimer, setLongPressTimer] = useState<NodeJS.Timeout | null>(null)
+  const [touchStartPos, setTouchStartPos] = useState({ x: 0, y: 0 })
+  const { isMobile } = useViewState()
+  
   const { updateTask, removeTimeSlot, completeTask, uncompleteTask, addTask, moveTaskToTimeline } = useTaskStoreWithAuth()
   const { user } = useAuth()
   const {
@@ -60,7 +67,10 @@ function ScheduledTaskCard({ task, slotId, slotData }: ScheduledTaskCardProps) {
     transform,
     transition,
     isDragging
-  } = useSortable({ id: `scheduled-${task.id}-${slotId}` })
+  } = useSortable({ 
+    id: `scheduled-${task.id}-${slotId}`,
+    disabled: isMobile && operationMode !== 'move'
+  })
 
   const style = {
     transform: CSS.Transform.toString(transform),
@@ -68,8 +78,68 @@ function ScheduledTaskCard({ task, slotId, slotData }: ScheduledTaskCardProps) {
     opacity: isDragging ? 0.5 : 1
   }
 
+  // 長押し検出とモード選択
+  const handleTouchStart = useCallback((e: React.TouchEvent) => {
+    if (!isMobile || task.status === 'completed') return
+    
+    const touch = e.touches[0]
+    setTouchStartPos({ x: touch.clientX, y: touch.clientY })
+    
+    // 長押しタイマー開始（500ms）
+    const timer = setTimeout(() => {
+      setShowModeSelector(true)
+      // ハプティックフィードバック
+      if ('vibrate' in navigator) {
+        navigator.vibrate(10)
+      }
+    }, 500)
+    
+    setLongPressTimer(timer)
+  }, [isMobile, task.status])
+
+  const handleTouchMove = useCallback((e: React.TouchEvent) => {
+    if (!longPressTimer) return
+    
+    const touch = e.touches[0]
+    const moveThreshold = 10 // 10px以上動いたら長押しキャンセル
+    
+    if (Math.abs(touch.clientX - touchStartPos.x) > moveThreshold ||
+        Math.abs(touch.clientY - touchStartPos.y) > moveThreshold) {
+      clearTimeout(longPressTimer)
+      setLongPressTimer(null)
+    }
+  }, [longPressTimer, touchStartPos])
+
+  const handleTouchEnd = useCallback(() => {
+    if (longPressTimer) {
+      clearTimeout(longPressTimer)
+      setLongPressTimer(null)
+    }
+  }, [longPressTimer])
+
+  // モード選択
+  const selectMode = useCallback((mode: 'move' | 'resize') => {
+    setOperationMode(mode)
+    setShowModeSelector(false)
+    
+    if (mode === 'resize') {
+      // リサイズモードの場合、すぐにリサイズハンドルを表示
+      setShowActions(true)
+    }
+  }, [])
+
+  // 操作キャンセル
+  const cancelOperation = useCallback(() => {
+    setOperationMode('none')
+    setShowModeSelector(false)
+    setIsResizing(false)
+  }, [])
+
   // リサイズハンドラー
   const handleResizeStart = (e: React.MouseEvent | React.TouchEvent, position: 'top' | 'bottom') => {
+    // モバイルの場合、リサイズモードでない場合は処理しない
+    if (isMobile && operationMode !== 'resize') return
+    
     e.preventDefault()
     e.stopPropagation()
     
@@ -125,6 +195,11 @@ function ScheduledTaskCard({ task, slotId, slotData }: ScheduledTaskCardProps) {
     setIsResizing(false)
     setResizePosition(null)
     
+    // モバイルの場合、操作モードもリセット
+    if (isMobile) {
+      setOperationMode('none')
+    }
+    
     // 時間が変更された場合のみ更新
     const timeChanged = tempEstimatedTime !== (slotData.estimatedTime || 60)
     const startTimeChanged = tempStartTime !== slotData.startTime
@@ -145,7 +220,7 @@ function ScheduledTaskCard({ task, slotId, slotData }: ScheduledTaskCardProps) {
         await moveTaskToTimeline(task.id, slotDate, tempStartTime, user.id)
       }
     }
-  }, [isResizing, tempEstimatedTime, tempStartTime, slotData, task.id, updateTask, removeTimeSlot, moveTaskToTimeline, user, slotId])
+  }, [isResizing, tempEstimatedTime, tempStartTime, slotData, task.id, updateTask, removeTimeSlot, moveTaskToTimeline, user, slotId, isMobile])
 
   // リサイズ中のマウス/タッチイベントをリッスン
   useEffect(() => {
@@ -166,6 +241,13 @@ function ScheduledTaskCard({ task, slotId, slotData }: ScheduledTaskCardProps) {
       }
     }
   }, [isResizing, handleResizeMove, handleResizeEnd])
+
+  // ドラッグ終了時に移動モードをリセット
+  useEffect(() => {
+    if (!isDragging && operationMode === 'move') {
+      setOperationMode('none')
+    }
+  }, [isDragging, operationMode])
 
   const handleEdit = () => {
     setIsEditing(true)
@@ -266,8 +348,14 @@ function ScheduledTaskCard({ task, slotId, slotData }: ScheduledTaskCardProps) {
     <div ref={setNodeRef} style={style}>
       <Card
         ref={cardRef}
-        {...(!isCompleted && !isResizing ? { ...listeners, ...attributes } : {})}
-        className={`absolute left-2 right-2 p-2 transition-colors group ${!isCompleted && !isResizing ? 'cursor-move' : ''} ${
+        {...(!isCompleted && !isResizing && !isMobile ? { ...listeners, ...attributes } : {})}
+        {...(isMobile && operationMode === 'move' && !isCompleted ? { ...listeners, ...attributes } : {})}
+        onTouchStart={isMobile ? handleTouchStart : undefined}
+        onTouchMove={isMobile ? handleTouchMove : undefined}
+        onTouchEnd={isMobile ? handleTouchEnd : undefined}
+        className={`absolute left-2 right-2 p-2 transition-colors group ${
+          !isCompleted && (!isResizing || (isMobile && operationMode === 'move')) ? 'cursor-move' : ''
+        } ${
           isDragging ? 'z-50 shadow-2xl scale-105' : 'z-20'
         } ${
           isCompleted 
@@ -275,6 +363,8 @@ function ScheduledTaskCard({ task, slotId, slotData }: ScheduledTaskCardProps) {
             : 'bg-blue-100 border-blue-300 dark:bg-blue-950/30 hover:bg-blue-200 dark:hover:bg-blue-900/40'
         } ${
           isResizing ? 'ring-2 ring-primary ring-offset-2' : ''
+        } ${
+          operationMode !== 'none' ? 'ring-2 ring-primary' : ''
         }`}
         style={{ 
           height: `${(() => {
@@ -434,21 +524,21 @@ function ScheduledTaskCard({ task, slotId, slotData }: ScheduledTaskCardProps) {
           )}
           
           {/* リサイズハンドル（完了タスクでは表示しない） */}
-          {!isCompleted && (
+          {!isCompleted && (!isMobile || operationMode === 'resize') && (
             <>
               {/* 上部リサイズハンドル */}
               <div
                 className={`absolute left-0 right-0 top-0 cursor-ns-resize transition-colors ${
-                  isResizing ? 'bg-primary/30 h-3' : 'h-2 hover:bg-primary/20 hover:h-3'
-                } touch:h-3 md:h-2`}
+                  isResizing ? 'bg-primary/30 h-4' : 'h-3 hover:bg-primary/20 hover:h-4'
+                } ${isMobile ? 'h-4 bg-primary/20' : ''}`}
                 onMouseDown={(e) => handleResizeStart(e, 'top')}
                 onTouchStart={(e) => handleResizeStart(e, 'top')}
               />
               {/* 下部リサイズハンドル */}
               <div
                 className={`absolute left-0 right-0 bottom-0 cursor-ns-resize transition-colors ${
-                  isResizing ? 'bg-primary/30 h-3' : 'h-2 hover:bg-primary/20 hover:h-3'
-                } touch:h-3 md:h-2`}
+                  isResizing ? 'bg-primary/30 h-4' : 'h-3 hover:bg-primary/20 hover:h-4'
+                } ${isMobile ? 'h-4 bg-primary/20' : ''}`}
                 onMouseDown={(e) => handleResizeStart(e, 'bottom')}
                 onTouchStart={(e) => handleResizeStart(e, 'bottom')}
               />
@@ -456,6 +546,64 @@ function ScheduledTaskCard({ task, slotId, slotData }: ScheduledTaskCardProps) {
           )}
         </div>
       </Card>
+      
+      {/* モード選択UI */}
+      {showModeSelector && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50" onClick={cancelOperation}>
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl p-4 mx-4" onClick={(e) => e.stopPropagation()}>
+            <h3 className="text-lg font-semibold mb-4 text-center">操作を選択</h3>
+            <div className="flex flex-col space-y-2">
+              <Button
+                onClick={() => selectMode('move')}
+                className="w-full justify-center"
+                variant="outline"
+              >
+                <div className="flex items-center space-x-2">
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 11.5V14m0-2.5v-6a1.5 1.5 0 113 0m-3 6a1.5 1.5 0 00-3 0v2a7.5 7.5 0 0015 0v-5a1.5 1.5 0 00-3 0m-6-3V11m0-5.5v-1a1.5 1.5 0 013 0v1m0 0V11m0-5.5a1.5 1.5 0 013 0v3m0 0V11" />
+                  </svg>
+                  <span>移動する</span>
+                </div>
+              </Button>
+              <Button
+                onClick={() => selectMode('resize')}
+                className="w-full justify-center"
+                variant="outline"
+              >
+                <div className="flex items-center space-x-2">
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" />
+                  </svg>
+                  <span>時間を調整する</span>
+                </div>
+              </Button>
+              <Button
+                onClick={cancelOperation}
+                className="w-full justify-center"
+                variant="ghost"
+              >
+                キャンセル
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+      
+      {/* 操作モード表示 */}
+      {operationMode !== 'none' && (
+        <div className="absolute -top-8 left-0 right-0 flex justify-center pointer-events-none z-30">
+          <div className="bg-primary text-primary-foreground px-3 py-1 rounded-full text-xs font-medium shadow-lg">
+            {operationMode === 'move' ? '移動モード' : 'リサイズモード'}
+            <button
+              onClick={cancelOperation}
+              className="ml-2 hover:opacity-80 pointer-events-auto"
+            >
+              ✕
+            </button>
+          </div>
+        </div>
+      )}
+      
       <TaskDetailModal
         task={task}
         isOpen={showDetail}
