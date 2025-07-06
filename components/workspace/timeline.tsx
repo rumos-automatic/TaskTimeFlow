@@ -288,27 +288,39 @@ function ScheduledTaskCard({ task, slotId, slotData }: ScheduledTaskCardProps) {
       return null
     }
 
-    const handleAutoScroll = (e: TouchEvent | MouseEvent) => {
-      const clientY = 'touches' in e ? e.touches[0].clientY : e.clientY
-      const scrollContainer = findScrollContainer(cardRef.current)
-      if (!scrollContainer) return
+    let currentClientY = 0
+    let currentScrollContainer: HTMLElement | null = null
 
-      const rect = scrollContainer.getBoundingClientRect()
-      const distanceFromTop = clientY - rect.top
-      const distanceFromBottom = rect.bottom - clientY
+    const handleAutoScroll = (e: TouchEvent | MouseEvent) => {
+      currentClientY = 'touches' in e ? e.touches[0].clientY : e.clientY
+      currentScrollContainer = findScrollContainer(cardRef.current)
+      if (!currentScrollContainer) return
 
       const scroll = () => {
+        if (!currentScrollContainer) return
+        
+        // 毎フレームで距離を再計算
+        const rect = currentScrollContainer.getBoundingClientRect()
+        const distanceFromTop = currentClientY - rect.top
+        const distanceFromBottom = rect.bottom - currentClientY
+
         // 上端に近い場合、上にスクロール
         if (distanceFromTop < edgeThreshold && distanceFromTop > 0) {
           const scrollAmount = Math.max(1, (edgeThreshold - distanceFromTop) / edgeThreshold * scrollSpeed)
-          scrollContainer.scrollTop -= scrollAmount
+          currentScrollContainer.scrollTop -= scrollAmount
           animationFrameId = requestAnimationFrame(scroll)
         }
         // 下端に近い場合、下にスクロール
         else if (distanceFromBottom < edgeThreshold && distanceFromBottom > 0) {
           const scrollAmount = Math.max(1, (edgeThreshold - distanceFromBottom) / edgeThreshold * scrollSpeed)
-          scrollContainer.scrollTop += scrollAmount
+          currentScrollContainer.scrollTop += scrollAmount
           animationFrameId = requestAnimationFrame(scroll)
+        } else {
+          // スクロールが不要になったらアニメーションを停止
+          if (animationFrameId) {
+            cancelAnimationFrame(animationFrameId)
+            animationFrameId = null
+          }
         }
       }
 
@@ -317,14 +329,13 @@ function ScheduledTaskCard({ task, slotId, slotData }: ScheduledTaskCardProps) {
         cancelAnimationFrame(animationFrameId)
       }
       
-      // スクロールが必要な場合のみアニメーションを開始
-      if ((distanceFromTop < edgeThreshold && distanceFromTop > 0) ||
-          (distanceFromBottom < edgeThreshold && distanceFromBottom > 0)) {
-        animationFrameId = requestAnimationFrame(scroll)
-      }
+      // アニメーションを開始
+      animationFrameId = requestAnimationFrame(scroll)
     }
 
     const handleMove = (e: TouchEvent | MouseEvent) => {
+      // マウス/タッチ位置を更新
+      currentClientY = 'touches' in e ? e.touches[0].clientY : e.clientY
       handleAutoScroll(e)
     }
 
@@ -445,8 +456,17 @@ function ScheduledTaskCard({ task, slotId, slotData }: ScheduledTaskCardProps) {
             setActivatorNodeRef(node)
           }
         }}
-        {...(!isCompleted && !isResizing && !isMobile ? { ...listeners, ...attributes } : {})}
-        {...(isMobile && operationMode === 'active' && !isCompleted && !isResizing ? { ...listeners, ...attributes } : {})}
+        {...((() => {
+          // PC版：完了タスクでなく、リサイズ中でない場合は常にドラッグ可能
+          if (!isMobile && !isCompleted && !isResizing) {
+            return { ...listeners, ...attributes }
+          }
+          // モバイル版：操作モードが有効で、完了タスクでなく、リサイズ中でない場合のみドラッグ可能
+          if (isMobile && operationMode === 'active' && !isCompleted && !isResizing) {
+            return { ...listeners, ...attributes }
+          }
+          return {}
+        })())}
         onTouchStart={isMobile && operationMode === 'none' ? handleTouchStart : undefined}
         onTouchMove={isMobile && operationMode === 'none' ? handleTouchMove : undefined}
         onTouchEnd={isMobile && operationMode === 'none' ? handleTouchEnd : undefined}
