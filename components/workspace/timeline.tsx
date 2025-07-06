@@ -70,7 +70,7 @@ function ScheduledTaskCard({ task, slotId, slotData }: ScheduledTaskCardProps) {
     isDragging
   } = useSortable({ 
     id: `scheduled-${task.id}-${slotId}`,
-    disabled: false
+    disabled: isMobile ? operationMode !== 'active' || isResizing : false
   })
 
   const style = {
@@ -83,10 +83,16 @@ function ScheduledTaskCard({ task, slotId, slotData }: ScheduledTaskCardProps) {
   const handleTouchStart = useCallback((e: React.TouchEvent) => {
     if (!isMobile || task.status === 'completed' || operationMode === 'active') return
     
+    // リサイズハンドルをタッチした場合は長押し検出をスキップ
+    const target = e.target as HTMLElement
+    if (target.classList.contains('cursor-ns-resize') || target.closest('.cursor-ns-resize')) {
+      return
+    }
+    
     const touch = e.touches[0]
     setTouchStartPos({ x: touch.clientX, y: touch.clientY })
     
-    // 長押しタイマー開始（500ms）
+    // 長押しタイマー開始（300msに短縮）
     const timer = setTimeout(() => {
       console.log('🔥 Long press detected, activating operation mode')
       setOperationMode('active')
@@ -99,7 +105,7 @@ function ScheduledTaskCard({ task, slotId, slotData }: ScheduledTaskCardProps) {
       } catch (e) {
         // Vibrate APIが利用できない場合は無視
       }
-    }, 500)
+    }, 300)
     
     setLongPressTimer(timer)
   }, [isMobile, task.status, operationMode])
@@ -194,11 +200,7 @@ function ScheduledTaskCard({ task, slotId, slotData }: ScheduledTaskCardProps) {
     setIsResizing(false)
     setResizePosition(null)
     
-    // モバイルの場合、操作モードもリセット
-    if (isMobile) {
-      setOperationMode('none')
-      setHasStartedDragging(false)
-    }
+    // リサイズ完了後も操作モードを維持
     
     // 時間が変更された場合のみ更新
     const timeChanged = tempEstimatedTime !== (slotData.estimatedTime || 60)
@@ -254,7 +256,26 @@ function ScheduledTaskCard({ task, slotId, slotData }: ScheduledTaskCardProps) {
     console.log('🎆 Operation mode changed:', operationMode)
     console.log('🎆 Is dragging:', isDragging)
     console.log('🎆 Is mobile:', isMobile)
-  }, [operationMode, isDragging, isMobile])
+    console.log('🎆 Is resizing:', isResizing)
+  }, [operationMode, isDragging, isMobile, isResizing])
+
+  // 操作モード中のスクロールを無効化
+  useEffect(() => {
+    if (!isMobile || operationMode !== 'active') return
+
+    const preventDefault = (e: TouchEvent) => {
+      // タスクカードをタッチしている間はスクロールを無効化
+      if (isDragging || isResizing) {
+        e.preventDefault()
+      }
+    }
+
+    document.addEventListener('touchmove', preventDefault, { passive: false })
+    
+    return () => {
+      document.removeEventListener('touchmove', preventDefault)
+    }
+  }, [isMobile, operationMode, isDragging, isResizing])
 
   // ドラッグ中の自動スクロール
   useEffect(() => {
@@ -430,10 +451,10 @@ function ScheduledTaskCard({ task, slotId, slotData }: ScheduledTaskCardProps) {
       <Card
         ref={cardRef}
         {...(!isCompleted && !isResizing && !isMobile ? { ...listeners, ...attributes } : {})}
-        {...(isMobile && operationMode === 'active' && !isCompleted ? { ...listeners, ...attributes } : {})}
-        onTouchStart={isMobile && operationMode !== 'active' ? handleTouchStart : undefined}
-        onTouchMove={isMobile && operationMode !== 'active' ? handleTouchMove : undefined}
-        onTouchEnd={isMobile && operationMode !== 'active' ? handleTouchEnd : undefined}
+        {...(isMobile && operationMode === 'active' && !isCompleted && !isResizing ? { ...listeners, ...attributes } : {})}
+        onTouchStart={isMobile ? handleTouchStart : undefined}
+        onTouchMove={isMobile && operationMode === 'none' ? handleTouchMove : undefined}
+        onTouchEnd={isMobile && operationMode === 'none' ? handleTouchEnd : undefined}
         className={`absolute left-2 right-2 p-2 transition-colors group ${
           !isCompleted && (!isResizing || (isMobile && operationMode === 'active')) ? 'cursor-move' : ''
         } ${
