@@ -80,25 +80,35 @@ function ScheduledTaskCard({ task, slotId, slotData }: ScheduledTaskCardProps) {
 
   // 長押し検出とモード選択
   const handleTouchStart = useCallback((e: React.TouchEvent) => {
-    if (!isMobile || task.status === 'completed') return
+    if (!isMobile || task.status === 'completed' || operationMode === 'active') return
     
     const touch = e.touches[0]
     setTouchStartPos({ x: touch.clientX, y: touch.clientY })
     
     // 長押しタイマー開始（500ms）
     const timer = setTimeout(() => {
+      console.log('🔥 Long press detected, activating operation mode')
       setOperationMode('active')
       setShowActions(true)
       // ハプティックフィードバック
-      if ('vibrate' in navigator) {
-        navigator.vibrate(10)
+      try {
+        if ('vibrate' in navigator && typeof navigator.vibrate === 'function') {
+          navigator.vibrate(10)
+        }
+      } catch (e) {
+        // Vibrate APIが利用できない場合は無視
       }
     }, 500)
     
     setLongPressTimer(timer)
-  }, [isMobile, task.status])
+  }, [isMobile, task.status, operationMode])
 
   const handleTouchMove = useCallback((e: React.TouchEvent) => {
+    // 操作モードが有効な場合はタッチイベントを処理しない
+    if (operationMode === 'active') {
+      return
+    }
+    
     if (!longPressTimer) return
     
     const touch = e.touches[0]
@@ -109,7 +119,7 @@ function ScheduledTaskCard({ task, slotId, slotData }: ScheduledTaskCardProps) {
       clearTimeout(longPressTimer)
       setLongPressTimer(null)
     }
-  }, [longPressTimer, touchStartPos])
+  }, [longPressTimer, touchStartPos, operationMode])
 
   const handleTouchEnd = useCallback(() => {
     if (longPressTimer) {
@@ -235,6 +245,13 @@ function ScheduledTaskCard({ task, slotId, slotData }: ScheduledTaskCardProps) {
       setOperationMode('none')
     }
   }, [isDragging, operationMode])
+
+  // 操作モードのデバッグログ
+  useEffect(() => {
+    console.log('🎆 Operation mode changed:', operationMode)
+    console.log('🎆 Is dragging:', isDragging)
+    console.log('🎆 Is mobile:', isMobile)
+  }, [operationMode, isDragging, isMobile])
 
   // ドラッグ中の自動スクロール
   useEffect(() => {
@@ -411,9 +428,9 @@ function ScheduledTaskCard({ task, slotId, slotData }: ScheduledTaskCardProps) {
         ref={cardRef}
         {...(!isCompleted && !isResizing && !isMobile ? { ...listeners, ...attributes } : {})}
         {...(isMobile && operationMode === 'active' && !isCompleted ? { ...listeners, ...attributes } : {})}
-        onTouchStart={isMobile ? handleTouchStart : undefined}
-        onTouchMove={isMobile ? handleTouchMove : undefined}
-        onTouchEnd={isMobile ? handleTouchEnd : undefined}
+        onTouchStart={isMobile && operationMode !== 'active' ? handleTouchStart : undefined}
+        onTouchMove={isMobile && operationMode !== 'active' ? handleTouchMove : undefined}
+        onTouchEnd={isMobile && operationMode !== 'active' ? handleTouchEnd : undefined}
         className={`absolute left-2 right-2 p-2 transition-colors group ${
           !isCompleted && (!isResizing || (isMobile && operationMode === 'active')) ? 'cursor-move' : ''
         } ${
