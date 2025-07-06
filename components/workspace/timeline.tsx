@@ -55,6 +55,7 @@ function ScheduledTaskCard({ task, slotId, slotData }: ScheduledTaskCardProps) {
   const [operationMode, setOperationMode] = useState<'none' | 'active'>('none')
   const [longPressTimer, setLongPressTimer] = useState<NodeJS.Timeout | null>(null)
   const [touchStartPos, setTouchStartPos] = useState({ x: 0, y: 0 })
+  const [hasStartedDragging, setHasStartedDragging] = useState(false)
   const { isMobile } = useViewState()
   const timelineRef = useRef<HTMLDivElement | null>(null)
   
@@ -132,6 +133,7 @@ function ScheduledTaskCard({ task, slotId, slotData }: ScheduledTaskCardProps) {
   const cancelOperation = useCallback(() => {
     setOperationMode('none')
     setIsResizing(false)
+    setHasStartedDragging(false)
   }, [])
 
   // リサイズハンドラー
@@ -195,6 +197,7 @@ function ScheduledTaskCard({ task, slotId, slotData }: ScheduledTaskCardProps) {
     // モバイルの場合、操作モードもリセット
     if (isMobile) {
       setOperationMode('none')
+      setHasStartedDragging(false)
     }
     
     // 時間が変更された場合のみ更新
@@ -239,10 +242,10 @@ function ScheduledTaskCard({ task, slotId, slotData }: ScheduledTaskCardProps) {
     }
   }, [isResizing, handleResizeMove, handleResizeEnd])
 
-  // ドラッグ終了時に操作モードをリセット
+  // ドラッグ開始を検出
   useEffect(() => {
-    if (!isDragging && operationMode === 'active') {
-      setOperationMode('none')
+    if (isDragging && operationMode === 'active') {
+      setHasStartedDragging(true)
     }
   }, [isDragging, operationMode])
 
@@ -628,17 +631,26 @@ function ScheduledTaskCard({ task, slotId, slotData }: ScheduledTaskCardProps) {
       
       {/* 操作モード表示 */}
       {operationMode !== 'none' && (
-        <div className="absolute -top-8 left-0 right-0 flex justify-center pointer-events-none z-30">
-          <div className="bg-primary text-primary-foreground px-3 py-1 rounded-full text-xs font-medium shadow-lg">
-操作モード
+        <>
+          {/* 操作モードインジケーター */}
+          <div className="absolute -top-10 left-0 right-0 flex justify-center pointer-events-none z-30">
+            <div className="bg-primary text-primary-foreground px-3 py-1 rounded-full text-xs font-medium shadow-lg animate-pulse">
+              🔄 移動・リサイズモード
+            </div>
+          </div>
+          {/* 終了ボタン */}
+          <div className="fixed bottom-20 left-0 right-0 flex justify-center pointer-events-none z-50">
             <button
               onClick={cancelOperation}
-              className="ml-2 hover:opacity-80 pointer-events-auto"
+              className="bg-red-500 hover:bg-red-600 text-white px-6 py-3 rounded-full font-medium shadow-lg pointer-events-auto transition-colors flex items-center space-x-2 animate-bounce"
             >
-              ✕
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+              <span>操作モードを終了</span>
             </button>
           </div>
-        </div>
+        </>
       )}
       
       <TaskDetailModal
