@@ -84,14 +84,14 @@ function ScheduledTaskCard({ task, slotId, slotData }: ScheduledTaskCardProps) {
       return
     }
     
-    // 300msの長押しでリサイズモードを有効化
+    // 600msの長押しでリサイズモードを有効化（移動モード優先）
     const timer = setTimeout(() => {
       setResizeMode(true)
       // ハプティックフィードバック
       if ('vibrate' in navigator) {
         navigator.vibrate(10)
       }
-    }, 300)
+    }, 600)
     
     setLongPressTimer(timer)
   }, [isMobile, task.status])
@@ -102,6 +102,14 @@ function ScheduledTaskCard({ task, slotId, slotData }: ScheduledTaskCardProps) {
       setLongPressTimer(null)
     }
   }, [longPressTimer])
+
+  // ドラッグ開始時に長押しタイマーをクリア
+  useEffect(() => {
+    if (isDragging && longPressTimer) {
+      clearTimeout(longPressTimer)
+      setLongPressTimer(null)
+    }
+  }, [isDragging, longPressTimer])
 
   // リサイズハンドラー
   const handleResizeStart = (e: React.MouseEvent | React.TouchEvent, position: 'top' | 'bottom') => {
@@ -375,10 +383,10 @@ function ScheduledTaskCard({ task, slotId, slotData }: ScheduledTaskCardProps) {
     <div ref={setNodeRef} style={style}>
       <Card
         ref={cardRef}
-        {...(!isCompleted && !isResizing ? { ...listeners, ...attributes } : {})}
+        {...(!isCompleted && !isResizing && !resizeMode ? { ...listeners, ...attributes } : {})}
         onTouchStart={isMobile ? handleLongPressStart : undefined}
         onTouchEnd={isMobile ? handleLongPressEnd : undefined}
-        className={`absolute left-2 right-2 p-2 transition-colors group ${!isCompleted && !isResizing ? 'cursor-move' : ''} ${
+        className={`absolute left-2 right-2 p-2 transition-colors group ${!isCompleted && !isResizing && !resizeMode ? 'cursor-move' : ''} ${
           isDragging ? 'z-50 shadow-2xl scale-105' : 'z-20'
         } ${
           isCompleted 
