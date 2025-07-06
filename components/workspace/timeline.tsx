@@ -78,7 +78,7 @@ function ScheduledTaskCard({ task, slotId, slotData }: ScheduledTaskCardProps) {
     transform: CSS.Transform.toString(transform),
     transition: isResizing ? 'none' : transition,
     opacity: isDragging ? 0.5 : 1,
-    touchAction: operationMode === 'active' ? 'none' : 'auto'
+    touchAction: operationMode === 'active' && (isDragging || isResizing) ? 'none' : 'auto'
   }
 
   // 長押し検出とモード選択
@@ -263,27 +263,12 @@ function ScheduledTaskCard({ task, slotId, slotData }: ScheduledTaskCardProps) {
     console.log('🎆 Attributes:', attributes)
   }, [operationMode, isDragging, isMobile, isResizing, listeners, attributes])
 
-  // 操作モード中のスクロールを無効化
+  // 操作モード中のスクロールを無効化（削除）
+  // touch-actionで制御するため不要
+
+  // ドラッグ・リサイズ中の自動スクロール
   useEffect(() => {
-    if (!isMobile || operationMode !== 'active') return
-
-    const preventDefault = (e: TouchEvent) => {
-      // タスクカードをタッチしている間はスクロールを無効化
-      if (isDragging || isResizing) {
-        e.preventDefault()
-      }
-    }
-
-    document.addEventListener('touchmove', preventDefault, { passive: false })
-    
-    return () => {
-      document.removeEventListener('touchmove', preventDefault)
-    }
-  }, [isMobile, operationMode, isDragging, isResizing])
-
-  // ドラッグ中の自動スクロール
-  useEffect(() => {
-    if (!isDragging || !isMobile) return
+    if ((!isDragging && !isResizing) || !isMobile) return
 
     let animationFrameId: number | null = null
     const scrollSpeed = 8
@@ -353,7 +338,7 @@ function ScheduledTaskCard({ task, slotId, slotData }: ScheduledTaskCardProps) {
         cancelAnimationFrame(animationFrameId)
       }
     }
-  }, [isDragging, isMobile, cardRef])
+  }, [isDragging, isResizing, isMobile, cardRef])
 
   const handleEdit = () => {
     setIsEditing(true)
@@ -451,10 +436,11 @@ function ScheduledTaskCard({ task, slotId, slotData }: ScheduledTaskCardProps) {
   const isCompleted = task.status === 'completed'
   
   return (
-    <div ref={setNodeRef} style={style}>
+    <div style={style}>
       <Card
         ref={(node) => {
           cardRef.current = node
+          setNodeRef(node)
           if (isMobile && operationMode === 'active' && !isResizing) {
             setActivatorNodeRef(node)
           }
