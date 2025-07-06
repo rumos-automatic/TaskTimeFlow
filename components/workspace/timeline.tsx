@@ -51,14 +51,6 @@ function ScheduledTaskCard({ task, slotId, slotData }: ScheduledTaskCardProps) {
   const [resizePosition, setResizePosition] = useState<'top' | 'bottom' | null>(null)
   const cardRef = useRef<HTMLDivElement>(null)
   
-  // モバイル用の操作モード管理
-  const [operationMode, setOperationMode] = useState<'none' | 'active'>('none')
-  const [longPressTimer, setLongPressTimer] = useState<NodeJS.Timeout | null>(null)
-  const [touchStartPos, setTouchStartPos] = useState({ x: 0, y: 0 })
-  const [hasStartedDragging, setHasStartedDragging] = useState(false)
-  const { isMobile } = useViewState()
-  const timelineRef = useRef<HTMLDivElement | null>(null)
-  
   const { updateTask, removeTimeSlot, completeTask, uncompleteTask, addTask, moveTaskToTimeline } = useTaskStoreWithAuth()
   const { user } = useAuth()
   const {
@@ -67,86 +59,17 @@ function ScheduledTaskCard({ task, slotId, slotData }: ScheduledTaskCardProps) {
     setNodeRef,
     transform,
     transition,
-    isDragging,
-    setActivatorNodeRef
-  } = useSortable({ 
-    id: `scheduled-${task.id}-${slotId}`,
-    disabled: isMobile ? operationMode !== 'active' || isResizing : false
-  })
+    isDragging
+  } = useSortable({ id: `scheduled-${task.id}-${slotId}` })
 
   const style = {
     transform: CSS.Transform.toString(transform),
     transition: isResizing ? 'none' : transition,
-    opacity: isDragging ? 0.5 : 1,
-    touchAction: operationMode === 'active' && (isDragging || isResizing) ? 'none' : 'auto'
+    opacity: isDragging ? 0.5 : 1
   }
-
-  // 長押し検出とモード選択
-  const handleTouchStart = useCallback((e: React.TouchEvent) => {
-    if (!isMobile || task.status === 'completed' || operationMode === 'active') return
-    
-    // リサイズハンドルをタッチした場合は長押し検出をスキップ
-    const target = e.target as HTMLElement
-    if (target.classList.contains('cursor-ns-resize') || target.closest('.cursor-ns-resize')) {
-      return
-    }
-    
-    const touch = e.touches[0]
-    setTouchStartPos({ x: touch.clientX, y: touch.clientY })
-    
-    // 長押しタイマー開始（300msに短縮）
-    const timer = setTimeout(() => {
-      console.log('🔥 Long press detected, activating operation mode')
-      setOperationMode('active')
-      setShowActions(true)
-      // ハプティックフィードバック
-      try {
-        if ('vibrate' in navigator && typeof navigator.vibrate === 'function') {
-          navigator.vibrate(10)
-        }
-      } catch (e) {
-        // Vibrate APIが利用できない場合は無視
-      }
-    }, 300)
-    
-    setLongPressTimer(timer)
-  }, [isMobile, task.status, operationMode])
-
-  const handleTouchMove = useCallback((e: React.TouchEvent) => {
-    // 操作モードが有効な場合はタッチイベントを処理しない
-    if (operationMode === 'active') {
-      return
-    }
-    
-    if (!longPressTimer) return
-    
-    const touch = e.touches[0]
-    const moveThreshold = 10 // 10px以上動いたら長押しキャンセル
-    
-    if (Math.abs(touch.clientX - touchStartPos.x) > moveThreshold ||
-        Math.abs(touch.clientY - touchStartPos.y) > moveThreshold) {
-      clearTimeout(longPressTimer)
-      setLongPressTimer(null)
-    }
-  }, [longPressTimer, touchStartPos, operationMode])
-
-  const handleTouchEnd = useCallback(() => {
-    if (longPressTimer) {
-      clearTimeout(longPressTimer)
-      setLongPressTimer(null)
-    }
-  }, [longPressTimer])
-
-  // 操作キャンセル
-  const cancelOperation = useCallback(() => {
-    setOperationMode('none')
-    setIsResizing(false)
-    setHasStartedDragging(false)
-  }, [])
 
   // リサイズハンドラー
   const handleResizeStart = (e: React.MouseEvent | React.TouchEvent, position: 'top' | 'bottom') => {
-    
     e.preventDefault()
     e.stopPropagation()
     
@@ -202,8 +125,6 @@ function ScheduledTaskCard({ task, slotId, slotData }: ScheduledTaskCardProps) {
     setIsResizing(false)
     setResizePosition(null)
     
-    // リサイズ完了後も操作モードを維持
-    
     // 時間が変更された場合のみ更新
     const timeChanged = tempEstimatedTime !== (slotData.estimatedTime || 60)
     const startTimeChanged = tempStartTime !== slotData.startTime
@@ -224,7 +145,7 @@ function ScheduledTaskCard({ task, slotId, slotData }: ScheduledTaskCardProps) {
         await moveTaskToTimeline(task.id, slotDate, tempStartTime, user.id)
       }
     }
-  }, [isResizing, tempEstimatedTime, tempStartTime, slotData, task.id, updateTask, removeTimeSlot, moveTaskToTimeline, user, slotId, isMobile])
+  }, [isResizing, tempEstimatedTime, tempStartTime, slotData, task.id, updateTask, removeTimeSlot, moveTaskToTimeline, user, slotId])
 
   // リサイズ中のマウス/タッチイベントをリッスン
   useEffect(() => {
@@ -245,111 +166,6 @@ function ScheduledTaskCard({ task, slotId, slotData }: ScheduledTaskCardProps) {
       }
     }
   }, [isResizing, handleResizeMove, handleResizeEnd])
-
-  // ドラッグ開始を検出
-  useEffect(() => {
-    if (isDragging && operationMode === 'active') {
-      setHasStartedDragging(true)
-    }
-  }, [isDragging, operationMode])
-
-  // 操作モードのデバッグログ
-  useEffect(() => {
-    console.log('🎆 Operation mode changed:', operationMode)
-    console.log('🎆 Is dragging:', isDragging)
-    console.log('🎆 Is mobile:', isMobile)
-    console.log('🎆 Is resizing:', isResizing)
-    console.log('🎆 Listeners:', listeners)
-    console.log('🎆 Attributes:', attributes)
-  }, [operationMode, isDragging, isMobile, isResizing, listeners, attributes])
-
-  // 操作モード中のスクロールを無効化（削除）
-  // touch-actionで制御するため不要
-
-  // ドラッグ・リサイズ中の自動スクロール
-  useEffect(() => {
-    if ((!isDragging && !isResizing) || !isMobile) return
-
-    let animationFrameId: number | null = null
-    const scrollSpeed = 8
-    const edgeThreshold = 80 // 画面端から80px以内でスクロール
-
-    const findScrollContainer = (element: HTMLElement | null): HTMLElement | null => {
-      if (!element) return null
-      
-      let current: HTMLElement | null = element
-      while (current) {
-        const style = window.getComputedStyle(current)
-        if (style.overflowY === 'auto' || style.overflowY === 'scroll') {
-          return current
-        }
-        current = current.parentElement
-      }
-      return null
-    }
-
-    let currentClientY = 0
-    let currentScrollContainer: HTMLElement | null = null
-
-    const handleAutoScroll = (e: TouchEvent | MouseEvent) => {
-      currentClientY = 'touches' in e ? e.touches[0].clientY : e.clientY
-      currentScrollContainer = findScrollContainer(cardRef.current)
-      if (!currentScrollContainer) return
-
-      const scroll = () => {
-        if (!currentScrollContainer) return
-        
-        // 毎フレームで距離を再計算
-        const rect = currentScrollContainer.getBoundingClientRect()
-        const distanceFromTop = currentClientY - rect.top
-        const distanceFromBottom = rect.bottom - currentClientY
-
-        // 上端に近い場合、上にスクロール
-        if (distanceFromTop < edgeThreshold && distanceFromTop > 0) {
-          const scrollAmount = Math.max(1, (edgeThreshold - distanceFromTop) / edgeThreshold * scrollSpeed)
-          currentScrollContainer.scrollTop -= scrollAmount
-          animationFrameId = requestAnimationFrame(scroll)
-        }
-        // 下端に近い場合、下にスクロール
-        else if (distanceFromBottom < edgeThreshold && distanceFromBottom > 0) {
-          const scrollAmount = Math.max(1, (edgeThreshold - distanceFromBottom) / edgeThreshold * scrollSpeed)
-          currentScrollContainer.scrollTop += scrollAmount
-          animationFrameId = requestAnimationFrame(scroll)
-        } else {
-          // スクロールが不要になったらアニメーションを停止
-          if (animationFrameId) {
-            cancelAnimationFrame(animationFrameId)
-            animationFrameId = null
-          }
-        }
-      }
-
-      // 既にアニメーションが実行中の場合はキャンセル
-      if (animationFrameId) {
-        cancelAnimationFrame(animationFrameId)
-      }
-      
-      // アニメーションを開始
-      animationFrameId = requestAnimationFrame(scroll)
-    }
-
-    const handleMove = (e: TouchEvent | MouseEvent) => {
-      // マウス/タッチ位置を更新
-      currentClientY = 'touches' in e ? e.touches[0].clientY : e.clientY
-      handleAutoScroll(e)
-    }
-
-    document.addEventListener('touchmove', handleMove)
-    document.addEventListener('mousemove', handleMove)
-
-    return () => {
-      document.removeEventListener('touchmove', handleMove)
-      document.removeEventListener('mousemove', handleMove)
-      if (animationFrameId) {
-        cancelAnimationFrame(animationFrameId)
-      }
-    }
-  }, [isDragging, isResizing, isMobile, cardRef])
 
   const handleEdit = () => {
     setIsEditing(true)
@@ -447,32 +263,11 @@ function ScheduledTaskCard({ task, slotId, slotData }: ScheduledTaskCardProps) {
   const isCompleted = task.status === 'completed'
   
   return (
-    <div style={style}>
+    <div ref={setNodeRef} style={style}>
       <Card
-        ref={(node) => {
-          cardRef.current = node
-          setNodeRef(node)
-          if (isMobile && operationMode === 'active' && !isResizing) {
-            setActivatorNodeRef(node)
-          }
-        }}
-        {...((() => {
-          // PC版：完了タスクでなく、リサイズ中でない場合は常にドラッグ可能
-          if (!isMobile && !isCompleted && !isResizing) {
-            return { ...listeners, ...attributes }
-          }
-          // モバイル版：操作モードが有効で、完了タスクでなく、リサイズ中でない場合のみドラッグ可能
-          if (isMobile && operationMode === 'active' && !isCompleted && !isResizing) {
-            return { ...listeners, ...attributes }
-          }
-          return {}
-        })())}
-        onTouchStart={isMobile && operationMode === 'none' ? handleTouchStart : undefined}
-        onTouchMove={isMobile && operationMode === 'none' ? handleTouchMove : undefined}
-        onTouchEnd={isMobile && operationMode === 'none' ? handleTouchEnd : undefined}
-        className={`absolute left-2 right-2 p-2 transition-colors group ${
-          !isCompleted && (!isResizing || (isMobile && operationMode === 'active')) ? 'cursor-move' : ''
-        } ${
+        ref={cardRef}
+        {...(!isCompleted && !isResizing ? { ...listeners, ...attributes } : {})}
+        className={`absolute left-2 right-2 p-2 transition-colors group ${!isCompleted && !isResizing ? 'cursor-move' : ''} ${
           isDragging ? 'z-50 shadow-2xl scale-105' : 'z-20'
         } ${
           isCompleted 
@@ -480,8 +275,6 @@ function ScheduledTaskCard({ task, slotId, slotData }: ScheduledTaskCardProps) {
             : 'bg-blue-100 border-blue-300 dark:bg-blue-950/30 hover:bg-blue-200 dark:hover:bg-blue-900/40'
         } ${
           isResizing ? 'ring-2 ring-primary ring-offset-2' : ''
-        } ${
-          operationMode !== 'none' ? 'ring-2 ring-primary' : ''
         }`}
         style={{ 
           height: `${(() => {
@@ -641,21 +434,21 @@ function ScheduledTaskCard({ task, slotId, slotData }: ScheduledTaskCardProps) {
           )}
           
           {/* リサイズハンドル（完了タスクでは表示しない） */}
-          {!isCompleted && (!isMobile || operationMode === 'active') && (
+          {!isCompleted && (
             <>
               {/* 上部リサイズハンドル */}
               <div
                 className={`absolute left-0 right-0 top-0 cursor-ns-resize transition-colors ${
-                  isResizing ? 'bg-primary/30 h-4' : 'h-3 hover:bg-primary/20 hover:h-4'
-                } ${isMobile ? 'h-4 bg-primary/20' : ''}`}
+                  isResizing ? 'bg-primary/30 h-3' : 'h-2 hover:bg-primary/20 hover:h-3'
+                } touch:h-3 md:h-2`}
                 onMouseDown={(e) => handleResizeStart(e, 'top')}
                 onTouchStart={(e) => handleResizeStart(e, 'top')}
               />
               {/* 下部リサイズハンドル */}
               <div
                 className={`absolute left-0 right-0 bottom-0 cursor-ns-resize transition-colors ${
-                  isResizing ? 'bg-primary/30 h-4' : 'h-3 hover:bg-primary/20 hover:h-4'
-                } ${isMobile ? 'h-4 bg-primary/20' : ''}`}
+                  isResizing ? 'bg-primary/30 h-3' : 'h-2 hover:bg-primary/20 hover:h-3'
+                } touch:h-3 md:h-2`}
                 onMouseDown={(e) => handleResizeStart(e, 'bottom')}
                 onTouchStart={(e) => handleResizeStart(e, 'bottom')}
               />
@@ -663,32 +456,6 @@ function ScheduledTaskCard({ task, slotId, slotData }: ScheduledTaskCardProps) {
           )}
         </div>
       </Card>
-      
-      
-      {/* 操作モード表示 */}
-      {operationMode !== 'none' && (
-        <>
-          {/* 操作モードインジケーター */}
-          <div className="absolute -top-10 left-0 right-0 flex justify-center pointer-events-none z-30">
-            <div className="bg-primary text-primary-foreground px-3 py-1 rounded-full text-xs font-medium shadow-lg animate-pulse">
-              🔄 移動・リサイズモード
-            </div>
-          </div>
-          {/* 終了ボタン */}
-          <div className="fixed bottom-20 left-0 right-0 flex justify-center pointer-events-none z-50">
-            <button
-              onClick={cancelOperation}
-              className="bg-red-500 hover:bg-red-600 text-white px-6 py-3 rounded-full font-medium shadow-lg pointer-events-auto transition-colors flex items-center space-x-2 animate-bounce"
-            >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-              </svg>
-              <span>操作モードを終了</span>
-            </button>
-          </div>
-        </>
-      )}
-      
       <TaskDetailModal
         task={task}
         isOpen={showDetail}
