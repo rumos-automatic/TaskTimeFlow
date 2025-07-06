@@ -67,7 +67,8 @@ function ScheduledTaskCard({ task, slotId, slotData }: ScheduledTaskCardProps) {
     setNodeRef,
     transform,
     transition,
-    isDragging
+    isDragging,
+    setActivatorNodeRef
   } = useSortable({ 
     id: `scheduled-${task.id}-${slotId}`,
     disabled: isMobile ? operationMode !== 'active' || isResizing : false
@@ -76,7 +77,8 @@ function ScheduledTaskCard({ task, slotId, slotData }: ScheduledTaskCardProps) {
   const style = {
     transform: CSS.Transform.toString(transform),
     transition: isResizing ? 'none' : transition,
-    opacity: isDragging ? 0.5 : 1
+    opacity: isDragging ? 0.5 : 1,
+    touchAction: operationMode === 'active' ? 'none' : 'auto'
   }
 
   // 長押し検出とモード選択
@@ -257,7 +259,9 @@ function ScheduledTaskCard({ task, slotId, slotData }: ScheduledTaskCardProps) {
     console.log('🎆 Is dragging:', isDragging)
     console.log('🎆 Is mobile:', isMobile)
     console.log('🎆 Is resizing:', isResizing)
-  }, [operationMode, isDragging, isMobile, isResizing])
+    console.log('🎆 Listeners:', listeners)
+    console.log('🎆 Attributes:', attributes)
+  }, [operationMode, isDragging, isMobile, isResizing, listeners, attributes])
 
   // 操作モード中のスクロールを無効化
   useEffect(() => {
@@ -449,10 +453,15 @@ function ScheduledTaskCard({ task, slotId, slotData }: ScheduledTaskCardProps) {
   return (
     <div ref={setNodeRef} style={style}>
       <Card
-        ref={cardRef}
+        ref={(node) => {
+          cardRef.current = node
+          if (isMobile && operationMode === 'active' && !isResizing) {
+            setActivatorNodeRef(node)
+          }
+        }}
         {...(!isCompleted && !isResizing && !isMobile ? { ...listeners, ...attributes } : {})}
         {...(isMobile && operationMode === 'active' && !isCompleted && !isResizing ? { ...listeners, ...attributes } : {})}
-        onTouchStart={isMobile ? handleTouchStart : undefined}
+        onTouchStart={isMobile && operationMode === 'none' ? handleTouchStart : undefined}
         onTouchMove={isMobile && operationMode === 'none' ? handleTouchMove : undefined}
         onTouchEnd={isMobile && operationMode === 'none' ? handleTouchEnd : undefined}
         className={`absolute left-2 right-2 p-2 transition-colors group ${
