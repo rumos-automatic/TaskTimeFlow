@@ -571,4 +571,25 @@ export class TaskService {
       supabase.removeChannel(channel)
     }
   }
+  
+  // Get monthly time logs (work time and break time) for calendar view
+  static async getMonthlyTimeLogs(userId: string, year: number, month: number): Promise<{ date: Date, workTime: number, breakTime: number }[]> {
+    const { data, error } = await (supabase as any)
+      .rpc('get_monthly_time_logs', {
+        p_user_id: userId,
+        p_year: year,
+        p_month: month
+      })
+      
+    if (error) {
+      console.error('Error fetching monthly time logs:', error)
+      throw error
+    }
+    
+    return (data || []).map((log: any) => ({
+      date: parseDateFromDatabase(log.date),
+      workTime: log.work_time || 0,
+      breakTime: log.break_time || 0
+    }))
+  }
 }

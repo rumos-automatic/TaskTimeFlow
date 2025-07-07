@@ -4,7 +4,8 @@ import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
-import { Calendar, ChevronLeft, ChevronRight, Clock, Edit2, Trash2, X, Check, RotateCcw, CalendarDays, Plus, Copy, FileText } from 'lucide-react'
+import { Calendar, ChevronLeft, ChevronRight, Clock, Edit2, Trash2, X, Check, RotateCcw, CalendarDays, Plus, Copy, FileText, ListTodo, Timer } from 'lucide-react'
+import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group'
 import { useDroppable } from '@dnd-kit/core'
 import { useSortable, SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
@@ -17,6 +18,7 @@ import { Task, Priority, Urgency, TaskCategory } from '@/lib/types'
 import { TimelineAddForm, BaseTaskForm, CalendarAddForm, TaskFormData } from '@/components/ui/task-form'
 import { TaskDetailModal } from './task-detail-modal'
 import { getDueDateInfo } from '@/lib/utils/date-helpers'
+import { TaskService } from '@/lib/supabase/task-service'
 
 const timeSlots = Array.from({ length: 96 }, (_, i) => {
   const hour = Math.floor(i / 4)
@@ -1443,6 +1445,9 @@ function CalendarView({ selectedDate, setSelectedDate, scheduledSlots, tasks }: 
   const { completeTask, uncompleteTask, removeTimeSlot, addTask, moveTaskToTimeline, updateTask } = useTaskStoreWithAuth()
   const { user } = useAuth()
   
+  // カレンダービューの表示モード管理
+  const [calendarViewMode, setCalendarViewMode] = useState<'tasks' | 'time'>('tasks')
+  
   // カレンダービューでのタスク作成管理
   const [activeFormDate, setActiveFormDate] = useState<string | null>(null)
   const [formLocation, setFormLocation] = useState<'cell' | 'section' | null>(null)
@@ -1450,6 +1455,10 @@ function CalendarView({ selectedDate, setSelectedDate, scheduledSlots, tasks }: 
   // カレンダービューでのタスク編集管理
   const [editingTask, setEditingTask] = useState<any>(null)
   const [editingSlot, setEditingSlot] = useState<any>(null)
+  
+  // 月ごとの時間データ管理
+  const [monthlyTimeLogs, setMonthlyTimeLogs] = useState<{ date: Date, workTime: number, breakTime: number }[]>([])
+  const [isLoadingTimeLogs, setIsLoadingTimeLogs] = useState(false)
 
   // カレンダーからのタスク作成ハンドラー
   const handleCalendarTaskCreate = async (taskData: any, time: string, date: Date) => {
@@ -1585,6 +1594,32 @@ function CalendarView({ selectedDate, setSelectedDate, scheduledSlots, tasks }: 
     }
   }
   
+  // 月ごとの時間データを取得
+  const selectedMonth = selectedDate.getMonth()
+  const selectedYear = selectedDate.getFullYear()
+  
+  useEffect(() => {
+    if (calendarViewMode === 'time' && user) {
+      const fetchMonthlyTimeLogs = async () => {
+        setIsLoadingTimeLogs(true)
+        try {
+          const logs = await TaskService.getMonthlyTimeLogs(
+            user.id,
+            selectedYear,
+            selectedMonth + 1 // Month is 1-based in the RPC
+          )
+          setMonthlyTimeLogs(logs)
+        } catch (error) {
+          console.error('月ごとの時間データの取得に失敗しました:', error)
+        } finally {
+          setIsLoadingTimeLogs(false)
+        }
+      }
+      
+      fetchMonthlyTimeLogs()
+    }
+  }, [calendarViewMode, selectedMonth, selectedYear, user])
+  
   // 🔍 カレンダービューのデバッグログ
   console.log('🔍 CalendarView Debug Info:')
   console.log('📅 Selected Date:', selectedDate.toDateString())
@@ -1610,6 +1645,16 @@ function CalendarView({ selectedDate, setSelectedDate, scheduledSlots, tasks }: 
   
   // Group tasks by date
   const tasksByDate: { [key: string]: any[] } = {}
+  
+  // Group time logs by date
+  const timeLogsByDate: { [key: string]: { workTime: number, breakTime: number } } = {}
+  monthlyTimeLogs.forEach(log => {
+    const dateKey = log.date.toDateString()
+    timeLogsByDate[dateKey] = {
+      workTime: log.workTime,
+      breakTime: log.breakTime
+    }
+  })
   
   // Add scheduled tasks
   scheduledSlots.forEach(slot => {
@@ -1686,6 +1731,33 @@ function CalendarView({ selectedDate, setSelectedDate, scheduledSlots, tasks }: 
   
   return (
     <div className="flex-1 overflow-y-auto p-2 md:p-4 space-y-4">
+      {/* View Mode Toggle */}
+      <div className="flex justify-center mb-4">
+        <ToggleGroup 
+          type="single" 
+          value={calendarViewMode} 
+          onValueChange={(value) => value && setCalendarViewMode(value as 'tasks' | 'time')}
+          className="bg-muted/50 p-1 rounded-lg"
+        >
+          <ToggleGroupItem 
+            value="tasks" 
+            aria-label="タスク表示" 
+            className="px-3 py-1.5 text-sm data-[state=on]:bg-background data-[state=on]:shadow-sm"
+          >
+            <ListTodo className="w-4 h-4 mr-2" />
+            タスク
+          </ToggleGroupItem>
+          <ToggleGroupItem 
+            value="time" 
+            aria-label="時間表示" 
+            className="px-3 py-1.5 text-sm data-[state=on]:bg-background data-[state=on]:shadow-sm"
+          >
+            <Timer className="w-4 h-4 mr-2" />
+            時間
+          </ToggleGroupItem>
+        </ToggleGroup>
+      </div>
+      
       {/* Calendar Grid */}
       <div className="grid grid-cols-7 gap-0.5 md:gap-1">
         {/* Weekday headers */}
@@ -1707,6 +1779,7 @@ function CalendarView({ selectedDate, setSelectedDate, scheduledSlots, tasks }: 
           const isSelected = day.toDateString() === selectedDate.toDateString()
           const dateKey = day.toDateString()
           const dayTasks = tasksByDate[dateKey] || []
+          const dayTimeLog = timeLogsByDate[dateKey]
           const dayOfWeek = day.getDay()
           
           return (
@@ -1745,9 +1818,11 @@ function CalendarView({ selectedDate, setSelectedDate, scheduledSlots, tasks }: 
                   )}
                 </div>
                 <div className="flex-1 space-y-1 overflow-y-auto">
-                  {/* Desktop view - show task names */}
-                  <div className="hidden md:block space-y-1">
-                    {dayTasks.slice(0, 3).map(({ task, slot }, taskIndex) => (
+                  {calendarViewMode === 'tasks' ? (
+                    <>
+                      {/* Desktop view - show task names */}
+                      <div className="hidden md:block space-y-1">
+                        {dayTasks.slice(0, 3).map(({ task, slot }, taskIndex) => (
                       <div
                         key={taskIndex}
                         className={`text-xs p-1 rounded truncate cursor-pointer hover:opacity-80 transition-opacity ${
@@ -1808,6 +1883,37 @@ function CalendarView({ selectedDate, setSelectedDate, scheduledSlots, tasks }: 
                       />
                     ))}
                   </div>
+                    </>
+                  ) : (
+                    /* Time view - show work and break times */
+                    <div className="flex flex-col justify-center items-center h-full space-y-1">
+                      {dayTimeLog && (dayTimeLog.workTime > 0 || dayTimeLog.breakTime > 0) ? (
+                        <>
+                          {dayTimeLog.workTime > 0 && (
+                            <div className="flex items-center gap-1 text-xs">
+                              <Clock className="w-3 h-3 text-blue-500" />
+                              <span className="text-blue-700 dark:text-blue-300 font-medium">
+                                {Math.floor(dayTimeLog.workTime / 60)}h {dayTimeLog.workTime % 60}m
+                              </span>
+                            </div>
+                          )}
+                          {dayTimeLog.breakTime > 0 && (
+                            <div className="flex items-center gap-1 text-xs">
+                              <Timer className="w-3 h-3 text-green-500" />
+                              <span className="text-green-700 dark:text-green-300 font-medium">
+                                {Math.floor(dayTimeLog.breakTime / 60)}h {dayTimeLog.breakTime % 60}m
+                              </span>
+                            </div>
+                          )}
+                        </>
+                      ) : (
+                        /* No time logs for this day */
+                        isCurrentMonth && (
+                          <span className="text-xs text-muted-foreground">-</span>
+                        )
+                      )}
+                    </div>
+                  )}
                 </div>
                 
               </div>
@@ -1816,7 +1922,7 @@ function CalendarView({ selectedDate, setSelectedDate, scheduledSlots, tasks }: 
         })}
       </div>
       
-      {/* Selected Date Tasks */}
+      {/* Selected Date Tasks or Time Summary */}
       <div className="mt-4">
         <div className="mb-3">
           <div className="flex items-center justify-between">
@@ -1825,53 +1931,95 @@ function CalendarView({ selectedDate, setSelectedDate, scheduledSlots, tasks }: 
                 month: 'long', 
                 day: 'numeric', 
                 weekday: 'long' 
-              })}のタスク
+              })}の{calendarViewMode === 'tasks' ? 'タスク' : '時間記録'}
             </h3>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => {
-                setActiveFormDate(selectedDate.toDateString())
-                setFormLocation('section')
-              }}
-              className="h-7 px-2 text-xs"
-            >
-              <Plus className="w-3 h-3 mr-1" />
-              タスク追加
-            </Button>
+            {calendarViewMode === 'tasks' && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  setActiveFormDate(selectedDate.toDateString())
+                  setFormLocation('section')
+                }}
+                className="h-7 px-2 text-xs"
+              >
+                <Plus className="w-3 h-3 mr-1" />
+                タスク追加
+              </Button>
+            )}
           </div>
           <Separator className="mt-2" />
         </div>
         
-        {selectedDateTasks.length === 0 ? (
-          <div className="text-center py-8 text-muted-foreground">
-            <Calendar className="w-12 h-12 mx-auto mb-2 opacity-50" />
-            <p className="text-sm">この日にスケジュールされたタスクはありません</p>
-          </div>
+        {calendarViewMode === 'tasks' ? (
+          /* Task mode display */
+          selectedDateTasks.length === 0 ? (
+            <div className="text-center py-8 text-muted-foreground">
+              <Calendar className="w-12 h-12 mx-auto mb-2 opacity-50" />
+              <p className="text-sm">この日にスケジュールされたタスクはありません</p>
+            </div>
+          ) : (
+            <div className="space-y-2">
+              {selectedDateTasks
+                .sort((a, b) => {
+                  // Sort by start time
+                  const timeA = a.slot.startTime || '00:00'
+                  const timeB = b.slot.startTime || '00:00'
+                  return timeA.localeCompare(timeB)
+                })
+                .map(({ task, slot }, index) => (
+                  <SelectedDateTaskCard 
+                    key={`${task.id}-${slot.id}`}
+                    task={task}
+                    slot={slot}
+                    onComplete={() => completeTask(task.id)}
+                    onUncomplete={() => uncompleteTask(task.id)}
+                    onRemove={() => removeTimeSlot(slot.id)}
+                    onEdit={() => {
+                      setEditingTask(task)
+                      setEditingSlot(slot)
+                    }}
+                  />
+                ))
+              }
+            </div>
+          )
         ) : (
-          <div className="space-y-2">
-            {selectedDateTasks
-              .sort((a, b) => {
-                // Sort by start time
-                const timeA = a.slot.startTime || '00:00'
-                const timeB = b.slot.startTime || '00:00'
-                return timeA.localeCompare(timeB)
-              })
-              .map(({ task, slot }, index) => (
-                <SelectedDateTaskCard 
-                  key={`${task.id}-${slot.id}`}
-                  task={task}
-                  slot={slot}
-                  onComplete={() => completeTask(task.id)}
-                  onUncomplete={() => uncompleteTask(task.id)}
-                  onRemove={() => removeTimeSlot(slot.id)}
-                  onEdit={() => {
-                    setEditingTask(task)
-                    setEditingSlot(slot)
-                  }}
-                />
-              ))
-            }
+          /* Time mode display */
+          <div className="space-y-4">
+            {timeLogsByDate[selectedDate.toDateString()] ? (
+              <>
+                <div className="flex items-center justify-between p-4 bg-blue-50 dark:bg-blue-950/30 rounded-lg">
+                  <div className="flex items-center gap-3">
+                    <Clock className="w-6 h-6 text-blue-500" />
+                    <div>
+                      <p className="text-sm text-muted-foreground">作業時間</p>
+                      <p className="text-lg font-semibold text-blue-700 dark:text-blue-300">
+                        {Math.floor(timeLogsByDate[selectedDate.toDateString()].workTime / 60)}時間 
+                        {timeLogsByDate[selectedDate.toDateString()].workTime % 60}分
+                      </p>
+                    </div>
+                  </div>
+                </div>
+                <div className="flex items-center justify-between p-4 bg-green-50 dark:bg-green-950/30 rounded-lg">
+                  <div className="flex items-center gap-3">
+                    <Timer className="w-6 h-6 text-green-500" />
+                    <div>
+                      <p className="text-sm text-muted-foreground">休憩時間</p>
+                      <p className="text-lg font-semibold text-green-700 dark:text-green-300">
+                        {Math.floor(timeLogsByDate[selectedDate.toDateString()].breakTime / 60)}時間 
+                        {timeLogsByDate[selectedDate.toDateString()].breakTime % 60}分
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </>
+            ) : (
+              <div className="text-center py-8 text-muted-foreground">
+                <Timer className="w-12 h-12 mx-auto mb-2 opacity-50" />
+                <p className="text-sm">この日の時間記録はありません</p>
+              </div>
+            )}
           </div>
         )}
         
