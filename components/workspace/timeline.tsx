@@ -804,14 +804,10 @@ function DroppableTimeSlot({ time, hour, minute, slotIndex, isBusinessHour, isHo
       key={time}
       className={`relative flex items-start ${
         isBusinessHour ? 'bg-muted/10' : ''
-      } ${isCurrentSlot ? 'bg-blue-50 dark:bg-blue-950/20' : ''} h-16 ${
-        isHourStart ? 'border-t-2 border-border/60' : 
-        isHalfHour ? 'border-t border-border/30' : 
-        'border-t border-border/20'
-      }`}
+      } ${isCurrentSlot ? 'bg-blue-50 dark:bg-blue-950/20' : ''} h-16`}
     >
       {/* Time Label - 1時間ごとまたは30分ごとに表示 */}
-      <div className="w-16 text-xs text-muted-foreground p-2 font-mono">
+      <div className="w-16 text-xs text-muted-foreground px-2 py-1 font-mono flex items-center">
         {(isHourStart || isHalfHour) ? time : ''}
       </div>
 
@@ -820,6 +816,10 @@ function DroppableTimeSlot({ time, hour, minute, slotIndex, isBusinessHour, isHo
         ref={setNodeRef}
         className={`flex-1 min-h-full border-l border-border/20 p-2 relative transition-colors ${
           isOver ? 'bg-blue-100 dark:bg-blue-950/30 border-blue-300' : ''
+        } ${
+          isHourStart ? 'border-t-2 border-border/60' : 
+          isHalfHour ? 'border-t border-border/30' : 
+          'border-t border-border/20'
         }`}
         onMouseEnter={() => setActiveSlot(time)}
         onMouseLeave={() => setActiveSlot(null)}
