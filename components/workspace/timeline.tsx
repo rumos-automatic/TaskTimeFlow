@@ -807,7 +807,7 @@ function DroppableTimeSlot({ time, hour, minute, slotIndex, isBusinessHour, isHo
       } ${isCurrentSlot ? 'bg-blue-50 dark:bg-blue-950/20' : ''} h-16`}
     >
       {/* Time Label - 1時間ごとまたは30分ごとに表示 */}
-      <div className="w-16 text-xs text-muted-foreground px-2 py-1 font-mono flex items-center">
+      <div className="w-16 text-xs text-muted-foreground px-2 pt-px font-mono flex items-start leading-none">
         {(isHourStart || isHalfHour) ? time : ''}
       </div>
 
