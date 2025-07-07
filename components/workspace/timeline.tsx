@@ -92,8 +92,8 @@ function ScheduledTaskCard({ task, slotId, slotData }: ScheduledTaskCardProps) {
     const clientY = 'touches' in e ? e.touches[0].clientY : e.clientY
     const deltaY = clientY - resizeStartY
     
-    // 15分単位のスナップ（1スロット = 40px または 64px）
-    const pixelsPerSlot = 40 // 基本的なスロットの高さ
+    // 15分単位のスナップ（全スロットが統一）
+    const pixelsPerSlot = TIME_SLOT_HEIGHT // 統一されたスロットの高さ
     const slotsChanged = Math.round(deltaY / pixelsPerSlot)
     const minutesChanged = slotsChanged * 15
     
@@ -285,19 +285,9 @@ function ScheduledTaskCard({ task, slotId, slotData }: ScheduledTaskCardProps) {
         style={{ 
           height: `${(() => {
             const minutes = isResizing ? tempEstimatedTime : (slotData.estimatedTime || 60)
-            const currentStartTime = isResizing && resizePosition === 'top' ? tempStartTime : slotData.startTime
             const slots = Math.ceil(minutes / 15)
-            let totalHeight = 0
-            
-            // タスクの開始時刻から必要なスロット数分の高さを計算
-            const [startHour, startMinute] = currentStartTime.split(':').map(Number)
-            const startSlotIndex = startHour * 4 + Math.floor(startMinute / 15)
-            
-            for (let i = 0; i < slots; i++) {
-              const currentSlotIndex = startSlotIndex + i
-              const currentMinute = (currentSlotIndex % 4) * 15
-              totalHeight += currentMinute === 0 ? 64 : 40 // h-16 or h-10
-            }
+            // 全スロットの高さが統一されたため、シンプルな計算に
+            const totalHeight = slots * TIME_SLOT_HEIGHT
             
             // パディング分を考慮して少し減らす
             return totalHeight - 4
@@ -814,8 +804,10 @@ function DroppableTimeSlot({ time, hour, minute, slotIndex, isBusinessHour, isHo
       key={time}
       className={`relative flex items-start ${
         isBusinessHour ? 'bg-muted/10' : ''
-      } ${isCurrentSlot ? 'bg-blue-50 dark:bg-blue-950/20' : ''} ${
-        isHourStart ? 'border-t border-border/40 h-16' : 'border-t border-border/10 h-10'
+      } ${isCurrentSlot ? 'bg-blue-50 dark:bg-blue-950/20' : ''} h-16 ${
+        isHourStart ? 'border-t-2 border-border/60' : 
+        isHalfHour ? 'border-t border-border/30' : 
+        'border-t border-border/20'
       }`}
     >
       {/* Time Label - 1時間ごとまたは30分ごとに表示 */}
@@ -913,6 +905,9 @@ function DroppableTimeSlot({ time, hour, minute, slotIndex, isBusinessHour, isHo
     </div>
   )
 }
+
+// タイムスロットの高さ定数
+const TIME_SLOT_HEIGHT = 64 // px
 
 interface TimelineProps {
   hasInitialScroll?: boolean
@@ -1026,11 +1021,8 @@ export function Timeline({
     
     // Calculate scroll position based on current time
     const currentSlotIndex = currentHour * 4 + Math.floor(currentMinute / 15)
-    let totalHeight = 0
-    for (let i = 0; i < currentSlotIndex; i++) {
-      const slotMinute = (i % 4) * 15
-      totalHeight += slotMinute === 0 ? 64 : 40 // h-16 or h-10
-    }
+    // 全スロットが統一されたため、シンプルな計算に
+    const totalHeight = currentSlotIndex * TIME_SLOT_HEIGHT
     
     // Add offset for Due Tasks Section if present
     // Due Tasks Sectionのコンテナ要素を探す
@@ -1258,16 +1250,10 @@ export function Timeline({
                 top: `${(() => {
                   // 15分単位のスロットインデックス
                   const currentSlotIndex = currentHour * 4 + Math.floor(currentMinute / 15)
-                  // 各スロットの高さを累積計算
-                  let totalHeight = 0
-                  for (let i = 0; i < currentSlotIndex; i++) {
-                    const slotMinute = (i % 4) * 15
-                    totalHeight += slotMinute === 0 ? 64 : 40 // h-16 or h-10
-                  }
+                  // 各スロットの高さを累積計算（全スロット統一）
+                  const totalHeight = currentSlotIndex * TIME_SLOT_HEIGHT
                   // 現在のスロット内でのオフセット
-                  const currentSlotMinute = (currentSlotIndex % 4) * 15
-                  const slotHeight = currentSlotMinute === 0 ? 64 : 40
-                  const offsetInSlot = ((currentMinute % 15) / 15) * slotHeight
+                  const offsetInSlot = ((currentMinute % 15) / 15) * TIME_SLOT_HEIGHT
                   return totalHeight + offsetInSlot
                 })()}px`
               }}
