@@ -1608,6 +1608,16 @@ function CalendarView({ selectedDate, setSelectedDate, scheduledSlots, tasks }: 
             selectedYear,
             selectedMonth + 1 // Month is 1-based in the RPC
           )
+          console.log('📊 Fetched monthly time logs:', logs)
+          console.log('📊 Logs count:', logs.length)
+          logs.forEach(log => {
+            console.log('📊 Log entry:', {
+              date: log.date,
+              dateString: log.date.toDateString(),
+              workTime: log.workTime,
+              breakTime: log.breakTime
+            })
+          })
           setMonthlyTimeLogs(logs)
         } catch (error) {
           console.error('月ごとの時間データの取得に失敗しました:', error)
@@ -1648,13 +1658,20 @@ function CalendarView({ selectedDate, setSelectedDate, scheduledSlots, tasks }: 
   
   // Group time logs by date
   const timeLogsByDate: { [key: string]: { workTime: number, breakTime: number } } = {}
+  console.log('📊 Processing monthlyTimeLogs for timeLogsByDate:', monthlyTimeLogs.length)
   monthlyTimeLogs.forEach(log => {
     const dateKey = log.date.toDateString()
+    console.log('📊 Adding to timeLogsByDate:', {
+      dateKey,
+      workTime: log.workTime,
+      breakTime: log.breakTime
+    })
     timeLogsByDate[dateKey] = {
       workTime: log.workTime,
       breakTime: log.breakTime
     }
   })
+  console.log('📊 Final timeLogsByDate:', timeLogsByDate)
   
   // Add scheduled tasks
   scheduledSlots.forEach(slot => {
@@ -1781,6 +1798,15 @@ function CalendarView({ selectedDate, setSelectedDate, scheduledSlots, tasks }: 
           const dayTasks = tasksByDate[dateKey] || []
           const dayTimeLog = timeLogsByDate[dateKey]
           const dayOfWeek = day.getDay()
+          
+          // Debug logging for time display
+          if (calendarViewMode === 'time' && isCurrentMonth && dayTimeLog) {
+            console.log('📊 Day with time log:', {
+              date: day.toDateString(),
+              dateKey,
+              dayTimeLog
+            })
+          }
           
           return (
             <Card
