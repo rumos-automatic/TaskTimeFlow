@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
 import { Calendar, ChevronLeft, ChevronRight, Clock, Edit2, Trash2, X, Check, RotateCcw, CalendarDays, Plus, Copy, FileText, ListTodo, Timer } from 'lucide-react'
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group'
+import { formatSecondsToHM } from '@/lib/utils/time-helpers'
 import { useDroppable } from '@dnd-kit/core'
 import { useSortable, SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
@@ -1919,7 +1920,7 @@ function CalendarView({ selectedDate, setSelectedDate, scheduledSlots, tasks }: 
                             <div className="flex items-center gap-1 text-xs">
                               <Clock className="w-3 h-3 text-blue-500" />
                               <span className="text-blue-700 dark:text-blue-300 font-medium">
-                                {Math.floor(dayTimeLog.workTime / 60)}h {dayTimeLog.workTime % 60}m
+                                {formatSecondsToHM(dayTimeLog.workTime)}
                               </span>
                             </div>
                           )}
@@ -1927,7 +1928,7 @@ function CalendarView({ selectedDate, setSelectedDate, scheduledSlots, tasks }: 
                             <div className="flex items-center gap-1 text-xs">
                               <Timer className="w-3 h-3 text-green-500" />
                               <span className="text-green-700 dark:text-green-300 font-medium">
-                                {Math.floor(dayTimeLog.breakTime / 60)}h {dayTimeLog.breakTime % 60}m
+                                {formatSecondsToHM(dayTimeLog.breakTime)}
                               </span>
                             </div>
                           )}
@@ -2021,8 +2022,7 @@ function CalendarView({ selectedDate, setSelectedDate, scheduledSlots, tasks }: 
                     <div>
                       <p className="text-sm text-muted-foreground">作業時間</p>
                       <p className="text-lg font-semibold text-blue-700 dark:text-blue-300">
-                        {Math.floor(timeLogsByDate[selectedDate.toDateString()].workTime / 60)}時間 
-                        {timeLogsByDate[selectedDate.toDateString()].workTime % 60}分
+                        {formatSecondsToHM(timeLogsByDate[selectedDate.toDateString()].workTime)}
                       </p>
                     </div>
                   </div>
@@ -2033,8 +2033,7 @@ function CalendarView({ selectedDate, setSelectedDate, scheduledSlots, tasks }: 
                     <div>
                       <p className="text-sm text-muted-foreground">休憩時間</p>
                       <p className="text-lg font-semibold text-green-700 dark:text-green-300">
-                        {Math.floor(timeLogsByDate[selectedDate.toDateString()].breakTime / 60)}時間 
-                        {timeLogsByDate[selectedDate.toDateString()].breakTime % 60}分
+                        {formatSecondsToHM(timeLogsByDate[selectedDate.toDateString()].breakTime)}
                       </p>
                     </div>
                   </div>
