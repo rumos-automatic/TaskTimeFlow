@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
 import { Switch } from '@/components/ui/switch'
 import { Label } from '@/components/ui/label'
-import { Play, Pause, RotateCcw, Settings, TrendingUp, CheckCircle, Square, Clock, Timer, Coffee, Briefcase } from 'lucide-react'
+import { Play, Pause, RotateCcw, Settings, TrendingUp, CheckCircle, Square, Clock, Timer, Coffee, Briefcase, AlertCircle } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { useTheme } from 'next-themes'
 import { useTimerStore } from '@/lib/store/use-timer-store'
@@ -314,8 +314,8 @@ export function FocusMode() {
         <Card className="p-3">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-2">
-              <Briefcase className={`w-4 h-4 ${!isBreak ? 'text-blue-500' : 'text-muted-foreground'}`} />
-              <Label htmlFor="work-break-toggle" className={`text-sm font-medium ${!isBreak ? '' : 'text-muted-foreground'}`}>
+              <Briefcase className={`w-4 h-4 ${!isBreak ? 'text-blue-500' : 'text-muted-foreground'} ${isRunning ? 'opacity-50' : ''}`} />
+              <Label htmlFor="work-break-toggle" className={`text-sm font-medium ${!isBreak ? '' : 'text-muted-foreground'} ${isRunning ? 'opacity-50' : ''}`}>
                 作業
               </Label>
             </div>
@@ -323,16 +323,23 @@ export function FocusMode() {
               id="work-break-toggle"
               checked={isBreak}
               onCheckedChange={toggleStopwatchBreak}
+              disabled={isRunning}
               className="data-[state=checked]:bg-green-500"
             />
             <div className="flex items-center space-x-2">
-              <Label htmlFor="work-break-toggle" className={`text-sm font-medium ${isBreak ? '' : 'text-muted-foreground'}`}>
+              <Label htmlFor="work-break-toggle" className={`text-sm font-medium ${isBreak ? '' : 'text-muted-foreground'} ${isRunning ? 'opacity-50' : ''}`}>
                 休憩
               </Label>
-              <Coffee className={`w-4 h-4 ${isBreak ? 'text-green-500' : 'text-muted-foreground'}`} />
+              <Coffee className={`w-4 h-4 ${isBreak ? 'text-green-500' : 'text-muted-foreground'} ${isRunning ? 'opacity-50' : ''}`} />
             </div>
           </div>
-          {isBreak && (
+          {isRunning && (
+            <div className="text-xs text-orange-600 dark:text-orange-400 mt-2 text-center flex items-center justify-center space-x-1">
+              <AlertCircle className="w-3 h-3" />
+              <span>計測中は切り替えできません</span>
+            </div>
+          )}
+          {isBreak && !isRunning && (
             <div className="text-xs text-muted-foreground mt-2 text-center">
               休憩中の時間は作業時間に加算されません
             </div>
