@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
 import { Switch } from '@/components/ui/switch'
 import { Label } from '@/components/ui/label'
-import { Play, Pause, RotateCcw, Settings, TrendingUp, CheckCircle, Square, Clock, Timer, Coffee, Briefcase } from 'lucide-react'
+import { Play, Pause, RotateCcw, Settings, TrendingUp, CheckCircle, Square, Clock, Timer, Coffee, Briefcase, MoreVertical } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { useTheme } from 'next-themes'
 import { useTimerStore } from '@/lib/store/use-timer-store'
@@ -14,6 +14,7 @@ import { TimerSettings } from './timer-settings'
 import { useAuth } from '@/lib/auth/auth-context'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group'
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
 import './fluid-animations.css'
 
 export function FocusMode() {
@@ -288,32 +289,8 @@ export function FocusMode() {
 
   return (
     <div className="space-y-6 h-full flex flex-col">
-      {/* Timer Mode Toggle */}
-      <Card className="p-3">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-2">
-            <Timer className="w-4 h-4 text-orange-500" />
-            <Label htmlFor="timer-mode" className="text-sm font-medium">
-              ポモドーロ
-            </Label>
-          </div>
-          <Switch
-            id="timer-mode"
-            checked={timerMode === 'stopwatch'}
-            onCheckedChange={(checked) => setTimerMode(checked ? 'stopwatch' : 'pomodoro')}
-          />
-          <div className="flex items-center space-x-2">
-            <Label htmlFor="timer-mode" className="text-sm font-medium">
-              ストップウォッチ
-            </Label>
-            <Clock className="w-4 h-4 text-purple-500" />
-          </div>
-        </div>
-      </Card>
-      
-      
       {/* Timer Display */}
-      <Card className={`p-6 text-center transition-all duration-1000 h-auto min-h-fit ${
+      <Card className={`p-6 text-center transition-all duration-1000 h-auto min-h-fit relative ${
         gradientAnimation
           ? 'shadow-lg' 
           : 'bg-gradient-to-br from-orange-50 to-red-50 dark:from-orange-950/20 dark:to-red-950/20'
@@ -331,6 +308,38 @@ export function FocusMode() {
         backgroundSize: '200% 200%',
         animation: waveAnimation ? 'gradient-shift 8s ease infinite, pulse 2s ease-in-out infinite alternate' : 'gradient-shift 8s ease infinite'
       } : {}}>
+        {/* Timer Mode Selector - Small and in corner */}
+        <div className="absolute top-2 right-2 z-10">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                className="h-8 w-8 p-0"
+              >
+                <MoreVertical className="h-4 w-4" />
+                <span className="sr-only">タイマーモード選択</span>
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem 
+                onClick={() => setTimerMode('pomodoro')}
+                className={timerMode === 'pomodoro' ? 'bg-accent' : ''}
+              >
+                <Timer className="w-4 h-4 mr-2 text-orange-500" />
+                ポモドーロ
+              </DropdownMenuItem>
+              <DropdownMenuItem 
+                onClick={() => setTimerMode('stopwatch')}
+                className={timerMode === 'stopwatch' ? 'bg-accent' : ''}
+              >
+                <Clock className="w-4 h-4 mr-2 text-purple-500" />
+                ストップウォッチ
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+        
         <div className="relative w-32 h-32 mx-auto mb-4 overflow-visible">
           {/* Progress Ring with Magic Effects - Only for Pomodoro */}
           {timerMode === 'pomodoro' ? (
