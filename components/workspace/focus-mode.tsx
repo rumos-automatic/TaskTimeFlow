@@ -13,6 +13,7 @@ import { useTaskStoreWithAuth } from '@/lib/hooks/use-task-store-with-auth'
 import { TimerSettings } from './timer-settings'
 import { useAuth } from '@/lib/auth/auth-context'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
+import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group'
 import './fluid-animations.css'
 
 export function FocusMode() {
@@ -310,48 +311,6 @@ export function FocusMode() {
         </div>
       </Card>
       
-      {/* Work/Break Toggle (Stopwatch mode only) */}
-      {timerMode === 'stopwatch' && (
-        <Card className="p-3">
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-2">
-                    <Briefcase className={`w-4 h-4 ${!isBreak ? 'text-blue-500' : 'text-muted-foreground'} ${isRunning ? 'opacity-50' : ''}`} />
-                    <Label htmlFor="work-break-toggle" className={`text-sm font-medium ${!isBreak ? '' : 'text-muted-foreground'} ${isRunning ? 'opacity-50' : ''}`}>
-                      作業
-                    </Label>
-                  </div>
-                  <Switch
-                    id="work-break-toggle"
-                    checked={isBreak}
-                    onCheckedChange={toggleStopwatchBreak}
-                    disabled={isRunning}
-                    className="data-[state=checked]:bg-green-500"
-                  />
-                  <div className="flex items-center space-x-2">
-                    <Label htmlFor="work-break-toggle" className={`text-sm font-medium ${isBreak ? '' : 'text-muted-foreground'} ${isRunning ? 'opacity-50' : ''}`}>
-                      休憩
-                    </Label>
-                    <Coffee className={`w-4 h-4 ${isBreak ? 'text-green-500' : 'text-muted-foreground'} ${isRunning ? 'opacity-50' : ''}`} />
-                  </div>
-                </div>
-              </TooltipTrigger>
-              {isRunning && (
-                <TooltipContent>
-                  <p>計測中は切り替えできません</p>
-                </TooltipContent>
-              )}
-            </Tooltip>
-          </TooltipProvider>
-          {isBreak && !isRunning && (
-            <div className="text-xs text-muted-foreground mt-2 text-center">
-              休憩中の時間は作業時間に加算されません
-            </div>
-          )}
-        </Card>
-      )}
       
       {/* Timer Display */}
       <Card className={`p-6 text-center transition-all duration-1000 h-auto min-h-fit ${
@@ -727,6 +686,56 @@ export function FocusMode() {
             )}
           </div>
         </div>
+
+        {/* Work/Break Toggle (Stopwatch mode only) */}
+        {timerMode === 'stopwatch' && (
+          <div className="px-4 pb-2">
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <ToggleGroup 
+                    type="single" 
+                    value={isBreak ? "break" : "work"}
+                    onValueChange={(value) => {
+                      if (value && !isRunning) {
+                        toggleStopwatchBreak()
+                      }
+                    }}
+                    disabled={isRunning}
+                    className="w-full"
+                  >
+                    <ToggleGroupItem 
+                      value="work" 
+                      className={`flex-1 ${isRunning ? 'opacity-50' : ''}`}
+                      aria-label="作業モード"
+                    >
+                      <Briefcase className="w-4 h-4 mr-2" />
+                      作業
+                    </ToggleGroupItem>
+                    <ToggleGroupItem 
+                      value="break" 
+                      className={`flex-1 ${isRunning ? 'opacity-50' : ''}`}
+                      aria-label="休憩モード"
+                    >
+                      <Coffee className="w-4 h-4 mr-2" />
+                      休憩
+                    </ToggleGroupItem>
+                  </ToggleGroup>
+                </TooltipTrigger>
+                {isRunning && (
+                  <TooltipContent>
+                    <p>計測中は切り替えできません</p>
+                  </TooltipContent>
+                )}
+              </Tooltip>
+            </TooltipProvider>
+            {isBreak && !isRunning && (
+              <div className="text-xs text-muted-foreground mt-2 text-center">
+                休憩中の時間は作業時間に加算されません
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Timer Controls */}
         <div className="flex justify-center space-x-2">
