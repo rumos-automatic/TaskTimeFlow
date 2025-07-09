@@ -474,7 +474,8 @@ export class TaskService {
     
     if (error) {
       console.error('Error fetching break time logs:', error)
-      throw error
+      // break_time_logsテーブルが存在しない場合は空配列を返す
+      return []
     }
     
     return data || []
@@ -482,6 +483,7 @@ export class TaskService {
   
   static async getDailyBreakTime(userId: string, date: Date): Promise<number> {
     const dateStr = formatDateForDatabase(date)
+    console.log(`getDailyBreakTime called: userId=${userId}, date=${dateStr}`)
     
     const { data, error } = await (supabase as any)
       .from('break_time_logs')
@@ -491,10 +493,18 @@ export class TaskService {
       
     if (error) {
       console.error('Error fetching daily break time:', error)
+      console.error('Error details:', {
+        code: error.code,
+        message: error.message,
+        details: error.details,
+        hint: error.hint
+      })
       throw error
     }
     
+    console.log('Break time logs fetched:', data)
     const total = (data || []).reduce((total: number, log: any) => total + (log.duration || 0), 0)
+    console.log(`Total break time for ${dateStr}: ${total} seconds`)
     return total
   }
   

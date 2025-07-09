@@ -324,7 +324,7 @@ export const useSupabaseTimerStore = create<SupabaseTimerStore>((set, get) => ({
           // Update lastUpdateTime and lastSavedSeconds after successful save
           set({ 
             lastUpdateTime: Date.now(),
-            lastSavedSeconds: elapsed  // 保存済みの秒数を記録
+            lastSavedSeconds: initialTime + elapsed  // 累積時間を記録
           })
           console.log(`${currentBreakState ? 'Break' : 'Work'} time log updated successfully`)
         } catch (error) {
@@ -340,7 +340,7 @@ export const useSupabaseTimerStore = create<SupabaseTimerStore>((set, get) => ({
       currentTaskId: taskId || null,
       stopwatchInterval: interval as any,
       lastUpdateTime: Date.now(),
-      lastSavedSeconds: isPaused ? get().lastSavedSeconds : 0  // 新規開始時は0、再開時は保持
+      lastSavedSeconds: stopwatchTime  // 現在の累積時間を保存済みとして記録
     })
   },
   
@@ -382,8 +382,8 @@ export const useSupabaseTimerStore = create<SupabaseTimerStore>((set, get) => ({
       isPaused: true,  // 一時停止状態
       currentTaskId,   // タスクIDは保持
       stopwatchInterval: null,
-      lastUpdateTime: null
-      // stopwatchTimeは保持（一時停止）
+      lastUpdateTime: null,
+      lastSavedSeconds: stopwatchTime  // 停止時の秒数を保存済みとして記録
     })
     
     // データ更新のトリガー
