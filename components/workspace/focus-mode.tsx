@@ -266,6 +266,7 @@ export function FocusMode() {
         setTodayTotalTime(todayTime)
         
         const breakTime = await getTodayBreakTime()
+        console.log('Focus Mode - Today break time from DB:', breakTime, 'seconds =', formatStopwatchTime(breakTime))
         setTodayBreakTime(breakTime)
         
         if (currentTask) {
@@ -794,9 +795,22 @@ export function FocusMode() {
             </div>
             <div className="text-center">
               <div className="text-lg font-bold text-green-600">
-                {formatStopwatchTime(
-                  todayBreakTime + (timerMode === 'stopwatch' && isBreak ? (stopwatchTime - lastSavedSeconds) : 0)
-                )}
+                {(() => {
+                  const dbBreakTime = todayBreakTime
+                  const currentSessionTime = timerMode === 'stopwatch' && isBreak ? (stopwatchTime - lastSavedSeconds) : 0
+                  const totalBreakTime = dbBreakTime + currentSessionTime
+                  console.log('Break time display:', {
+                    dbBreakTime,
+                    currentSessionTime,
+                    totalBreakTime,
+                    stopwatchTime,
+                    lastSavedSeconds,
+                    isBreak,
+                    timerMode,
+                    formatted: formatStopwatchTime(totalBreakTime)
+                  })
+                  return formatStopwatchTime(totalBreakTime)
+                })()}
               </div>
               <div className="text-xs text-muted-foreground">今日の休憩時間</div>
             </div>

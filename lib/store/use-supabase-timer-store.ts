@@ -20,7 +20,7 @@ interface SupabaseTimerStore {
   // Stopwatch interval tracking
   stopwatchInterval: number | null
   lastUpdateTime: number | null
-  lastSavedSeconds: number  // 最後にDBに保存した秒数
+  lastSavedSeconds: number  // 現在のセッションで保存済みの秒数（セッション開始時は0）
   
   // Basic timer settings
   pomodoroTime: number // in minutes
@@ -279,7 +279,7 @@ export const useSupabaseTimerStore = create<SupabaseTimerStore>((set, get) => ({
   
   // Stopwatch actions
   startStopwatch: (taskId) => {
-    const { userId, stopwatchInterval, isPaused, stopwatchTime } = get()
+    const { userId, stopwatchInterval, isPaused, stopwatchTime, lastSavedSeconds } = get()
     if (!userId) {
       console.error('No user ID found, cannot start stopwatch')
       return
@@ -295,6 +295,8 @@ export const useSupabaseTimerStore = create<SupabaseTimerStore>((set, get) => ({
     const startTime = Date.now()
     // 常に現在のstopwatchTimeから継続（新規開始時は0）
     const initialTime = stopwatchTime
+    // 再開時は既存のlastSavedSecondsを保持
+    const initialSavedSeconds = isPaused ? lastSavedSeconds : 0
     
     // Update every second
     const interval = setInterval(async () => {
@@ -322,9 +324,10 @@ export const useSupabaseTimerStore = create<SupabaseTimerStore>((set, get) => ({
             await TaskService.updateBreakTime(userId, 5)
           }
           // Update lastUpdateTime and lastSavedSeconds after successful save
+          const currentSavedSeconds = get().lastSavedSeconds
           set({ 
             lastUpdateTime: Date.now(),
-            lastSavedSeconds: initialTime + elapsed  // 累積時間を記録
+            lastSavedSeconds: currentSavedSeconds + 5  // このセッションで保存した秒数を累積
           })
           console.log(`${currentBreakState ? 'Break' : 'Work'} time log updated successfully`)
         } catch (error) {
@@ -340,7 +343,7 @@ export const useSupabaseTimerStore = create<SupabaseTimerStore>((set, get) => ({
       currentTaskId: taskId || null,
       stopwatchInterval: interval as any,
       lastUpdateTime: Date.now(),
-      lastSavedSeconds: stopwatchTime  // 現在の累積時間を保存済みとして記録
+      lastSavedSeconds: initialSavedSeconds  // 新規開始時は0、再開時は既存の値を保持
     })
   },
   
@@ -382,8 +385,8 @@ export const useSupabaseTimerStore = create<SupabaseTimerStore>((set, get) => ({
       isPaused: true,  // 一時停止状態
       currentTaskId,   // タスクIDは保持
       stopwatchInterval: null,
-      lastUpdateTime: null,
-      lastSavedSeconds: stopwatchTime  // 停止時の秒数を保存済みとして記録
+      lastUpdateTime: null
+      // lastSavedSecondsは変更しない（現在のセッションで保存済みの秒数を保持）
     })
     
     // データ更新のトリガー
@@ -410,10 +413,21 @@ export const useSupabaseTimerStore = create<SupabaseTimerStore>((set, get) => ({
   },
   
   toggleStopwatchBreak: () => {
-    const { isBreak, timerMode } = get()
+    const { isBreak, timerMode, isRunning } = get()
     if (timerMode !== 'stopwatch') return
     
-    set({ isBreak: !isBreak })
+    // 実行中は切り替えできない（UIで無効化されているはず）
+    if (isRunning) {
+      console.warn('Cannot toggle break mode while timer is running')
+      return
+    }
+    
+    // モード切り替え時はタイマーをリセット（新しいセッションとして扱う）
+    set({ 
+      isBreak: !isBreak,
+      stopwatchTime: 0,
+      lastSavedSeconds: 0
+    })
     console.log(`Stopwatch ${!isBreak ? 'break' : 'work'} mode activated`)
   },
   
