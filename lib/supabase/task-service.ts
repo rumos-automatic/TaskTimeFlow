@@ -495,8 +495,14 @@ export class TaskService {
         .select('duration')
         .eq('user_id', userId)
         .eq('date', dateStr)
+        .single()
         
       if (error) {
+        // レコードが存在しない場合
+        if (error.code === 'PGRST116') {
+          console.log(`No break time log found for ${dateStr}, returning 0`)
+          return 0
+        }
         console.error('Error fetching daily break time:', error)
         console.error('Error details:', {
           code: error.code,
@@ -512,8 +518,8 @@ export class TaskService {
         throw error
       }
       
-      console.log('Break time logs fetched:', data)
-      const total = (data || []).reduce((total: number, log: any) => total + (log.duration || 0), 0)
+      console.log('Break time log fetched:', data)
+      const total = data?.duration || 0
       console.log(`Total break time for ${dateStr}: ${total} seconds`)
       return total
     } catch (error) {
@@ -529,14 +535,15 @@ export class TaskService {
     
     try {
       // Check if a log already exists for this date
-      const { data: existingLog, error: selectError } = await supabase
+      const { data: existingLogs, error: selectError } = await supabase
         .from('break_time_logs')
         .select('*')
         .eq('user_id', userId)
         .eq('date', dateStr)
-        .single()
+        .order('created_at', { ascending: true })
+        .limit(1)
       
-      if (selectError && selectError.code !== 'PGRST116') { // PGRST116 = no rows returned
+      if (selectError) {
         console.error('Error checking existing break time log:', selectError)
         // テーブルが存在しない場合はスキップ
         if (selectError.code === '42P01' || selectError.message?.includes('relation') || selectError.message?.includes('does not exist')) {
@@ -545,6 +552,8 @@ export class TaskService {
         }
         throw selectError
       }
+      
+      const existingLog = existingLogs && existingLogs.length > 0 ? existingLogs[0] : null
         
       if (existingLog) {
         // Update existing log - add to duration
