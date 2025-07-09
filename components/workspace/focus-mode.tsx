@@ -262,24 +262,17 @@ export function FocusMode() {
   useEffect(() => {
     const fetchTimeData = async () => {
       if (user?.id) {
-        try {
-          console.log('Fetching time data...')
-          const todayTime = await getTodayTotalTime()
-          console.log('Today total time:', todayTime)
-          setTodayTotalTime(todayTime)
-          
-          const breakTime = await getTodayBreakTime()
-          console.log('Today break time:', breakTime)
-          setTodayBreakTime(breakTime)
-          
-          if (currentTask) {
-            const taskTime = await getTaskTotalTime(currentTask.id)
-            setCurrentTaskTime(taskTime)
-          } else {
-            setCurrentTaskTime(0)
-          }
-        } catch (error) {
-          console.error('Error fetching time data:', error)
+        const todayTime = await getTodayTotalTime()
+        setTodayTotalTime(todayTime)
+        
+        const breakTime = await getTodayBreakTime()
+        setTodayBreakTime(breakTime)
+        
+        if (currentTask) {
+          const taskTime = await getTaskTotalTime(currentTask.id)
+          setCurrentTaskTime(taskTime)
+        } else {
+          setCurrentTaskTime(0)
         }
       }
     }
@@ -801,21 +794,9 @@ export function FocusMode() {
             </div>
             <div className="text-center">
               <div className="text-lg font-bold text-green-600">
-                {(() => {
-                  const dbBreakTime = todayBreakTime
-                  const currentBreakTime = timerMode === 'stopwatch' && isBreak ? (stopwatchTime - lastSavedSeconds) : 0
-                  const totalBreakTime = dbBreakTime + currentBreakTime
-                  console.log('Break time calculation:', {
-                    dbBreakTime,
-                    currentBreakTime,
-                    totalBreakTime,
-                    stopwatchTime,
-                    lastSavedSeconds,
-                    isBreak,
-                    timerMode
-                  })
-                  return formatStopwatchTime(totalBreakTime)
-                })()}
+                {formatStopwatchTime(
+                  todayBreakTime + (timerMode === 'stopwatch' && isBreak ? (stopwatchTime - lastSavedSeconds) : 0)
+                )}
               </div>
               <div className="text-xs text-muted-foreground">今日の休憩時間</div>
             </div>
