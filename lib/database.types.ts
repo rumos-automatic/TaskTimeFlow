@@ -158,6 +158,33 @@ export type Database = {
           },
         ]
       }
+      break_time_logs: {
+        Row: {
+          created_at: string | null
+          date: string
+          duration: number
+          id: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          date: string
+          duration?: number
+          id?: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          date?: string
+          duration?: number
+          id?: string
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       tasks: {
         Row: {
           actual_time: number | null
@@ -378,7 +405,18 @@ export type Database = {
       }
     }
     Functions: {
-      [_ in never]: never
+      get_monthly_time_logs: {
+        Args: {
+          p_user_id: string
+          p_year: number
+          p_month: number
+        }
+        Returns: {
+          date: string
+          work_time: number
+          break_time: number
+        }[]
+      }
     }
     Enums: {
       [_ in never]: never

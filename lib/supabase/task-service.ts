@@ -27,6 +27,10 @@ type DbTaskTimeLog = Database['public']['Tables']['task_time_logs']['Row']
 type DbTaskTimeLogInsert = Database['public']['Tables']['task_time_logs']['Insert']
 type DbTaskTimeLogUpdate = Database['public']['Tables']['task_time_logs']['Update']
 
+type DbBreakTimeLog = Database['public']['Tables']['break_time_logs']['Row']
+type DbBreakTimeLogInsert = Database['public']['Tables']['break_time_logs']['Insert']
+type DbBreakTimeLogUpdate = Database['public']['Tables']['break_time_logs']['Update']
+
 // Database models to App models conversion
 export function dbTaskToTask(dbTask: DbTask): Task {
   return {
@@ -459,8 +463,8 @@ export class TaskService {
   }
   
   // Break Time Log operations
-  static async getBreakTimeLogs(userId: string, date?: Date): Promise<any[]> {
-    let query = (supabase as any)
+  static async getBreakTimeLogs(userId: string, date?: Date): Promise<DbBreakTimeLog[]> {
+    let query = supabase
       .from('break_time_logs')
       .select('*')
       .eq('user_id', userId)
@@ -485,27 +489,37 @@ export class TaskService {
     const dateStr = formatDateForDatabase(date)
     console.log(`getDailyBreakTime called: userId=${userId}, date=${dateStr}`)
     
-    const { data, error } = await (supabase as any)
-      .from('break_time_logs')
-      .select('duration')
-      .eq('user_id', userId)
-      .eq('date', dateStr)
+    try {
+      const { data, error } = await supabase
+        .from('break_time_logs')
+        .select('duration')
+        .eq('user_id', userId)
+        .eq('date', dateStr)
+        
+      if (error) {
+        console.error('Error fetching daily break time:', error)
+        console.error('Error details:', {
+          code: error.code,
+          message: error.message,
+          details: error.details,
+          hint: error.hint
+        })
+        // テーブルが存在しない場合は0を返す
+        if (error.code === '42P01' || error.message?.includes('relation') || error.message?.includes('does not exist')) {
+          console.warn('break_time_logs table does not exist, returning 0')
+          return 0
+        }
+        throw error
+      }
       
-    if (error) {
-      console.error('Error fetching daily break time:', error)
-      console.error('Error details:', {
-        code: error.code,
-        message: error.message,
-        details: error.details,
-        hint: error.hint
-      })
-      throw error
+      console.log('Break time logs fetched:', data)
+      const total = (data || []).reduce((total: number, log: any) => total + (log.duration || 0), 0)
+      console.log(`Total break time for ${dateStr}: ${total} seconds`)
+      return total
+    } catch (error) {
+      console.error('Unexpected error in getDailyBreakTime:', error)
+      return 0
     }
-    
-    console.log('Break time logs fetched:', data)
-    const total = (data || []).reduce((total: number, log: any) => total + (log.duration || 0), 0)
-    console.log(`Total break time for ${dateStr}: ${total} seconds`)
-    return total
   }
   
   static async updateBreakTime(userId: string, duration: number, date?: Date): Promise<void> {
@@ -513,48 +527,63 @@ export class TaskService {
     const dateStr = formatDateForDatabase(targetDate)
     console.log(`updateBreakTime called: userId=${userId}, duration=${duration}, date=${dateStr}`)
     
-    // Check if a log already exists for this date
-    const { data: existingLog } = await (supabase as any)
-      .from('break_time_logs')
-      .select('*')
-      .eq('user_id', userId)
-      .eq('date', dateStr)
-      .single()
-      
-    if (existingLog) {
-      // Update existing log - add to duration
-      const newDuration = (existingLog.duration || 0) + duration
-      console.log(`Updating existing break log ${existingLog.id}: ${existingLog.duration || 0} + ${duration} = ${newDuration}`)
-      
-      const { error } = await (supabase as any)
+    try {
+      // Check if a log already exists for this date
+      const { data: existingLog, error: selectError } = await supabase
         .from('break_time_logs')
-        .update({ 
-          duration: newDuration,
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', existingLog.id)
-        
-      if (error) {
-        console.error('Error updating break time log:', error)
-        throw error
+        .select('*')
+        .eq('user_id', userId)
+        .eq('date', dateStr)
+        .single()
+      
+      if (selectError && selectError.code !== 'PGRST116') { // PGRST116 = no rows returned
+        console.error('Error checking existing break time log:', selectError)
+        // テーブルが存在しない場合はスキップ
+        if (selectError.code === '42P01' || selectError.message?.includes('relation') || selectError.message?.includes('does not exist')) {
+          console.warn('break_time_logs table does not exist, skipping update')
+          return
+        }
+        throw selectError
       }
-      console.log('Break time log updated successfully')
-    } else {
-      // Create new log
-      console.log(`Creating new break time log with duration: ${duration}`)
-      const { error } = await (supabase as any)
-        .from('break_time_logs')
-        .insert({
-          user_id: userId,
-          date: dateStr,
-          duration: duration
-        })
         
-      if (error) {
-        console.error('Error creating break time log:', error)
-        throw error
+      if (existingLog) {
+        // Update existing log - add to duration
+        const newDuration = (existingLog.duration || 0) + duration
+        console.log(`Updating existing break log ${existingLog.id}: ${existingLog.duration || 0} + ${duration} = ${newDuration}`)
+        
+        const { error } = await supabase
+          .from('break_time_logs')
+          .update({ 
+            duration: newDuration,
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', existingLog.id)
+          
+        if (error) {
+          console.error('Error updating break time log:', error)
+          throw error
+        }
+        console.log('Break time log updated successfully')
+      } else {
+        // Create new log
+        console.log(`Creating new break time log with duration: ${duration}`)
+        const { error } = await supabase
+          .from('break_time_logs')
+          .insert({
+            user_id: userId,
+            date: dateStr,
+            duration: duration
+          })
+          
+        if (error) {
+          console.error('Error creating break time log:', error)
+          throw error
+        }
+        console.log('Break time log created successfully')
       }
-      console.log('Break time log created successfully')
+    } catch (error) {
+      console.error('Unexpected error in updateBreakTime:', error)
+      // エラーが発生しても処理を継続
     }
   }
   
@@ -584,7 +613,7 @@ export class TaskService {
   
   // Get monthly time logs (work time and break time) for calendar view
   static async getMonthlyTimeLogs(userId: string, year: number, month: number): Promise<{ date: Date, workTime: number, breakTime: number }[]> {
-    const { data, error } = await (supabase as any)
+    const { data, error } = await supabase
       .rpc('get_monthly_time_logs', {
         p_user_id: userId,
         p_year: year,
