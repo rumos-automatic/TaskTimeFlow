@@ -117,18 +117,27 @@ npm run db:studio     # Open database studio
 - **Rate Limiting**: Queue management with retry logic
 - **Duplicate Prevention**: Sync IDs and checksum validation
 
-## Development Phases
+## Development Phases (Updated Priority)
 
-### Phase 1: MVP (3 months)
-- **Month 1**: Infrastructure, authentication, Google integration
+### Phase 1: MVP (3 months) - ✅ Core features completed
+- **Month 1**: Infrastructure, authentication basics
 - **Month 2**: 3-screen UI implementation, drag & drop
-- **Month 3**: Sync functionality, beta testing
+- **Month 3**: Basic functionality, UI polish
 
-### Phase 2: Pro Version (3 months)
+### Phase 1.5: Route Restructuring & Marketing Foundation (2 weeks) - 🚧 CURRENT PRIORITY
+- **Week 1**: Route structure refactoring (public vs authenticated pages)
+- **Week 2**: Landing page and marketing pages development
+- **Reason**: Essential for user acquisition and monetization strategy
+
+### Phase 2: Google Integration (3 weeks) - 📅 NEXT
+- **Week 3-5**: Google Calendar/Tasks API integration
+- Complete bi-directional sync implementation
+
+### Phase 3: Pro Features (3 months)
 - **Month 4-5**: Multi-AI integration (GPT-4, Claude, Gemini)
 - **Month 6**: Analytics, advanced integrations
 
-### Phase 3: Enterprise (6 months)
+### Phase 4: Enterprise (6 months)
 - **Month 7-12**: Team features, B2B functionality
 
 ## Business Model
@@ -163,6 +172,22 @@ npm run db:studio     # Open database studio
 - **6-month Retention**: 60%+ target
 
 ## Future Features (Roadmap)
+
+### 🔧 Route Restructuring (Critical) - NEXT PRIORITY
+- **Current Issue**: All pages require authentication (no public landing page)
+- **Goal**: Separate public pages (LP, pricing, features) from authenticated app
+- **Implementation**:
+  - Introduce route groups: `(marketing)`, `(legal)`, `(auth)`, `app/`
+  - Move AuthGuard to only protect `/app/*` routes
+  - Implement middleware.ts for authentication control
+  - Create public landing page at root `/`
+  - Move workspace to `/app/workspace`
+- **Benefits**:
+  - SEO optimization for marketing pages
+  - Better user acquisition funnel
+  - Cleaner URL structure
+  - Improved conversion rates
+- **Reference**: `/docs/domain-routing-strategy.md`
 
 ### 💰 Advertisement Integration (Free Plan) - PLANNED
 - **Google AdSense実装**: 
@@ -204,6 +229,42 @@ npm run db:studio     # Open database studio
 - **Privacy-First Design**: User data never sent to third-party services without explicit consent
 - **Integration**: OpenAI GPT-4, Claude, Google Gemini via Edge APIs
 
+### 🚀 Landing Page (Marketing Site) - PLANNED
+
+#### Purpose & Goals
+- **Conversion Optimization**: 無料プランへの登録促進、有料プランへのアップグレード促進
+- **Value Proposition**: TaskTimeFlowの革新的な3画面UIとGoogle統合の価値を効果的に伝える
+- **SEO Strategy**: オーガニック流入の増加とブランド認知度向上
+
+#### Key Sections
+- **Hero Section**: 
+  - キャッチコピー: "タスクが溜まらない、時間に追われない。革新的な3画面UIでタスク管理を再定義"
+  - メインCTA: "無料で始める" / "デモを見る"
+  - ヒーロー画像/動画: 3画面UIの実際の操作イメージ
+- **Features Section**:
+  - 3画面UI（タスクプール×タイムライン×フォーカス）の詳細説明
+  - Google Calendar/Tasks完全統合の説明
+  - ドラッグ&ドロップの直感的操作のデモ
+- **Pricing Section**:
+  - 料金プランの比較表（Free/Personal/Pro/Team）
+  - 広告表示有無の明確な説明
+  - よくある質問（FAQ）の統合
+- **Social Proof**:
+  - ユーザーレビュー・評価
+  - 導入企業ロゴ（将来的に）
+  - 利用統計（タスク完了率70%以上など）
+- **CTA Section**:
+  - メールマガジン登録
+  - 無料プラン登録への導線
+  - お問い合わせフォーム
+
+#### Technical Implementation
+- **Framework**: Next.js（メインアプリと同じ）でSSG/ISR対応
+- **Performance**: Lighthouse Score 95+を目指す
+- **Analytics**: Google Analytics 4 + Tag Manager実装
+- **A/B Testing**: 複数のCTAバリエーションをテスト
+- **実装予定時期**: Phase 4後期〜Phase 5
+
 ## Important Files
 
 - `/docs/requirements.md` - Detailed requirements and specifications
@@ -214,6 +275,7 @@ npm run db:studio     # Open database studio
 - `/docs/database-schema.md` - Database schema and data models
 - `/docs/api-specification.md` - API endpoints and specifications
 - `/docs/auth-architecture.md` - Authentication and authorization design
+- `/docs/domain-routing-strategy.md` - Domain structure and routing strategy
 
 ## Development Best Practices
 
