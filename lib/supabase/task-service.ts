@@ -385,56 +385,67 @@ export class TaskService {
     const dateStr = formatDateForDatabase(targetDate)
     console.log(`updateTimeLog called: userId=${userId}, taskId=${taskId}, duration=${duration}, date=${dateStr}`)
     
-    // Build query conditionally based on whether taskId is null
-    let query = supabase
-      .from('task_time_logs')
-      .select('*')
-      .eq('user_id', userId)
-      .eq('date', dateStr)
-    
-    if (taskId === null) {
-      query = query.is('task_id', null)
-    } else {
-      query = query.eq('task_id', taskId)
-    }
-    
-    const { data: existingLog } = await query.single()
-      
-    if (existingLog) {
-      // Update existing log - add to duration
-      const newDuration = (existingLog.duration || 0) + duration
-      console.log(`Updating existing log ${existingLog.id}: ${existingLog.duration || 0} + ${duration} = ${newDuration}`)
-      
-      const { error } = await supabase
+    try {
+      // Build query conditionally based on whether taskId is null
+      let query = supabase
         .from('task_time_logs')
-        .update({ 
-          duration: newDuration,
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', existingLog.id)
-        
-      if (error) {
-        console.error('Error updating time log:', error)
-        throw error
+        .select('*')
+        .eq('user_id', userId)
+        .eq('date', dateStr)
+      
+      if (taskId === null) {
+        query = query.is('task_id', null)
+      } else {
+        query = query.eq('task_id', taskId)
       }
-      console.log('Time log updated successfully')
-    } else {
-      // Create new log
-      console.log(`Creating new time log with duration: ${duration}`)
-      const { error } = await supabase
-        .from('task_time_logs')
-        .insert({
-          user_id: userId,
-          task_id: taskId,
-          date: dateStr,
-          duration: duration
-        })
-        
-      if (error) {
-        console.error('Error creating time log:', error)
-        throw error
+      
+      // Use maybeSingle() instead of single() to handle multiple records gracefully
+      const { data: existingLog, error: selectError } = await query.limit(1).maybeSingle()
+      
+      if (selectError) {
+        console.error('Error selecting time log:', selectError)
+        throw selectError
       }
-      console.log('Time log created successfully')
+        
+      if (existingLog) {
+        // Update existing log - add to duration
+        const newDuration = (existingLog.duration || 0) + duration
+        console.log(`Updating existing log ${existingLog.id}: ${existingLog.duration || 0} + ${duration} = ${newDuration}`)
+        
+        const { error } = await supabase
+          .from('task_time_logs')
+          .update({ 
+            duration: newDuration,
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', existingLog.id)
+          
+        if (error) {
+          console.error('Error updating time log:', error)
+          throw error
+        }
+        console.log('Time log updated successfully')
+      } else {
+        // Create new log
+        console.log(`Creating new time log with duration: ${duration}`)
+        const { error } = await supabase
+          .from('task_time_logs')
+          .insert({
+            user_id: userId,
+            task_id: taskId,
+            date: dateStr,
+            duration: duration
+          })
+          
+        if (error) {
+          console.error('Error creating time log:', error)
+          throw error
+        }
+        console.log('Time log created successfully')
+      }
+    } catch (error) {
+      console.error('Error in updateTimeLog:', error)
+      throw error
     }
   }
   
