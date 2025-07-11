@@ -3,6 +3,7 @@ import './globals.css'
 import { ThemeProvider } from '@/components/theme-provider'
 import { AuthProvider } from '@/lib/auth/auth-context'
 import { AuthGuard } from '@/components/auth/auth-guard'
+import { Footer } from '@/components/footer'
 
 export const metadata: Metadata = {
   title: 'TaskTimeFlow',
@@ -34,7 +35,12 @@ export default function RootLayout({
         >
           <AuthProvider>
             <AuthGuard>
-              {children}
+              <div className="min-h-screen flex flex-col">
+                <main className="flex-1">
+                  {children}
+                </main>
+                <Footer />
+              </div>
             </AuthGuard>
           </AuthProvider>
         </ThemeProvider>
