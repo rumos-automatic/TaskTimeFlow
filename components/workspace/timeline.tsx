@@ -121,7 +121,7 @@ function ScheduledTaskCard({ task, slotId, slotData }: ScheduledTaskCardProps) {
       setTempEstimatedTime(newEstimatedTime)
     } else {
       // 下部リサイズ：終了時間を変更（推定時間を変更）
-      const newEstimatedTime = Math.max(15, Math.min(240, (slotData.estimatedTime || 60) + minutesChanged))
+      const newEstimatedTime = Math.max(15, Math.min(1440, (slotData.estimatedTime || 60) + minutesChanged))
       setTempEstimatedTime(newEstimatedTime)
     }
   }, [isResizing, resizeStartY, slotData.estimatedTime, slotData.startTime, resizePosition])
